@@ -1,0 +1,433 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import AdminActions from '../../../components/AdminActions.astro';
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection('posts');
+  return allPosts.map(p => ({
+    params: { slug: p.id },
+    props: { post: p },
+  }));
+}
+
+const { post } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const [pillar, ...rest] = post.id.split('/');
+const slug = rest.join('/');
+
+// Computed fields
+const wordCount = post.body ? post.body.split(/\s+/).length : 0;
+const readingTime = Math.max(1, Math.round(wordCount / 250));
+const charCount = post.body ? post.body.length : 0;
+
+// H2 extraction
+const h2s = post.body ? [...post.body.matchAll(/^## (.+)$/gm)].map(m => m[1]) : [];
+
+// Internal links
+const internalLinks = post.body ? [...post.body.matchAll(/\[([^\]]+)\]\(\/magazine\/([^)]+)\)/g)].map(m => ({ text: m[1], url: `/magazine/${m[2]}` })) : [];
+
+// External links
+const externalLinks = post.body ? [...post.body.matchAll(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g)].map(m => ({ text: m[1], url: m[2] })) : [];
+
+// SEO checks
+const seoChecks = [
+  {
+    label: 'Title length',
+    pass: post.data.title.length <= 60,
+    detail: `${post.data.title.length} chars (max 60)`,
+  },
+  {
+    label: 'Meta description',
+    pass: post.data.metaDescription && post.data.metaDescription.length >= 120 && post.data.metaDescription.length <= 160,
+    detail: post.data.metaDescription ? `${post.data.metaDescription.length} chars (target 120-160)` : 'Missing',
+  },
+  {
+    label: 'Target keyword set',
+    pass: !!post.data.targetKeyword,
+    detail: post.data.targetKeyword || 'Not set',
+  },
+  {
+    label: 'Keyword in title',
+    pass: post.data.targetKeyword ? post.data.title.toLowerCase().includes(post.data.targetKeyword.toLowerCase()) : false,
+    detail: post.data.targetKeyword ? (post.data.title.toLowerCase().includes(post.data.targetKeyword.toLowerCase()) ? 'Found' : 'Not found') : 'No keyword',
+  },
+  {
+    label: 'Keyword in first 100 words',
+    pass: post.data.targetKeyword && post.body ? post.body.split(/\s+/).slice(0, 100).join(' ').toLowerCase().includes(post.data.targetKeyword.toLowerCase()) : false,
+    detail: 'First 100 words of body',
+  },
+  {
+    label: 'Keyword in H2s',
+    pass: post.data.targetKeyword ? h2s.some(h => h.toLowerCase().includes(post.data.targetKeyword.toLowerCase())) : false,
+    detail: `${h2s.filter(h => post.data.targetKeyword && h.toLowerCase().includes(post.data.targetKeyword.toLowerCase())).length} of ${h2s.length} H2s contain keyword`,
+  },
+  {
+    label: 'Content depth',
+    pass: wordCount >= 1500,
+    detail: `${wordCount} words (target 1500+)`,
+  },
+  {
+    label: 'Image alt text',
+    pass: !!post.data.imageAlt,
+    detail: post.data.imageAlt || 'Missing',
+  },
+  {
+    label: 'Internal links',
+    pass: internalLinks.length >= 3,
+    detail: `${internalLinks.length} internal links (target 3+)`,
+  },
+  {
+    label: 'FAQ section',
+    pass: post.data.faq && post.data.faq.length >= 2,
+    detail: `${post.data.faq?.length || 0} FAQ items`,
+  },
+  {
+    label: 'Table of contents',
+    pass: post.data.toc,
+    detail: post.data.toc ? 'Enabled' : 'Disabled',
+  },
+];
+
+const seoScore = Math.round((seoChecks.filter(c => c.pass).length / seoChecks.length) * 100);
+
+// Content quality checks
+const qualityChecks = [
+  {
+    label: 'Has excerpt',
+    pass: !!post.data.excerpt,
+    detail: post.data.excerpt ? `${post.data.excerpt.length} chars` : 'Missing',
+  },
+  {
+    label: 'Has featured image',
+    pass: !!post.data.image && !post.data.image.includes('placeholder'),
+    detail: post.data.image ? 'Set' : 'Missing',
+  },
+  {
+    label: 'Has destinations',
+    pass: post.data.destinations && post.data.destinations.length > 0,
+    detail: post.data.destinations?.join(', ') || 'None',
+  },
+  {
+    label: 'Multiple H2 sections',
+    pass: h2s.length >= 3,
+    detail: `${h2s.length} sections`,
+  },
+  {
+    label: 'Not a draft',
+    pass: !post.data.draft,
+    detail: post.data.draft ? 'Draft' : 'Published',
+  },
+];
+---
+
+<Base title={`${post.data.title} | Admin`} noindex={true}>
+  <div class="admin-layout">
+    <nav class="admin-breadcrumb">
+      <a href={`${base}/admin/`}>Admin</a> &rsaquo;
+      <a href={`${base}/admin/posts/`}>All Posts</a> &rsaquo;
+      <span>{post.data.title}</span>
+    </nav>
+
+    <div class="post-detail-header">
+      <h1>{post.data.title}</h1>
+      <div class="post-detail-actions">
+        <a href={`${base}/${pillar}/${slug}/`} class="admin-btn" target="_blank">View Live</a>
+      </div>
+    </div>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
+      <a href={`${base}/admin/posts/`} class="admin-nav-link active">All Posts</a>
+      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
+      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
+      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
+      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
+      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
+      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
+    </nav>
+
+    <!-- Quick Stats -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat">
+        <span class={`admin-stat-number ${seoScore >= 80 ? 'voice-score--good' : seoScore >= 60 ? 'voice-score--warn' : 'voice-score--bad'}`}>{seoScore}%</span>
+        <span class="admin-stat-label">SEO Score</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{wordCount.toLocaleString()}</span>
+        <span class="admin-stat-label">Words ({readingTime} min read)</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{h2s.length}</span>
+        <span class="admin-stat-label">Sections</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{internalLinks.length}</span>
+        <span class="admin-stat-label">Internal Links</span>
+      </div>
+    </div>
+
+    <div class="post-detail-grid">
+      <!-- Left column: Metadata -->
+      <div>
+        <!-- Frontmatter -->
+        <div class="admin-card">
+          <h2>Post Metadata</h2>
+          <table class="admin-table metadata-table">
+            <tbody>
+              <tr><td class="meta-label">Pillar</td><td><span class={`pillar-badge pillar-badge--${post.data.pillar}`}>{post.data.pillar}</span></td></tr>
+              <tr><td class="meta-label">Content Type</td><td>{(post.data.contentType || 'article').replace(/-/g, ' ')}</td></tr>
+              <tr><td class="meta-label">Date</td><td>{post.data.date}{post.data.updatedDate ? ` (updated ${post.data.updatedDate})` : ''}</td></tr>
+              <tr><td class="meta-label">Author</td><td>{post.data.author}</td></tr>
+              <tr><td class="meta-label">Status</td><td>{post.data.draft ? 'Draft' : 'Published'}</td></tr>
+              <tr><td class="meta-label">Featured</td><td>{post.data.featured ? `Yes (order: ${post.data.featuredOrder || 'auto'})` : 'No'}</td></tr>
+              <tr><td class="meta-label">Cornerstone</td><td>{post.data.cornerstone ? 'Yes' : 'No'}</td></tr>
+              <tr><td class="meta-label">Destinations</td><td>{post.data.destinations?.join(', ') || 'None'}</td></tr>
+              <tr><td class="meta-label">Target Keyword</td><td><strong>{post.data.targetKeyword}</strong></td></tr>
+              <tr><td class="meta-label">Slug / File</td><td><code>{post.id}</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Meta Tags Preview -->
+        <div class="admin-card">
+          <h2>Meta Tags Preview</h2>
+          <div class="serp-preview">
+            <div class="serp-title">{post.data.ogTitle || post.data.title} | AILEEN Magazine</div>
+            <div class="serp-url">cafecito-ai.com/magazine/{pillar}/{slug}/</div>
+            <div class="serp-desc">{post.data.ogDescription || post.data.metaDescription}</div>
+          </div>
+          <table class="admin-table metadata-table" style="margin-top: 1rem;">
+            <tbody>
+              <tr><td class="meta-label">Meta Title</td><td>{post.data.title} ({post.data.title.length} chars)</td></tr>
+              <tr><td class="meta-label">Meta Description</td><td>{post.data.metaDescription} ({post.data.metaDescription?.length} chars)</td></tr>
+              {post.data.ogTitle && <tr><td class="meta-label">OG Title Override</td><td>{post.data.ogTitle}</td></tr>}
+              {post.data.ogDescription && <tr><td class="meta-label">OG Desc Override</td><td>{post.data.ogDescription}</td></tr>}
+              {post.data.canonicalOverride && <tr><td class="meta-label">Canonical Override</td><td>{post.data.canonicalOverride}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Monetization -->
+        <div class="admin-card">
+          <h2>Monetization</h2>
+          <table class="admin-table metadata-table">
+            <tbody>
+              <tr><td class="meta-label">Affiliate Disclosure</td><td>{post.data.affiliateDisclosure ? 'Yes' : 'No'}</td></tr>
+              <tr><td class="meta-label">Products</td><td>{post.data.products?.length || 0} items</td></tr>
+              <tr><td class="meta-label">Booking Links</td><td>{post.data.bookingLinks?.length || 0} items</td></tr>
+              <tr><td class="meta-label">Reservation Links</td><td>{post.data.reservationLinks?.length || 0} items</td></tr>
+            </tbody>
+          </table>
+          {post.data.products && post.data.products.length > 0 && (
+            <div style="margin-top: 0.75rem;">
+              <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">Products</h3>
+              <ul class="product-list">
+                {post.data.products.map(pr => (
+                  <li>{pr.name}{pr.brand ? ` by ${pr.brand}` : ''}{pr.price ? ` — ${pr.price}` : ''}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <!-- Distribution -->
+        <div class="admin-card">
+          <h2>Distribution</h2>
+          <table class="admin-table metadata-table">
+            <tbody>
+              <tr><td class="meta-label">Pins Generated</td><td>{post.data.pinsGenerated || 0}</td></tr>
+              <tr><td class="meta-label">In Newsletter</td><td>{post.data.newsletterIncluded ? 'Yes' : 'No'}</td></tr>
+              <tr><td class="meta-label">Voice Score</td><td>{post.data.voiceScore || 'Not scored'}</td></tr>
+              <tr><td class="meta-label">SEO Score</td><td>{post.data.seoScore || 'Not scored'}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right column: Health checks -->
+      <div>
+        <!-- SEO Health -->
+        <div class="admin-card">
+          <h2>SEO Health ({seoChecks.filter(c => c.pass).length}/{seoChecks.length})</h2>
+          <table class="admin-table">
+            <thead><tr><th>Check</th><th>Detail</th><th>Status</th></tr></thead>
+            <tbody>
+              {seoChecks.map(c => (
+                <tr>
+                  <td>{c.label}</td>
+                  <td class="check-detail">{c.detail}</td>
+                  <td><span class={`status-badge ${c.pass ? 'voice-score--good' : 'voice-score--bad'}`}>{c.pass ? 'Pass' : 'Fail'}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Content Quality -->
+        <div class="admin-card">
+          <h2>Content Quality ({qualityChecks.filter(c => c.pass).length}/{qualityChecks.length})</h2>
+          <table class="admin-table">
+            <thead><tr><th>Check</th><th>Detail</th><th>Status</th></tr></thead>
+            <tbody>
+              {qualityChecks.map(c => (
+                <tr>
+                  <td>{c.label}</td>
+                  <td class="check-detail">{c.detail}</td>
+                  <td><span class={`status-badge ${c.pass ? 'voice-score--good' : 'voice-score--bad'}`}>{c.pass ? 'Pass' : 'Fail'}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Structure -->
+        <div class="admin-card">
+          <h2>Content Structure</h2>
+          <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">H2 Sections ({h2s.length})</h3>
+          <ol class="structure-list">
+            {h2s.map(h => <li>{h}</li>)}
+          </ol>
+
+          {post.data.faq && post.data.faq.length > 0 && (
+            <Fragment>
+              <h3 style="font-size: 0.85rem; margin: 1rem 0 0.5rem;">FAQ ({post.data.faq.length})</h3>
+              <ul class="structure-list">
+                {post.data.faq.map(f => <li><strong>Q:</strong> {f.question}</li>)}
+              </ul>
+            </Fragment>
+          )}
+        </div>
+
+        <!-- Links -->
+        <div class="admin-card">
+          <h2>Links</h2>
+          {internalLinks.length > 0 && (
+            <Fragment>
+              <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">Internal Links ({internalLinks.length})</h3>
+              <ul class="structure-list">
+                {internalLinks.map(l => <li><a href={l.url}>{l.text}</a></li>)}
+              </ul>
+            </Fragment>
+          )}
+          {externalLinks.length > 0 && (
+            <Fragment>
+              <h3 style="font-size: 0.85rem; margin: 1rem 0 0.5rem;">External Links ({externalLinks.length})</h3>
+              <ul class="structure-list">
+                {externalLinks.map(l => <li>{l.text}</li>)}
+              </ul>
+            </Fragment>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+  <AdminActions />
+</Base>
+
+<style>
+  .admin-breadcrumb {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+    color: var(--color-text-light);
+  }
+  .admin-breadcrumb a {
+    color: var(--color-text-light);
+    text-decoration: none;
+  }
+  .admin-breadcrumb a:hover {
+    text-decoration: underline;
+  }
+  .post-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .post-detail-header h1 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+  .post-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 900px) {
+    .post-detail-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .metadata-table td {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  .meta-label {
+    font-weight: 600;
+    white-space: nowrap;
+    width: 140px;
+    color: var(--color-text-light);
+  }
+  .serp-preview {
+    background: #fff;
+    border: 1px solid #dfe1e5;
+    border-radius: 8px;
+    padding: 1rem;
+    max-width: 600px;
+  }
+  .serp-title {
+    color: #1a0dab;
+    font-size: 1.1rem;
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .serp-url {
+    color: #006621;
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+  }
+  .serp-desc {
+    color: #545454;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .check-detail {
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    max-width: 200px;
+  }
+  .structure-list {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    padding-left: 1.25rem;
+  }
+  .structure-list a {
+    color: var(--color-text);
+  }
+  .product-list {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    padding-left: 1.25rem;
+  }
+  .pillar-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+  }
+  .pillar-badge--travel { background: #e3f2fd; color: #1565c0; }
+  .pillar-badge--style { background: #fce4ec; color: #c62828; }
+  .pillar-badge--recipes { background: #fff3e0; color: #e65100; }
+  .pillar-badge--lifestyle { background: #e8f5e9; color: #2e7d32; }
+</style>

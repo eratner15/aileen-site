@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Base title="Page Not Found" noindex={true}>
+  <section class="container" style="padding: 6rem 1.5rem; text-align: center; min-height: 60vh;">
+    <p class="section-label">404</p>
+    <h1 style="font-family: var(--font-display); margin-bottom: 1rem;">Page not found.</h1>
+    <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
+      The page you're looking for doesn't exist or has been moved.
+    </p>
+    <a href={`${base}/`} class="read-more" style="text-decoration: none;">Back to AILEEN Magazine</a>
+  </section>
+</Base>

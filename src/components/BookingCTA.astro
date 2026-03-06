@@ -1,0 +1,32 @@
+---
+interface BookingLink {
+  name: string;
+  platform?: string;
+  url?: string;
+}
+
+interface Props {
+  links: BookingLink[];
+}
+
+const { links } = Astro.props;
+---
+
+{links.length > 0 && (
+  <div class="booking-cta">
+    <p class="booking-cta-label">Where to Stay</p>
+    {links.map(link => (
+      <div class="booking-cta-item">
+        <span class="booking-cta-name">{link.name}</span>
+        {link.platform && <span class="booking-cta-platform">via {link.platform}</span>}
+        {link.url ? (
+          <a href={link.url} class="booking-cta-link" target="_blank" rel="noopener sponsored" data-booking="true">
+            Check Availability
+          </a>
+        ) : (
+          <span class="booking-cta-link booking-cta-link--placeholder">Booking link coming soon</span>
+        )}
+      </div>
+    ))}
+  </div>
+)}

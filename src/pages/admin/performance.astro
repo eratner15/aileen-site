@@ -1,0 +1,217 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import AdminActions from '../../components/AdminActions.astro';
+
+const allPosts = await getCollection('posts');
+const published = allPosts.filter(p => !p.data.draft);
+const drafts = allPosts.filter(p => p.data.draft);
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Session goal tracker (placeholder — update manually)
+const currentSessions = 0; // Update this value manually or via analytics integration
+const sessionGoal = 50_000;
+const sessionPercent = Math.min(Math.round((currentSessions / sessionGoal) * 100), 100);
+
+// Post count progress
+const postCountGoal = 100; // Adjust target as needed
+const postPercent = Math.min(Math.round((published.length / postCountGoal) * 100), 100);
+
+// Content velocity: posts per month
+const postsByMonth: Record<string, number> = {};
+for (const p of published) {
+  const d = new Date(p.data.date);
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  postsByMonth[key] = (postsByMonth[key] || 0) + 1;
+}
+const sortedMonths = Object.entries(postsByMonth).sort((a, b) => a[0].localeCompare(b[0]));
+const recentMonths = sortedMonths.slice(-12);
+
+// Average posts per month (last 6 months)
+const last6 = sortedMonths.slice(-6);
+const avgPerMonth = last6.length > 0 ? Math.round(last6.reduce((sum, [, count]) => sum + count, 0) / last6.length * 10) / 10 : 0;
+
+// Pillar distribution
+const byPillar: Record<string, number> = {};
+for (const p of published) {
+  byPillar[p.data.pillar] = (byPillar[p.data.pillar] || 0) + 1;
+}
+
+// Voice score stats
+const withVoiceScore = published.filter(p => p.data.voiceScore !== undefined && p.data.voiceScore !== null);
+const avgVoiceScore = withVoiceScore.length > 0 ? Math.round(withVoiceScore.reduce((sum, p) => sum + p.data.voiceScore!, 0) / withVoiceScore.length) : 0;
+
+// SEO score stats
+const withSeoScore = published.filter(p => p.data.seoScore !== undefined && p.data.seoScore !== null);
+const avgSeoScore = withSeoScore.length > 0 ? Math.round(withSeoScore.reduce((sum, p) => sum + p.data.seoScore!, 0) / withSeoScore.length) : 0;
+
+// Mediavine readiness checklist
+const mediavineChecks = [
+  { label: '50,000 sessions per month', pass: currentSessions >= 50_000, detail: `${currentSessions.toLocaleString()} / 50,000 sessions` },
+  { label: 'Original, long-form content', pass: published.length >= 30, detail: `${published.length} published posts` },
+  { label: 'No content policy violations', pass: true, detail: 'Manual check required' },
+  { label: 'Site loads fast (< 3s)', pass: true, detail: 'Manual check — run Lighthouse' },
+  { label: 'Good ad placement potential', pass: published.length >= 20, detail: 'Sufficient content depth' },
+  { label: 'SSL certificate active', pass: true, detail: 'Manual check required' },
+  { label: 'Content in English', pass: true, detail: 'Primary language is English' },
+  { label: 'Good standing with Google AdSense', pass: true, detail: 'Manual check required' },
+];
+const mediavinePassCount = mediavineChecks.filter(c => c.pass).length;
+---
+
+<Base title="Performance Dashboard | Admin" noindex={true}>
+  <div class="admin-layout">
+    <h1>Performance Dashboard</h1>
+    <p class="admin-subtitle">Growth metrics and Mediavine readiness</p>
+
+    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+
+    <div class="admin-actions-bar">
+      <button class="admin-btn" data-action="import-astro">Sync Posts to DB</button>
+    </div>
+    <pre id="action-output"></pre>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
+      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
+      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
+      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
+      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
+      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
+      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
+      <a href={`${base}/admin/performance/`} class="admin-nav-link active">Performance</a>
+    </nav>
+
+    <!-- Stats row -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat">
+        <span class="admin-stat-number">{published.length}</span>
+        <span class="admin-stat-label">Published Posts</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{drafts.length}</span>
+        <span class="admin-stat-label">In Pipeline</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{avgPerMonth}</span>
+        <span class="admin-stat-label">Posts/Month (6mo avg)</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{avgVoiceScore || '—'}</span>
+        <span class="admin-stat-label">Avg Voice Score</span>
+      </div>
+    </div>
+
+    <!-- 50K Session Goal Tracker -->
+    <div class="admin-card">
+      <h2>50K Session Goal</h2>
+      <p>Current sessions: <strong>{currentSessions.toLocaleString()}</strong> / {sessionGoal.toLocaleString()}</p>
+      <div class="admin-bar-track" style="height: 2rem; border-radius: 0.5rem; margin: 1rem 0;">
+        <div class={`admin-bar-fill ${sessionPercent >= 100 ? 'voice-score--good' : sessionPercent >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`} style={`width: ${sessionPercent}%; height: 100%; border-radius: 0.5rem;`}></div>
+      </div>
+      <p><strong>{sessionPercent}%</strong> of goal reached. Update the <code>currentSessions</code> value in this file with your actual analytics data.</p>
+    </div>
+
+    <!-- Post Count Progress -->
+    <div class="admin-card">
+      <h2>Post Count Progress</h2>
+      <p>Published: <strong>{published.length}</strong> / {postCountGoal} target posts</p>
+      <div class="admin-bar-track" style="height: 2rem; border-radius: 0.5rem; margin: 1rem 0;">
+        <div class={`admin-bar-fill ${postPercent >= 100 ? 'voice-score--good' : postPercent >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`} style={`width: ${postPercent}%; height: 100%; border-radius: 0.5rem;`}></div>
+      </div>
+      <p><strong>{postPercent}%</strong> of post count goal</p>
+    </div>
+
+    <!-- Content Velocity -->
+    <div class="admin-card">
+      <h2>Content Velocity</h2>
+      <p>Posts published per month (last 12 months)</p>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Posts</th>
+            <th>Visual</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recentMonths.map(([month, count]) => {
+            const maxCount = Math.max(...recentMonths.map(([, c]) => c));
+            const barWidth = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+            return (
+              <tr>
+                <td>{month}</td>
+                <td>{count}</td>
+                <td>
+                  <div class="admin-bar-track" style="height: 1.25rem;">
+                    <div class="admin-bar-fill" style={`width: ${barWidth}%; height: 100%;`}></div>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pillar Distribution -->
+    <div class="admin-card">
+      <h2>Pillar Distribution</h2>
+      <div class="admin-bar-chart">
+        {Object.entries(byPillar).sort((a, b) => b[1] - a[1]).map(([pillar, count]) => (
+          <div class="admin-bar-row">
+            <span class="admin-bar-label">{pillar.charAt(0).toUpperCase() + pillar.slice(1)}</span>
+            <div class="admin-bar-track">
+              <div class="admin-bar-fill" style={`width: ${Math.round(count / published.length * 100)}%`}></div>
+            </div>
+            <span class="admin-bar-count">{count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Quality Scores -->
+    <div class="admin-card">
+      <h2>Quality Scores</h2>
+      <div class="admin-stats-grid">
+        <div class="admin-stat">
+          <span class={`admin-stat-number ${avgVoiceScore >= 75 ? 'voice-score--good' : avgVoiceScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{avgVoiceScore || '—'}</span>
+          <span class="admin-stat-label">Avg Voice Score ({withVoiceScore.length} posts)</span>
+        </div>
+        <div class="admin-stat">
+          <span class={`admin-stat-number ${avgSeoScore >= 75 ? 'voice-score--good' : avgSeoScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{avgSeoScore || '—'}</span>
+          <span class="admin-stat-label">Avg SEO Score ({withSeoScore.length} posts)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mediavine Readiness Checklist -->
+    <div class="admin-card">
+      <h2>Mediavine Readiness ({mediavinePassCount}/{mediavineChecks.length})</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Requirement</th>
+            <th>Detail</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mediavineChecks.map(check => (
+            <tr>
+              <td>{check.label}</td>
+              <td>{check.detail}</td>
+              <td>
+                <span class={`status-badge ${check.pass ? 'voice-score--good' : 'voice-score--bad'}`}>
+                  {check.pass ? 'Ready' : 'Not Ready'}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <AdminActions />
+</Base>

@@ -1,0 +1,60 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const DESTINATIONS = [
+  { slug: 'miami', label: 'Miami', image: 'https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=600&h=400&fit=crop' },
+  { slug: 'palm-beach', label: 'Palm Beach', image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=600&h=400&fit=crop' },
+  { slug: 'boston', label: 'Boston', image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=600&h=400&fit=crop' },
+  { slug: 'nyc', label: 'New York City', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&h=400&fit=crop' },
+  { slug: 'maine', label: 'Maine', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop' },
+  { slug: 'aspen', label: 'Aspen', image: 'https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=600&h=400&fit=crop' },
+  { slug: 'nantucket', label: 'Nantucket', image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=600&h=400&fit=crop' },
+  { slug: 'hamptons', label: 'The Hamptons', image: 'https://images.unsplash.com/photo-1544642058-2d2e6cf3e040?w=600&h=400&fit=crop' },
+  { slug: 'italy', label: 'Italy', image: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=600&h=400&fit=crop' },
+  { slug: 'colorado', label: 'Colorado', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop' },
+];
+
+// Count posts per destination
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+const counts: Record<string, number> = {};
+for (const post of allPosts) {
+  for (const d of post.data.destinations || []) {
+    counts[d] = (counts[d] || 0) + 1;
+  }
+}
+---
+
+<Base title="Destinations" description="Curated destination guides — where to stay, eat, and spend your time in the places worth going.">
+
+  <section class="pillar-hero">
+    <div class="container">
+      <p class="section-label">Destinations</p>
+      <h1>The places worth going.</h1>
+      <p class="pillar-description">
+        Curated guides by destination — restaurants, hotels, travel, and style for the places I know and love.
+      </p>
+    </div>
+  </section>
+
+  <section class="container" style="padding: 3rem 0 4rem;">
+    <div class="post-grid">
+      {DESTINATIONS.map(dest => (
+        <a href={`${base}/destinations/${dest.slug}/`} class="post-card" style="text-decoration: none; color: inherit;">
+          <div class="post-card-image">
+            <img src={dest.image} alt={dest.label} loading="lazy" width="600" height="400" />
+          </div>
+          <div class="post-card-body">
+            <h3>{dest.label}</h3>
+            <p class="post-card-excerpt">
+              {counts[dest.slug] ? `${counts[dest.slug]} guide${counts[dest.slug] > 1 ? 's' : ''}` : 'Coming soon'}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+</Base>

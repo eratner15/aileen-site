@@ -1,0 +1,445 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import AdminActions from '../../components/AdminActions.astro';
+
+const allPosts = await getCollection('posts');
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Enrich posts with computed fields
+const posts = allPosts.map(p => {
+  const wordCount = p.body ? p.body.split(/\s+/).length : 0;
+  const readingTime = Math.max(1, Math.round(wordCount / 250));
+  const [pillar, ...rest] = p.id.split('/');
+  const slug = rest.join('/');
+  const hasProducts = p.data.products && p.data.products.length > 0;
+  const hasBooking = p.data.bookingLinks && p.data.bookingLinks.length > 0;
+  const hasReservation = p.data.reservationLinks && p.data.reservationLinks.length > 0;
+  const hasFaq = p.data.faq && p.data.faq.length > 0;
+  const hasMonetization = p.data.affiliateDisclosure || hasProducts || hasBooking || hasReservation;
+
+  // Per-post SEO health
+  const seoIssues: string[] = [];
+  if (p.data.title.length > 60) seoIssues.push('Title too long');
+  if (!p.data.metaDescription || p.data.metaDescription.length > 160) seoIssues.push('Meta desc issue');
+  if (!p.data.targetKeyword) seoIssues.push('No keyword');
+  if (p.data.targetKeyword && !p.data.title.toLowerCase().includes(p.data.targetKeyword.toLowerCase())) seoIssues.push('Keyword not in title');
+  if (!p.data.imageAlt) seoIssues.push('No alt text');
+  if (wordCount < 800) seoIssues.push('Thin content');
+  if (!p.data.destinations || p.data.destinations.length === 0) seoIssues.push('No destinations');
+
+  return {
+    ...p,
+    pillarDir: pillar,
+    slug,
+    wordCount,
+    readingTime,
+    hasProducts,
+    hasBooking,
+    hasReservation,
+    hasFaq,
+    hasMonetization,
+    seoIssues,
+    seoHealth: Math.round(((7 - seoIssues.length) / 7) * 100),
+  };
+}).sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+// Unique pillars and types for filter dropdowns
+const pillars = [...new Set(posts.map(p => p.data.pillar))].sort();
+const types = [...new Set(posts.map(p => p.data.contentType || 'article'))].sort();
+const destinations = [...new Set(posts.flatMap(p => p.data.destinations || []))].sort();
+---
+
+<Base title="All Posts | Admin" noindex={true}>
+  <div class="admin-layout">
+    <h1>All Posts ({posts.length})</h1>
+    <p class="admin-subtitle">Full content inventory with search and filtering</p>
+
+    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
+      <a href={`${base}/admin/posts/`} class="admin-nav-link active">All Posts</a>
+      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
+      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
+      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
+      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
+      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
+      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
+    </nav>
+
+    <!-- Search & Filters -->
+    <div class="admin-card" style="margin-bottom: 1.5rem;">
+      <div class="posts-filters">
+        <input type="text" id="post-search" placeholder="Search posts..." class="posts-search" />
+        <select id="filter-pillar" class="posts-filter-select">
+          <option value="">All Pillars</option>
+          {pillars.map(p => <option value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+        </select>
+        <select id="filter-type" class="posts-filter-select">
+          <option value="">All Types</option>
+          {types.map(t => <option value={t}>{t.replace(/-/g, ' ')}</option>)}
+        </select>
+        <select id="filter-status" class="posts-filter-select">
+          <option value="">All Status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="featured">Featured</option>
+          <option value="cornerstone">Cornerstone</option>
+        </select>
+        <select id="filter-dest" class="posts-filter-select">
+          <option value="">All Destinations</option>
+          {destinations.map(d => <option value={d}>{d}</option>)}
+        </select>
+      </div>
+      <div class="posts-filter-meta">
+        <span id="filter-count">{posts.length} posts</span>
+        <button id="clear-filters" class="posts-clear-btn">Clear Filters</button>
+      </div>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="admin-card" style="overflow-x: auto;">
+      <table class="admin-table posts-table" id="posts-table">
+        <thead>
+          <tr>
+            <th class="sortable" data-sort="title">Title</th>
+            <th class="sortable" data-sort="pillar">Pillar</th>
+            <th class="sortable" data-sort="type">Type</th>
+            <th class="sortable" data-sort="date">Date</th>
+            <th class="sortable" data-sort="words">Words</th>
+            <th>Status</th>
+            <th class="sortable" data-sort="seo">SEO</th>
+            <th>Links</th>
+          </tr>
+        </thead>
+        <tbody>
+          {posts.map(p => (
+            <tr
+              class="post-row"
+              data-title={p.data.title.toLowerCase()}
+              data-pillar={p.data.pillar}
+              data-type={p.data.contentType || 'article'}
+              data-status={`${p.data.draft ? 'draft' : 'published'} ${p.data.featured ? 'featured' : ''} ${p.data.cornerstone ? 'cornerstone' : ''}`}
+              data-dest={(p.data.destinations || []).join(' ')}
+              data-date={p.data.date}
+              data-words={p.wordCount}
+              data-seo={p.seoHealth}
+            >
+              <td>
+                <div class="post-title-cell">
+                  <a href={`${base}/admin/post/${p.pillarDir}/${p.slug}/`} class="post-title-link">{p.data.title}</a>
+                  <div class="post-meta-line">
+                    <span class="post-keyword">{p.data.targetKeyword}</span>
+                    {p.data.destinations && p.data.destinations.length > 0 && (
+                      <span class="post-dest-tags">
+                        {p.data.destinations.map(d => <span class="dest-tag">{d}</span>)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </td>
+              <td><span class={`pillar-badge pillar-badge--${p.data.pillar}`}>{p.data.pillar}</span></td>
+              <td><span class="status-badge">{(p.data.contentType || 'article').replace(/-/g, ' ')}</span></td>
+              <td>{p.data.date}</td>
+              <td>
+                <span class={`word-count ${p.wordCount < 800 ? 'word-count--thin' : ''}`}>
+                  {p.wordCount.toLocaleString()}
+                </span>
+                <span class="reading-time">{p.readingTime} min</span>
+              </td>
+              <td>
+                <div class="status-flags">
+                  {p.data.draft ? <span class="flag flag--draft">Draft</span> : <span class="flag flag--published">Live</span>}
+                  {p.data.featured && <span class="flag flag--featured">Featured</span>}
+                  {p.data.cornerstone && <span class="flag flag--cornerstone">Cornerstone</span>}
+                </div>
+              </td>
+              <td>
+                <span class={`seo-score ${p.seoHealth >= 85 ? 'voice-score--good' : p.seoHealth >= 60 ? 'voice-score--warn' : 'voice-score--bad'}`}>
+                  {p.seoHealth}%
+                </span>
+              </td>
+              <td>
+                <div class="link-icons">
+                  <a href={`${base}/${p.pillarDir}/${p.slug}/`} title="View live post" target="_blank" class="link-icon">View</a>
+                  {p.hasMonetization && <span class="link-icon link-icon--money" title="Has monetization">$</span>}
+                  {p.hasFaq && <span class="link-icon link-icon--faq" title="Has FAQ">FAQ</span>}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="admin-stats-grid" style="margin-top: 1.5rem;">
+      <div class="admin-stat">
+        <span class="admin-stat-number">{posts.filter(p => !p.data.draft).length}</span>
+        <span class="admin-stat-label">Published</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{posts.filter(p => p.data.draft).length}</span>
+        <span class="admin-stat-label">Drafts</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{Math.round(posts.reduce((s, p) => s + p.wordCount, 0) / 1000)}k</span>
+        <span class="admin-stat-label">Total Words</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{posts.filter(p => p.hasMonetization).length}</span>
+        <span class="admin-stat-label">Monetized</span>
+      </div>
+    </div>
+  </div>
+
+  <AdminActions />
+</Base>
+
+<style>
+  .posts-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+  .posts-search {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+  .posts-filter-select {
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    cursor: pointer;
+  }
+  .posts-filter-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--color-text-light);
+  }
+  .posts-clear-btn {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--color-text-light);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .posts-clear-btn:hover {
+    color: var(--color-text);
+  }
+  .posts-table td {
+    vertical-align: top;
+    padding: 0.6rem 0.5rem;
+  }
+  .post-title-cell {
+    max-width: 320px;
+  }
+  .post-title-link {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    text-decoration: none;
+    line-height: 1.3;
+    display: block;
+  }
+  .post-title-link:hover {
+    text-decoration: underline;
+  }
+  .post-meta-line {
+    margin-top: 0.25rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .post-keyword {
+    font-size: 0.7rem;
+    color: var(--color-text-light);
+    font-style: italic;
+  }
+  .dest-tag {
+    font-size: 0.65rem;
+    background: #f0f0f0;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+  }
+  .pillar-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+  }
+  .pillar-badge--travel { background: #e3f2fd; color: #1565c0; }
+  .pillar-badge--style { background: #fce4ec; color: #c62828; }
+  .pillar-badge--recipes { background: #fff3e0; color: #e65100; }
+  .pillar-badge--lifestyle { background: #e8f5e9; color: #2e7d32; }
+
+  .word-count { font-size: 0.8rem; font-weight: 500; }
+  .word-count--thin { color: #c62828; }
+  .reading-time { font-size: 0.7rem; color: var(--color-text-light); display: block; }
+
+  .status-flags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .flag {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.2rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .flag--published { background: #e8f5e9; color: #2e7d32; }
+  .flag--draft { background: #fff3e0; color: #e65100; }
+  .flag--featured { background: #e3f2fd; color: #1565c0; }
+  .flag--cornerstone { background: #f3e5f5; color: #6a1b9a; }
+
+  .seo-score {
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  .link-icons {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .link-icon {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.2rem;
+    background: #f5f5f5;
+    color: var(--color-text-light);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .link-icon:hover { background: var(--color-text); color: var(--color-white); }
+  .link-icon--money { background: #e8f5e9; color: #2e7d32; }
+  .link-icon--faq { background: #e3f2fd; color: #1565c0; }
+
+  .sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  .sortable:hover {
+    text-decoration: underline;
+  }
+  .post-row.hidden {
+    display: none;
+  }
+</style>
+
+<script>
+  // Client-side filtering and sorting
+  const searchInput = document.getElementById('post-search') as HTMLInputElement;
+  const pillarFilter = document.getElementById('filter-pillar') as HTMLSelectElement;
+  const typeFilter = document.getElementById('filter-type') as HTMLSelectElement;
+  const statusFilter = document.getElementById('filter-status') as HTMLSelectElement;
+  const destFilter = document.getElementById('filter-dest') as HTMLSelectElement;
+  const filterCount = document.getElementById('filter-count');
+  const clearBtn = document.getElementById('clear-filters');
+  const rows = document.querySelectorAll('.post-row');
+
+  function applyFilters() {
+    const search = searchInput.value.toLowerCase();
+    const pillar = pillarFilter.value;
+    const type = typeFilter.value;
+    const status = statusFilter.value;
+    const dest = destFilter.value;
+    let visible = 0;
+
+    rows.forEach(row => {
+      const el = row as HTMLElement;
+      const matchSearch = !search || el.dataset.title!.includes(search);
+      const matchPillar = !pillar || el.dataset.pillar === pillar;
+      const matchType = !type || el.dataset.type === type;
+      const matchStatus = !status || el.dataset.status!.includes(status);
+      const matchDest = !dest || el.dataset.dest!.includes(dest);
+
+      if (matchSearch && matchPillar && matchType && matchStatus && matchDest) {
+        el.classList.remove('hidden');
+        visible++;
+      } else {
+        el.classList.add('hidden');
+      }
+    });
+
+    if (filterCount) filterCount.textContent = `${visible} posts`;
+  }
+
+  searchInput?.addEventListener('input', applyFilters);
+  pillarFilter?.addEventListener('change', applyFilters);
+  typeFilter?.addEventListener('change', applyFilters);
+  statusFilter?.addEventListener('change', applyFilters);
+  destFilter?.addEventListener('change', applyFilters);
+  clearBtn?.addEventListener('click', () => {
+    searchInput.value = '';
+    pillarFilter.value = '';
+    typeFilter.value = '';
+    statusFilter.value = '';
+    destFilter.value = '';
+    applyFilters();
+  });
+
+  // Column sorting
+  const sortHeaders = document.querySelectorAll('.sortable');
+  let currentSort = '';
+  let sortAsc = true;
+
+  sortHeaders.forEach(th => {
+    th.addEventListener('click', () => {
+      const field = (th as HTMLElement).dataset.sort!;
+      if (currentSort === field) {
+        sortAsc = !sortAsc;
+      } else {
+        currentSort = field;
+        sortAsc = true;
+      }
+
+      const tbody = document.querySelector('#posts-table tbody')!;
+      const rowsArr = Array.from(rows);
+
+      rowsArr.sort((a, b) => {
+        const aEl = a as HTMLElement;
+        const bEl = b as HTMLElement;
+        let aVal: string | number = '';
+        let bVal: string | number = '';
+
+        switch (field) {
+          case 'title': aVal = aEl.dataset.title!; bVal = bEl.dataset.title!; break;
+          case 'pillar': aVal = aEl.dataset.pillar!; bVal = bEl.dataset.pillar!; break;
+          case 'type': aVal = aEl.dataset.type!; bVal = bEl.dataset.type!; break;
+          case 'date': aVal = aEl.dataset.date!; bVal = bEl.dataset.date!; break;
+          case 'words': aVal = parseInt(aEl.dataset.words!); bVal = parseInt(bEl.dataset.words!); break;
+          case 'seo': aVal = parseInt(aEl.dataset.seo!); bVal = parseInt(bEl.dataset.seo!); break;
+        }
+
+        if (typeof aVal === 'number') {
+          return sortAsc ? aVal - bVal : bVal - aVal;
+        }
+        return sortAsc ? aVal.localeCompare(bVal as string) : (bVal as string).localeCompare(aVal);
+      });
+
+      rowsArr.forEach(row => tbody.appendChild(row));
+    });
+  });
+</script>

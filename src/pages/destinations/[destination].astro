@@ -1,0 +1,156 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PostCard from '../../components/PostCard.astro';
+import NewsletterCTA from '../../components/NewsletterCTA.astro';
+
+const destinationData: Record<string, { label: string; description: string; image: string }> = {
+  miami: {
+    label: 'Miami',
+    description: 'Restaurant guides, hotel reviews, and style for Miami — from Aventura to Brickell. The spots worth your time from someone who lives here.',
+    image: 'https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=1200&h=675&fit=crop',
+  },
+  'palm-beach': {
+    label: 'Palm Beach',
+    description: 'Where to stay, where to eat, and what to wear in Palm Beach. Curated guides for a destination that rewards good taste.',
+    image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=1200&h=675&fit=crop',
+  },
+  boston: {
+    label: 'Boston',
+    description: 'A slower pace, brownstone streets, and a food scene worth exploring. Boston guides for the person who wants to actually experience the city.',
+    image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=1200&h=675&fit=crop',
+  },
+  nyc: {
+    label: 'New York City',
+    description: 'The restaurants, hotels, and style guides worth knowing in New York. Curated, not exhaustive.',
+    image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&h=675&fit=crop',
+  },
+  maine: {
+    label: 'Maine',
+    description: 'Bar Harbor, the coast, and the kind of New England summer that stays with you. Travel and dining guides for Maine.',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=675&fit=crop',
+  },
+  aspen: {
+    label: 'Aspen',
+    description: 'Mountain luxury, winter style, and where to eat after a day on the slopes. Aspen guides for people who appreciate the details.',
+    image: 'https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=1200&h=675&fit=crop',
+  },
+  nantucket: {
+    label: 'Nantucket',
+    description: 'Island time done well. Where to eat, what to wear, and how to spend a weekend on Nantucket without the tourist traps.',
+    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1200&h=675&fit=crop',
+  },
+  hamptons: {
+    label: 'The Hamptons',
+    description: 'Summer weekends, restaurant reservations, and what to pack for the East End. A curated approach to the Hamptons.',
+    image: 'https://images.unsplash.com/photo-1544642058-2d2e6cf3e040?w=1200&h=675&fit=crop',
+  },
+  italy: {
+    label: 'Italy',
+    description: 'The hotels worth booking, the restaurants worth finding, and the kind of Italian trip that stays with you. Guides beyond the guidebook.',
+    image: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=1200&h=675&fit=crop',
+  },
+  colorado: {
+    label: 'Colorado',
+    description: 'Beyond Aspen — mountain towns, ski resorts, and summer escapes across Colorado. Where to stay, eat, and explore.',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=675&fit=crop',
+  },
+};
+
+export function getStaticPaths() {
+  const dests = ['miami', 'palm-beach', 'boston', 'nyc', 'maine', 'aspen', 'nantucket', 'hamptons', 'italy', 'colorado'];
+  return dests.map(destination => ({
+    params: { destination },
+  }));
+}
+
+const { destination } = Astro.params;
+const meta = destinationData[destination!] || { label: destination, description: '', image: '' };
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const allPosts = await getCollection('posts', ({ data }) =>
+  !data.draft && data.destinations?.includes(destination!)
+);
+allPosts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+const restaurants = allPosts.filter(p => p.data.contentType === 'restaurant-guide');
+const hotels = allPosts.filter(p => p.data.contentType === 'hotel-review');
+const travel = allPosts.filter(p => p.data.contentType === 'travel-guide');
+const style = allPosts.filter(p => p.data.contentType === 'style-guide');
+const other = allPosts.filter(p => !['restaurant-guide', 'hotel-review', 'travel-guide', 'style-guide'].includes(p.data.contentType || ''));
+
+function postUrl(post: typeof allPosts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
+
+const sections = [
+  { label: 'Where to Eat', posts: restaurants },
+  { label: 'Where to Stay', posts: hotels },
+  { label: 'Travel Guides', posts: travel },
+  { label: 'What to Wear', posts: style },
+  { label: 'More', posts: other },
+].filter(s => s.posts.length > 0);
+---
+
+<Base title={`${meta.label} Guide`} description={meta.description} ogImage={meta.image}>
+
+  <section class="destination-hero" style={`background-image: url(${meta.image})`}>
+    <div class="destination-hero-overlay">
+      <p class="section-label">Destination Guide</p>
+      <h1>{meta.label}</h1>
+      <p class="destination-description">{meta.description}</p>
+    </div>
+  </section>
+
+  {sections.map(section => (
+    <section class="container destination-section">
+      <div class="section-header" style="text-align: left; margin-bottom: 2rem;">
+        <p class="section-label">{section.label}</p>
+      </div>
+      <div class="post-grid">
+        {section.posts.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+    </section>
+  ))}
+
+  {allPosts.length === 0 && (
+    <section class="container" style="padding: 4rem 0;">
+      <div class="empty-state">
+        <p>Guides for {meta.label} are coming soon.</p>
+      </div>
+    </section>
+  )}
+
+  <!-- Destination Newsletter CTA -->
+  <section class="container" style="padding: 2rem 0;">
+    <NewsletterCTA variant="destination" destination={meta.label} />
+  </section>
+
+  <!-- Related Destinations -->
+  <section class="container" style="padding: 2rem 0 3rem;">
+    <div class="section-header" style="text-align: left; margin-bottom: 1.5rem;">
+      <p class="section-label">More Destinations</p>
+    </div>
+    <div class="related-destinations">
+      {Object.entries(destinationData)
+        .filter(([slug]) => slug !== destination)
+        .map(([slug, meta]) => (
+          <a href={`${base}/destinations/${slug}/`} class="related-destination-link">
+            {meta.label}
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+</Base>

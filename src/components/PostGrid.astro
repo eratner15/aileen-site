@@ -1,0 +1,44 @@
+---
+import PostCard from './PostCard.astro';
+
+interface PostEntry {
+  id: string;
+  data: {
+    title: string;
+    pillar: string;
+    excerpt: string;
+    date: string;
+    image: string;
+  };
+}
+
+interface Props {
+  posts: PostEntry[];
+}
+
+const { posts } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+{posts.length > 0 ? (
+  <div class="post-grid">
+    {posts.map(post => {
+      const [pillar, ...rest] = post.id.split('/');
+      const slug = rest.join('/');
+      return (
+        <PostCard
+          title={post.data.title}
+          href={`${base}/${pillar}/${slug}/`}
+          pillar={post.data.pillar}
+          excerpt={post.data.excerpt}
+          date={post.data.date}
+          image={post.data.image.replace('1200', '600').replace('675', '400')}
+        />
+      );
+    })}
+  </div>
+) : (
+  <div class="empty-state">
+    <p>New content coming soon.</p>
+  </div>
+)}

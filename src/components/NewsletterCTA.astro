@@ -1,0 +1,29 @@
+---
+interface Props {
+  variant?: 'inline' | 'bold' | 'destination';
+  destination?: string;
+}
+
+const { variant = 'inline', destination } = Astro.props;
+
+const headlines: Record<string, string> = {
+  inline: "Worth your inbox.",
+  bold: "Get The AILEEN Edit",
+  destination: destination ? `More ${destination} guides, straight to your inbox.` : "Worth your inbox.",
+};
+
+const descriptions: Record<string, string> = {
+  inline: "A weekly letter on what's worth your time — in travel, style, and everything in between.",
+  bold: "One email a week. The restaurants worth booking, the hotels worth staying, the pieces worth keeping. No filler.",
+  destination: "New guides, restaurant finds, and travel intel delivered weekly.",
+};
+---
+
+<aside class={`newsletter-inline newsletter-inline--${variant}`}>
+  <p class="newsletter-inline-headline">{headlines[variant]}</p>
+  <p class="newsletter-inline-description">{descriptions[variant]}</p>
+  <form class="newsletter-inline-form" data-newsletter="true">
+    <input type="email" placeholder="Your email address" aria-label="Email address" required />
+    <button type="submit">Subscribe</button>
+  </form>
+</aside>

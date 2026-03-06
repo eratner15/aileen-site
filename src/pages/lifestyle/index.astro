@@ -1,29 +1,35 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import PostGrid from '../../components/PostGrid.astro';
+import PostCard from '../../components/PostCard.astro';
+import FAQ from '../../components/FAQ.astro';
 
-const posts = [
-  {
-    title: 'The Butter Mom Aesthetic: What It Actually Means',
-    slug: '/lifestyle/butter-mom-aesthetic/',
-    excerpt: 'It\'s not about perfection. It\'s about warmth, ease, and the kind of elegance that comes from actually living in your home.',
-    date: 'January 2026',
-    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'The Nancy Meyers Aesthetic: A Guide to the Look',
-    slug: '/lifestyle/nancy-meyers-aesthetic/',
-    excerpt: 'Oversized kitchens, cream turtlenecks, and homes that feel like a hug. Why we\'re all still trying to live inside a Nancy Meyers movie.',
-    date: 'December 2025',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Best Beach Reads for 2026 (The Ones Worth Packing)',
-    slug: '/lifestyle/best-beach-reads/',
-    excerpt: 'Books that earn their place in your carry-on. Smart, absorbing, and the kind of reading that makes you forget what time it is.',
-    date: 'November 2025',
-    image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&h=400&fit=crop',
-  },
-];
+const posts = await getCollection('posts', ({ data }) =>
+  data.pillar === 'lifestyle' && !data.draft
+);
+posts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function postUrl(post: typeof posts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
+
+const cornerstones = posts.filter(p => p.data.cornerstone);
+const featured = posts.find(p => p.data.featured) || posts[0];
+const rest = posts
+  .filter(p => p.id !== featured?.id)
+  .sort((a, b) => {
+    if (a.data.cornerstone && !b.data.cornerstone) return -1;
+    if (!a.data.cornerstone && b.data.cornerstone) return 1;
+    return new Date(b.data.date).getTime() - new Date(a.data.date).getTime();
+  });
+const pillarFaq = posts
+  .filter(p => p.data.cornerstone && p.data.faq?.length > 0)
+  .flatMap(p => p.data.faq)
+  .slice(0, 5);
 ---
 
 <Base title="Lifestyle" description="Intentional living, home aesthetics, and the kind of life worth designing on purpose.">
@@ -39,24 +45,53 @@ const posts = [
     </div>
   </section>
 
-  <section class="container" style="padding-top: 3rem;">
-    <div class="post-grid">
-      {posts.map(post => (
-        <article class="post-card">
-          <a href={post.slug} style="text-decoration:none; color:inherit;">
-            <div class="post-card-image">
-              <img src={post.image} alt={post.title} loading="lazy" />
-              <span class="pillar-badge">Lifestyle</span>
-            </div>
-            <div class="post-card-body">
-              <h3><span>{post.title}</span></h3>
-              <p class="post-card-excerpt">{post.excerpt}</p>
-              <p class="post-card-meta">{post.date}</p>
-            </div>
-          </a>
-        </article>
-      ))}
-    </div>
+  {featured && (
+    <section class="featured-section container" style="padding-top: 2rem;">
+      <a href={postUrl(featured)} class="featured-card" style="text-decoration:none; color:inherit;">
+        <div class="featured-image">
+          <img src={featured.data.image} alt={featured.data.title} loading="eager" width="1200" height="675" />
+        </div>
+        <div class="featured-content">
+          <p class="featured-label">Featured</p>
+          <h2><span>{featured.data.title}</span></h2>
+          <p class="featured-excerpt">{featured.data.excerpt}</p>
+          <span class="read-more">Read More</span>
+        </div>
+      </a>
+    </section>
+  )}
+
+  {cornerstones.length > 0 && (
+    <section class="container" style="padding-top: 2rem;">
+      <div class="section-header" style="text-align: left; margin-bottom: 1.5rem;">
+        <p class="section-label">Essential Guides</p>
+      </div>
+      <div class="post-grid">
+        {cornerstones.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="container" style="padding-top: 2rem;">
+    <PostGrid posts={rest} />
   </section>
+
+  {pillarFaq.length > 0 && (
+    <section class="container" style="padding: 2rem 0 3rem;">
+      <div class="section-header" style="text-align: left; margin-bottom: 1.5rem;">
+        <p class="section-label">Frequently Asked</p>
+      </div>
+      <FAQ items={pillarFaq} />
+    </section>
+  )}
 
 </Base>

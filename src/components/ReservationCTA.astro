@@ -1,0 +1,32 @@
+---
+interface ReservationLink {
+  name: string;
+  platform?: string;
+  url?: string;
+}
+
+interface Props {
+  links: ReservationLink[];
+}
+
+const { links } = Astro.props;
+---
+
+{links.length > 0 && (
+  <div class="reservation-cta">
+    <p class="reservation-cta-label">Make a Reservation</p>
+    {links.map(link => (
+      <div class="reservation-cta-item">
+        <span class="reservation-cta-name">{link.name}</span>
+        {link.platform && <span class="reservation-cta-platform">via {link.platform}</span>}
+        {link.url ? (
+          <a href={link.url} class="reservation-cta-link" target="_blank" rel="noopener sponsored" data-reservation="true">
+            Reserve a Table
+          </a>
+        ) : (
+          <span class="reservation-cta-link reservation-cta-link--placeholder">Reservation link coming soon</span>
+        )}
+      </div>
+    ))}
+  </div>
+)}

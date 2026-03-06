@@ -1,0 +1,27 @@
+---
+interface Props {
+  title: string;
+  href: string;
+  pillar: string;
+  excerpt: string;
+  date: string;
+  image: string;
+}
+
+const { title, href, pillar, excerpt, date, image } = Astro.props;
+const displayDate = new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+---
+
+<article class="post-card">
+  <a href={href} style="text-decoration:none; color:inherit;">
+    <div class="post-card-image">
+      <img src={image} alt={title} loading="lazy" width="600" height="400" />
+      <span class="pillar-badge">{pillar.charAt(0).toUpperCase() + pillar.slice(1)}</span>
+    </div>
+    <div class="post-card-body">
+      <h3>{title}</h3>
+      <p class="post-card-excerpt">{excerpt}</p>
+      <p class="post-card-meta">{displayDate}</p>
+    </div>
+  </a>
+</article>

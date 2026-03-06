@@ -1,0 +1,154 @@
+---
+/**
+ * AdminActions — client-side JS for Phase 2 interactive admin buttons.
+ * Detects if the growth engine API is running and enables action buttons.
+ * Include once per admin page.
+ */
+---
+
+<script>
+  const API_BASE = 'http://localhost:3001';
+
+  // Check if API is available
+  async function checkApi() {
+    try {
+      const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(2000) });
+      if (res.ok) return true;
+    } catch {}
+    return false;
+  }
+
+  // Initialize admin action buttons
+  async function initAdminActions() {
+    const apiOnline = await checkApi();
+    const indicator = document.getElementById('api-status');
+    const buttons = document.querySelectorAll('[data-action]');
+
+    if (indicator) {
+      indicator.textContent = apiOnline ? 'API Connected' : 'API Offline — run: aileen serve';
+      indicator.className = `api-status ${apiOnline ? 'api-status--online' : 'api-status--offline'}`;
+    }
+
+    buttons.forEach(btn => {
+      if (!apiOnline) {
+        (btn as HTMLButtonElement).disabled = true;
+        (btn as HTMLButtonElement).title = 'Start the API server: aileen serve';
+        return;
+      }
+
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const action = (btn as HTMLElement).dataset.action;
+        const method = (btn as HTMLElement).dataset.method || 'POST';
+        const body = (btn as HTMLElement).dataset.body || '{}';
+        const originalText = btn.textContent;
+
+        btn.textContent = 'Running...';
+        (btn as HTMLButtonElement).disabled = true;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/${action}`, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: method === 'POST' ? body : undefined,
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            btn.textContent = 'Done!';
+            btn.classList.add('admin-btn--success');
+
+            // Show result in the output area if present
+            const output = document.getElementById('action-output');
+            if (output) {
+              output.textContent = JSON.stringify(data, null, 2);
+              output.style.display = 'block';
+            }
+          } else {
+            btn.textContent = `Error: ${data.error || 'Unknown'}`;
+            btn.classList.add('admin-btn--error');
+          }
+        } catch (err) {
+          btn.textContent = 'Connection failed';
+          btn.classList.add('admin-btn--error');
+        }
+
+        setTimeout(() => {
+          btn.textContent = originalText;
+          (btn as HTMLButtonElement).disabled = false;
+          btn.classList.remove('admin-btn--success', 'admin-btn--error');
+        }, 3000);
+      });
+    });
+  }
+
+  // Run on page load
+  initAdminActions();
+</script>
+
+<style is:global>
+  .api-status {
+    display: inline-block;
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+  }
+  .api-status--online {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  .api-status--offline {
+    background: #fff3e0;
+    color: #e65100;
+  }
+  .admin-btn {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.02em;
+  }
+  .admin-btn:hover:not(:disabled) {
+    background: var(--color-text);
+    color: var(--color-white);
+    border-color: var(--color-text);
+  }
+  .admin-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .admin-btn--success {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+    border-color: #a5d6a7 !important;
+  }
+  .admin-btn--error {
+    background: #fbe9e7 !important;
+    color: #c62828 !important;
+    border-color: #ef9a9a !important;
+  }
+  .admin-actions-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  #action-output {
+    display: none;
+    font-family: monospace;
+    font-size: 0.75rem;
+    background: var(--color-bg-alt);
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    margin-top: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+</style>

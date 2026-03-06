@@ -1,0 +1,11 @@
+name = "aileen-magazine-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+routes = [
+  { pattern = "cafecito-ai.com/magazine/*", zone_name = "cafecito-ai.com" },
+  { pattern = "cafecito-ai.com/magazine", zone_name = "cafecito-ai.com" }
+]
+
+[site]
+bucket = "./dist"

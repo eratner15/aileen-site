@@ -1,59 +1,64 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import PostCard from '../components/PostCard.astro';
 
-const posts = [
-  {
-    title: 'Best Restaurants in Miami (A Local\'s Guide for 2026)',
-    slug: '/travel/best-restaurants-miami/',
-    pillar: 'Travel',
-    excerpt: 'These are the spots I go back to — elegant rooms, standout dishes, and places that never disappoint. A local\'s guide to Miami dining worth the reservation.',
-    date: 'March 2026',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Quiet Luxury Brands Worth Knowing in 2026',
-    slug: '/style/quiet-luxury-brands/',
-    pillar: 'Style',
-    excerpt: 'The brands that whisper instead of shout. Timeless pieces that earn their place in your closet — investment-worthy, understated, and built to last.',
-    date: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Boston Travel Guide: Where to Stay, Eat, and Spend Your Time',
-    slug: '/travel/boston-travel-guide/',
-    pillar: 'Travel',
-    excerpt: 'Boston is the kind of city that rewards a slower pace. The cobblestone streets, the brownstones, the way every neighborhood feels like its own world.',
-    date: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'The Butter Mom Aesthetic: What It Actually Means',
-    slug: '/lifestyle/butter-mom-aesthetic/',
-    pillar: 'Lifestyle',
-    excerpt: 'It\'s not about perfection. It\'s about warmth, ease, and the kind of elegance that comes from actually living in your home — not just styling it.',
-    date: 'January 2026',
-    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Sourdough Bread Recipe (The One I Actually Use)',
-    slug: '/recipes/sourdough-bread/',
-    pillar: 'Recipes',
-    excerpt: 'After dozens of failed loaves and more flour than I care to admit, this is the sourdough recipe I go back to every single week.',
-    date: 'January 2026',
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Carolyn Bessette-Kennedy Style: The Definitive Guide',
-    slug: '/style/carolyn-bessette-kennedy-style/',
-    pillar: 'Style',
-    excerpt: 'Her wardrobe was deceptively simple. A handful of pieces, always in proportion, always unhurried. The kind of style that doesn\'t try.',
-    date: 'January 2026',
-    image: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=600&h=400&fit=crop',
-  },
-];
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+allPosts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
 
-const featured = posts[0];
-const grid = posts.slice(1);
+const featured = allPosts.find(p => p.data.featured) || allPosts[0];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function postUrl(post: typeof allPosts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
+
+// Signature clusters
+const restaurants = allPosts.filter(p => p.data.contentType === 'restaurant-guide').slice(0, 3);
+const travelGuides = allPosts.filter(p => p.data.contentType === 'travel-guide').slice(0, 3);
+const hotels = allPosts.filter(p => p.data.contentType === 'hotel-review').slice(0, 3);
+const styleGuides = allPosts.filter(p => p.data.contentType === 'style-guide' || p.data.pillar === 'style').slice(0, 3);
+const recipes = allPosts.filter(p => p.data.pillar === 'recipes').slice(0, 3);
+
+// Destination data for rows
+const destinationData: Record<string, { label: string; image: string }> = {
+  miami: { label: 'Miami', image: 'https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=800&h=500&fit=crop' },
+  'palm-beach': { label: 'Palm Beach', image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=800&h=500&fit=crop' },
+  nyc: { label: 'New York City', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&h=500&fit=crop' },
+  boston: { label: 'Boston', image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=800&h=500&fit=crop' },
+  maine: { label: 'Maine', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop' },
+  aspen: { label: 'Aspen', image: 'https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=800&h=500&fit=crop' },
+};
+
+// Count posts per destination
+const destCounts: Record<string, number> = {};
+for (const dest of Object.keys(destinationData)) {
+  destCounts[dest] = allPosts.filter(p => p.data.destinations?.includes(dest)).length;
+}
+
+// Editor's Picks: featured posts sorted by featuredOrder
+const editorsPicks = allPosts
+  .filter(p => p.data.featured && p.id !== featured?.id)
+  .sort((a, b) => (a.data.featuredOrder || 99) - (b.data.featuredOrder || 99))
+  .slice(0, 3);
+
+// Popular Guides: cornerstone posts across all pillars
+const popularGuides = allPosts
+  .filter(p => p.data.cornerstone)
+  .slice(0, 6);
+
+// Latest posts (excluding featured)
+const latest = allPosts.filter(p => p.id !== featured?.id).slice(0, 6);
+
+// Build cluster sections - only show if posts exist
+const clusters = [
+  { label: 'Where to Eat', linkLabel: 'All Restaurant Guides', linkHref: `${base}/restaurants/`, posts: restaurants },
+  { label: 'Where to Go', linkLabel: 'All Travel Guides', linkHref: `${base}/travel/`, posts: travelGuides },
+  { label: 'Where to Stay', linkLabel: 'All Hotel Reviews', linkHref: `${base}/hotels/`, posts: hotels },
+  { label: 'What to Wear', linkLabel: 'All Style Guides', linkHref: `${base}/style/`, posts: styleGuides },
+  { label: 'What to Make', linkLabel: 'All Recipes', linkHref: `${base}/recipes/`, posts: recipes },
+].filter(c => c.posts.length > 0);
 ---
 
 <Base title="AILEEN Magazine" description="Elegant travel, timeless style, and food that feels like home. The ones worth knowing.">
@@ -70,43 +75,129 @@ const grid = posts.slice(1);
   </section>
 
   <!-- Featured Post -->
-  <section class="featured-section container">
-    <a href={featured.slug} class="featured-card" style="text-decoration:none; color:inherit;">
-      <div class="featured-image">
-        <img src={featured.image} alt={featured.title} loading="eager" />
-      </div>
-      <div class="featured-content">
-        <p class="featured-label">Featured</p>
-        <h2><span>{featured.title}</span></h2>
-        <p class="featured-excerpt">{featured.excerpt}</p>
-        <span class="read-more">Read the Guide</span>
-      </div>
-    </a>
-  </section>
+  {featured && (
+    <section class="featured-section container">
+      <a href={postUrl(featured)} class="featured-card" style="text-decoration:none; color:inherit;">
+        <div class="featured-image">
+          <img src={featured.data.image} alt={featured.data.title} loading="eager" width="1200" height="675" />
+        </div>
+        <div class="featured-content">
+          <p class="featured-label">Featured</p>
+          <h2><span>{featured.data.title}</span></h2>
+          <p class="featured-excerpt">{featured.data.excerpt}</p>
+          <span class="read-more">Read the Guide</span>
+        </div>
+      </a>
+    </section>
+  )}
 
-  <!-- Latest Posts -->
-  <section class="container" style="padding-bottom: 1rem;">
+  <!-- Editor's Picks / The Edit -->
+  {editorsPicks.length > 0 && (
+    <section class="container" style="padding-bottom: 1rem;">
+      <div class="section-header">
+        <p class="section-label">The Edit</p>
+        <h2>Editor's Picks</h2>
+      </div>
+      <div class="post-grid">
+        {editorsPicks.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Popular Guides (cornerstone content) -->
+  {popularGuides.length > 0 && (
+    <section class="container" style="padding-bottom: 1rem;">
+      <div class="section-header">
+        <p class="section-label">Essential Reading</p>
+        <h2>Popular Guides</h2>
+      </div>
+      <div class="post-grid">
+        {popularGuides.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Signature Clusters -->
+  {clusters.map(cluster => (
+    <section class="container" style="padding-bottom: 1rem;">
+      <div class="section-header">
+        <p class="section-label">{cluster.label}</p>
+      </div>
+      <div class="post-grid">
+        {cluster.posts.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <a href={cluster.linkHref} class="read-more" style="text-decoration: none;">{cluster.linkLabel} &rarr;</a>
+      </div>
+    </section>
+  ))}
+
+  <!-- Destination Rows -->
+  <section class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
     <div class="section-header">
-      <p class="section-label">Latest</p>
-      <h2>Worth Your Time</h2>
+      <p class="section-label">Destinations</p>
+      <h2>Explore by City</h2>
     </div>
-    <div class="post-grid">
-      {grid.map(post => (
-        <article class="post-card">
-          <a href={post.slug} style="text-decoration:none; color:inherit;">
-            <div class="post-card-image">
-              <img src={post.image} alt={post.title} loading="lazy" />
-              <span class="pillar-badge">{post.pillar}</span>
-            </div>
-            <div class="post-card-body">
-              <h3><span>{post.title}</span></h3>
-              <p class="post-card-excerpt">{post.excerpt}</p>
-              <p class="post-card-meta">{post.date}</p>
-            </div>
-          </a>
-        </article>
+    <div class="destination-row">
+      {Object.entries(destinationData).map(([slug, meta]) => (
+        <a href={`${base}/destinations/${slug}/`} class="destination-card">
+          <img src={meta.image} alt={meta.label} loading="lazy" width="800" height="500" />
+          <div class="destination-card-overlay">
+            <span class="destination-card-label">{meta.label}</span>
+            {destCounts[slug] > 0 && <span class="destination-card-count">{destCounts[slug]} {destCounts[slug] === 1 ? 'guide' : 'guides'}</span>}
+          </div>
+        </a>
       ))}
     </div>
   </section>
+
+  <!-- Latest Posts -->
+  {latest.length > 0 && (
+    <section class="container" style="padding-bottom: 1rem;">
+      <div class="section-header">
+        <p class="section-label">Latest</p>
+        <h2>Worth Your Time</h2>
+      </div>
+      <div class="post-grid">
+        {latest.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+    </section>
+  )}
 
 </Base>

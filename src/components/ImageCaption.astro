@@ -1,0 +1,45 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  caption?: string;
+  credit?: string;
+  loading?: 'eager' | 'lazy';
+  width?: number;
+  height?: number;
+}
+
+const { src, alt, caption, credit, loading = 'lazy', width = 1200, height = 675 } = Astro.props;
+---
+
+<figure class="image-caption">
+  <img src={src} alt={alt} loading={loading} width={width} height={height} />
+  {(caption || credit) && (
+    <figcaption>
+      {caption && <span>{caption}</span>}
+      {caption && credit && <span> &mdash; </span>}
+      {credit && <span class="image-credit">{credit}</span>}
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .image-caption {
+    margin: 2rem 0;
+  }
+  .image-caption img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .image-caption figcaption {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 0.5rem;
+    line-height: 1.4;
+  }
+  .image-credit {
+    font-style: italic;
+  }
+</style>

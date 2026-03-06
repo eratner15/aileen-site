@@ -1,0 +1,232 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import AdminActions from '../../components/AdminActions.astro';
+
+const allPosts = await getCollection('posts');
+const published = allPosts.filter(p => !p.data.draft);
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// All known content types
+const knownTypes = [
+  'destination-guide', 'neighborhood-guide', 'itinerary', 'restaurant-guide',
+  'hotel-review', 'travel-tips', 'packing-list', 'style-guide', 'the-edit',
+  'seasonal-guide', 'article'
+];
+
+// Destination coverage
+const destCounts: Record<string, number> = {};
+for (const p of published) {
+  if (p.data.destinations && p.data.destinations.length > 0) {
+    for (const d of p.data.destinations) {
+      destCounts[d] = (destCounts[d] || 0) + 1;
+    }
+  }
+}
+const sortedDests = Object.entries(destCounts).sort((a, b) => b[1] - a[1]);
+const underservedDests = sortedDests.filter(([, count]) => count < 3);
+
+// Content type coverage
+const typeCounts: Record<string, number> = {};
+for (const t of knownTypes) {
+  typeCounts[t] = 0;
+}
+for (const p of published) {
+  const t = p.data.contentType || 'article';
+  typeCounts[t] = (typeCounts[t] || 0) + 1;
+}
+const missingTypes = Object.entries(typeCounts).filter(([, count]) => count === 0);
+
+// Cluster gaps: for each destination, which content types are missing
+const destTypeMatrix: Record<string, Set<string>> = {};
+for (const p of published) {
+  if (p.data.destinations) {
+    for (const d of p.data.destinations) {
+      if (!destTypeMatrix[d]) destTypeMatrix[d] = new Set();
+      destTypeMatrix[d].add(p.data.contentType || 'article');
+    }
+  }
+}
+
+const coreTypes = ['destination-guide', 'restaurant-guide', 'hotel-review', 'itinerary'];
+const clusterGaps: { destination: string; missing: string[] }[] = [];
+for (const [dest, types] of Object.entries(destTypeMatrix)) {
+  const missing = coreTypes.filter(t => !types.has(t));
+  if (missing.length > 0) {
+    clusterGaps.push({ destination: dest, missing });
+  }
+}
+clusterGaps.sort((a, b) => b.missing.length - a.missing.length);
+
+// Recent posts for follow-up suggestions
+const recent = [...published]
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+  .slice(0, 10);
+
+// Follow-up suggestions based on content type
+function suggestFollowUp(contentType: string): string[] {
+  const suggestions: Record<string, string[]> = {
+    'destination-guide': ['restaurant-guide', 'hotel-review', 'itinerary', 'packing-list'],
+    'restaurant-guide': ['destination-guide', 'the-edit', 'neighborhood-guide'],
+    'hotel-review': ['destination-guide', 'itinerary', 'style-guide'],
+    'itinerary': ['packing-list', 'restaurant-guide', 'hotel-review'],
+    'neighborhood-guide': ['restaurant-guide', 'itinerary'],
+    'style-guide': ['packing-list', 'the-edit'],
+    'the-edit': ['style-guide', 'destination-guide'],
+    'packing-list': ['style-guide', 'destination-guide'],
+    'travel-tips': ['packing-list', 'destination-guide'],
+    'seasonal-guide': ['packing-list', 'itinerary', 'destination-guide'],
+    'article': ['destination-guide', 'the-edit'],
+  };
+  return suggestions[contentType] || ['destination-guide'];
+}
+---
+
+<Base title="Content Opportunities | Admin" noindex={true}>
+  <div class="admin-layout">
+    <h1>Content Opportunities</h1>
+    <p class="admin-subtitle">Gaps, clusters, and growth areas</p>
+
+    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+
+    <div class="admin-actions-bar">
+      <button class="admin-btn" data-action="plan">Generate Content Plan</button>
+    </div>
+    <pre id="action-output"></pre>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
+      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
+      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
+      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
+      <a href={`${base}/admin/opportunities/`} class="admin-nav-link active">Opportunities</a>
+      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
+      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
+      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
+    </nav>
+
+    <!-- Stats row -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat">
+        <span class="admin-stat-number">{sortedDests.length}</span>
+        <span class="admin-stat-label">Destinations Covered</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{underservedDests.length}</span>
+        <span class="admin-stat-label">Underserved Destinations</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{missingTypes.length}</span>
+        <span class="admin-stat-label">Unused Content Types</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{clusterGaps.length}</span>
+        <span class="admin-stat-label">Cluster Gaps</span>
+      </div>
+    </div>
+
+    <!-- Destination Coverage -->
+    <div class="admin-card">
+      <h2>Destination Coverage</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Destination</th>
+            <th>Posts</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedDests.map(([dest, count]) => (
+            <tr>
+              <td>{dest}</td>
+              <td>{count}</td>
+              <td>
+                <span class={`status-badge ${count >= 5 ? 'voice-score--good' : count >= 3 ? 'voice-score--warn' : 'voice-score--bad'}`}>
+                  {count >= 5 ? 'Strong' : count >= 3 ? 'Growing' : 'Needs Content'}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Content Type Coverage -->
+    <div class="admin-card">
+      <h2>Content Type Coverage</h2>
+      <div class="admin-bar-chart">
+        {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+          <div class="admin-bar-row">
+            <span class="admin-bar-label">{type.replace(/-/g, ' ')}</span>
+            <div class="admin-bar-track">
+              <div class={`admin-bar-fill ${count === 0 ? 'voice-score--bad' : ''}`} style={`width: ${published.length > 0 ? Math.max(Math.round(count / published.length * 100), count > 0 ? 3 : 0) : 0}%`}></div>
+            </div>
+            <span class="admin-bar-count">{count}</span>
+          </div>
+        ))}
+      </div>
+      {missingTypes.length > 0 && (
+        <p class="admin-alert-text">Unused types: {missingTypes.map(([t]) => t.replace(/-/g, ' ')).join(', ')}</p>
+      )}
+    </div>
+
+    <!-- Cluster Gaps -->
+    {clusterGaps.length > 0 && (
+      <div class="admin-card">
+        <h2>Content Cluster Gaps</h2>
+        <p>For each destination, these core content types are missing:</p>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Destination</th>
+              <th>Missing Content Types</th>
+              <th>Gap Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clusterGaps.map(({ destination, missing }) => (
+              <tr>
+                <td>{destination}</td>
+                <td>{missing.map(t => t.replace(/-/g, ' ')).join(', ')}</td>
+                <td><span class={`status-badge ${missing.length >= 3 ? 'voice-score--bad' : 'voice-score--warn'}`}>{missing.length}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <!-- Follow-up Suggestions -->
+    <div class="admin-card">
+      <h2>Follow-up Content Suggestions</h2>
+      <p>Based on recently published posts, consider writing these next:</p>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Recent Post</th>
+            <th>Type</th>
+            <th>Destinations</th>
+            <th>Suggested Follow-ups</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recent.map(p => {
+            const ct = p.data.contentType || 'article';
+            const suggestions = suggestFollowUp(ct);
+            return (
+              <tr>
+                <td>{p.data.title}</td>
+                <td><span class="status-badge">{ct.replace(/-/g, ' ')}</span></td>
+                <td>{p.data.destinations?.join(', ') || '—'}</td>
+                <td>{suggestions.map(s => s.replace(/-/g, ' ')).join(', ')}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <AdminActions />
+</Base>

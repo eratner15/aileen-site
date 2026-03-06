@@ -1,0 +1,114 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+allPosts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Build search index as JSON for client-side filtering
+const searchIndex = allPosts.map(post => {
+  const [pillar, ...rest] = post.id.split('/');
+  return {
+    title: post.data.title,
+    excerpt: post.data.excerpt,
+    pillar: post.data.pillar,
+    contentType: post.data.contentType || 'article',
+    destinations: post.data.destinations || [],
+    keyword: post.data.targetKeyword,
+    url: `${base}/${pillar}/${rest.join('/')}/`,
+    image: post.data.image.replace('1200', '600').replace('675', '400'),
+    date: post.data.date,
+  };
+});
+---
+
+<Base title="Search" description="Search AILEEN Magazine — find restaurant guides, travel guides, hotel reviews, style guides, and recipes.">
+
+  <section class="article-header">
+    <h1>Search</h1>
+    <p class="article-meta">Find restaurants, hotels, travel guides, style, and recipes</p>
+  </section>
+
+  <div class="container" style="max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 4rem;">
+    <div class="search-box">
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Try 'miami restaurants' or 'quiet luxury'..."
+        aria-label="Search articles"
+        autocomplete="off"
+      />
+    </div>
+
+    <div id="search-results" class="post-grid" style="margin-top: 2rem;"></div>
+    <div id="search-empty" style="display: none; text-align: center; padding: 3rem 0; color: var(--color-text-secondary);">
+      <p>No results found. Try a different search term.</p>
+    </div>
+    <div id="search-start" style="text-align: center; padding: 2rem 0; color: var(--color-text-secondary);">
+      <p>Start typing to search across all guides and articles.</p>
+    </div>
+  </div>
+
+  <script define:vars={{ searchIndex }}>
+    const input = document.getElementById('search-input');
+    const results = document.getElementById('search-results');
+    const empty = document.getElementById('search-empty');
+    const start = document.getElementById('search-start');
+
+    function renderResults(posts) {
+      if (posts.length === 0) {
+        results.innerHTML = '';
+        empty.style.display = 'block';
+        start.style.display = 'none';
+        return;
+      }
+      empty.style.display = 'none';
+      start.style.display = 'none';
+      results.innerHTML = posts.map(p => `
+        <a href="${p.url}" class="post-card" style="text-decoration:none;color:inherit;">
+          <div class="post-card-image">
+            <img src="${p.image}" alt="${p.title}" loading="lazy" />
+          </div>
+          <div class="post-card-body">
+            <span class="pillar-badge">${p.pillar.charAt(0).toUpperCase() + p.pillar.slice(1)}</span>
+            <h3 class="post-card-title">${p.title}</h3>
+            <p class="post-card-excerpt">${p.excerpt}</p>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    let searchTimeout;
+    input.addEventListener('input', () => {
+      const q = input.value.toLowerCase().trim();
+      if (!q) {
+        results.innerHTML = '';
+        empty.style.display = 'none';
+        start.style.display = 'block';
+        return;
+      }
+      const filtered = searchIndex.filter(p => {
+        const haystack = [p.title, p.excerpt, p.pillar, p.contentType, p.keyword, ...p.destinations].join(' ').toLowerCase();
+        return q.split(/\s+/).every(word => haystack.includes(word));
+      });
+      renderResults(filtered);
+
+      // Track search queries (debounced)
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        if (typeof window.gtag === 'function' && q.length >= 3) {
+          window.gtag('event', 'search', {
+            search_term: q,
+            event_category: 'engagement',
+          });
+        }
+      }, 1000);
+    });
+
+    // Focus search input on page load
+    input.focus();
+  </script>
+
+</Base>

@@ -1,0 +1,45 @@
+---
+interface Product {
+  name: string;
+  brand?: string;
+  price?: string;
+  url?: string;
+  image?: string;
+}
+
+interface Props {
+  products: Product[];
+  title?: string;
+}
+
+const { products, title = 'Shop the Edit' } = Astro.props;
+---
+
+{products.length > 0 && (
+  <section class="product-section">
+    <p class="section-label">{title}</p>
+    <div class="product-grid">
+      {products.map(product => (
+        <div class="product-card">
+          {product.image && (
+            <div class="product-image">
+              <img src={product.image} alt={product.name} loading="lazy" />
+            </div>
+          )}
+          <div class="product-info">
+            {product.brand && <p class="product-brand">{product.brand}</p>}
+            <p class="product-name">{product.name}</p>
+            {product.price && <p class="product-price">{product.price}</p>}
+            {product.url ? (
+              <a href={product.url} class="product-link" target="_blank" rel="noopener sponsored" data-affiliate="true">
+                Shop Now
+              </a>
+            ) : (
+              <span class="product-link product-link--placeholder">Link Coming Soon</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+)}

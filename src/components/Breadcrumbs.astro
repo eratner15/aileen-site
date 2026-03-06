@@ -1,0 +1,18 @@
+---
+interface Props {
+  pillar: string;
+  title: string;
+}
+
+const { pillar, title } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const pillarLabel = pillar.charAt(0).toUpperCase() + pillar.slice(1);
+---
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href={`${base}/`}>Home</a>
+  <span class="sep" aria-hidden="true">/</span>
+  <a href={`${base}/${pillar}/`}>{pillarLabel}</a>
+  <span class="sep" aria-hidden="true">/</span>
+  <span aria-current="page">{title}</span>
+</nav>

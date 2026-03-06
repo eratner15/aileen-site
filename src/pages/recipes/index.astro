@@ -1,36 +1,35 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import PostGrid from '../../components/PostGrid.astro';
+import PostCard from '../../components/PostCard.astro';
+import FAQ from '../../components/FAQ.astro';
 
-const posts = [
-  {
-    title: 'Sourdough Bread Recipe (The One I Actually Use)',
-    slug: '/recipes/sourdough-bread/',
-    excerpt: 'After dozens of failed loaves and more flour than I care to admit, this is the sourdough recipe I go back to every single week.',
-    date: 'January 2026',
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Easy Roast Chicken (The Sunday Recipe)',
-    slug: '/recipes/easy-roast-chicken/',
-    excerpt: 'The kind of recipe that makes your kitchen smell like home. Simple, reliable, and the one I make almost every Sunday.',
-    date: 'December 2025',
-    image: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Elegant Dinner Party Recipes Worth the Effort',
-    slug: '/recipes/dinner-party-recipes/',
-    excerpt: 'When the table matters and the food needs to deliver. Recipes that impress without requiring culinary school.',
-    date: 'November 2025',
-    image: 'https://images.unsplash.com/photo-1547573854-74d2a71d0826?w=600&h=400&fit=crop',
-  },
-  {
-    title: 'Easy Meatloaf Recipe (Better Than You Think)',
-    slug: '/recipes/easy-meatloaf/',
-    excerpt: 'Meatloaf doesn\'t need to be boring. This version is the one that converted even the skeptics at my table.',
-    date: 'October 2025',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&h=400&fit=crop',
-  },
-];
+const posts = await getCollection('posts', ({ data }) =>
+  data.pillar === 'recipes' && !data.draft
+);
+posts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function postUrl(post: typeof posts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
+
+const cornerstones = posts.filter(p => p.data.cornerstone);
+const featured = posts.find(p => p.data.featured) || posts[0];
+const rest = posts
+  .filter(p => p.id !== featured?.id)
+  .sort((a, b) => {
+    if (a.data.cornerstone && !b.data.cornerstone) return -1;
+    if (!a.data.cornerstone && b.data.cornerstone) return 1;
+    return new Date(b.data.date).getTime() - new Date(a.data.date).getTime();
+  });
+const pillarFaq = posts
+  .filter(p => p.data.cornerstone && p.data.faq?.length > 0)
+  .flatMap(p => p.data.faq)
+  .slice(0, 5);
 ---
 
 <Base title="Recipes" description="Simple, elegant recipes that feel like home. The kind you'll actually make again.">
@@ -46,24 +45,53 @@ const posts = [
     </div>
   </section>
 
-  <section class="container" style="padding-top: 3rem;">
-    <div class="post-grid">
-      {posts.map(post => (
-        <article class="post-card">
-          <a href={post.slug} style="text-decoration:none; color:inherit;">
-            <div class="post-card-image">
-              <img src={post.image} alt={post.title} loading="lazy" />
-              <span class="pillar-badge">Recipes</span>
-            </div>
-            <div class="post-card-body">
-              <h3><span>{post.title}</span></h3>
-              <p class="post-card-excerpt">{post.excerpt}</p>
-              <p class="post-card-meta">{post.date}</p>
-            </div>
-          </a>
-        </article>
-      ))}
-    </div>
+  {featured && (
+    <section class="featured-section container" style="padding-top: 2rem;">
+      <a href={postUrl(featured)} class="featured-card" style="text-decoration:none; color:inherit;">
+        <div class="featured-image">
+          <img src={featured.data.image} alt={featured.data.title} loading="eager" width="1200" height="675" />
+        </div>
+        <div class="featured-content">
+          <p class="featured-label">Featured Recipe</p>
+          <h2><span>{featured.data.title}</span></h2>
+          <p class="featured-excerpt">{featured.data.excerpt}</p>
+          <span class="read-more">Read the Recipe</span>
+        </div>
+      </a>
+    </section>
+  )}
+
+  {cornerstones.length > 0 && (
+    <section class="container" style="padding-top: 2rem;">
+      <div class="section-header" style="text-align: left; margin-bottom: 1.5rem;">
+        <p class="section-label">Essential Recipes</p>
+      </div>
+      <div class="post-grid">
+        {cornerstones.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="container" style="padding-top: 2rem;">
+    <PostGrid posts={rest} />
   </section>
+
+  {pillarFaq.length > 0 && (
+    <section class="container" style="padding: 2rem 0 3rem;">
+      <div class="section-header" style="text-align: left; margin-bottom: 1.5rem;">
+        <p class="section-label">Frequently Asked</p>
+      </div>
+      <FAQ items={pillarFaq} />
+    </section>
+  )}
 
 </Base>

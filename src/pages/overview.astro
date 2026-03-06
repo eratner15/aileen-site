@@ -1,0 +1,1042 @@
+---
+import Base from '../layouts/Base.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Base title="Platform Overview" description="The complete guide to your editorial publishing platform — architecture, content models, SEO systems, monetization, analytics, and everything you need to publish." noindex={true}>
+
+  <section class="article-header">
+    <span class="pillar-badge">Your Platform</span>
+    <h1>AILEEN OS: The Complete Guide</h1>
+    <p class="article-meta">Everything you need to understand, operate, and grow your editorial publishing system.</p>
+  </section>
+
+  <div class="article-body">
+
+    <p>This is your new editorial operating system. It replaces WordPress with something faster, smarter, and built entirely around your voice. Every feature exists to make the flywheel spin: publish voice-consistent content, rank organically, capture subscribers, generate revenue, and use data to decide what to write next.</p>
+
+    <p>This page is your reference. Bookmark it. Come back when you need to remember how something works.</p>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="toc">
+      <p class="toc-title">On This Page</p>
+      <ol>
+        <li><a href="#what-this-is">What This Is</a></li>
+        <li><a href="#architecture">Technical Architecture</a></li>
+        <li><a href="#information-architecture">Information Architecture</a></li>
+        <li><a href="#url-structure">URL Structure</a></li>
+        <li><a href="#content-models">Content Models</a></li>
+        <li><a href="#page-templates">Page Templates</a></li>
+        <li><a href="#components">Component Library</a></li>
+        <li><a href="#internal-linking">Internal Linking System</a></li>
+        <li><a href="#seo">SEO Infrastructure</a></li>
+        <li><a href="#monetization">Monetization Surfaces</a></li>
+        <li><a href="#newsletter">Newsletter &amp; Audience Capture</a></li>
+        <li><a href="#analytics">Analytics &amp; Instrumentation</a></li>
+        <li><a href="#dashboards">Admin Dashboards</a></li>
+        <li><a href="#voice-engine">The Voice Engine</a></li>
+        <li><a href="#ai-assist">AI Assist Commands</a></li>
+        <li><a href="#editorial-workflow">Editorial Workflow</a></li>
+        <li><a href="#content-strategy">Content Strategy</a></li>
+        <li><a href="#design">Design Direction</a></li>
+        <li><a href="#50k-roadmap">The 50K Session Roadmap</a></li>
+        <li><a href="#feature-inventory">Feature Inventory</a></li>
+        <li><a href="#setup">Setup Items You Need to Provide</a></li>
+        <li><a href="#flywheel">The Flywheel</a></li>
+      </ol>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 1. WHAT THIS IS -->
+    <h2 id="what-this-is">1. What This Is</h2>
+
+    <p>This is not a blog. It's a premium editorial publishing system designed to grow high-quality search traffic, capture email subscribers, support affiliate monetization, and qualify for premium ad monetization (Mediavine at 50K monthly sessions).</p>
+
+    <p>Think of it as a hybrid of:</p>
+    <ul>
+      <li>An elegant lifestyle magazine with a real editorial voice</li>
+      <li>A practical, search-first editorial site that ranks for the queries people actually type</li>
+      <li>An affiliate-friendly recommendation engine with tasteful, embedded commerce</li>
+      <li>A newsletter-driven personal brand platform</li>
+    </ul>
+
+    <h3>What it's built to do</h3>
+    <ol>
+      <li>Increase qualified organic traffic through crawlable topic architecture</li>
+      <li>Improve the number of rankable entry pages across restaurants, travel, hotels, style, and recipes</li>
+      <li>Capture email subscribers through editorial CTAs that feel native, not desperate</li>
+      <li>Add affiliate, booking, and reservation monetization before premium ads kick in</li>
+      <li>Build reusable systems so new content compounds instead of existing as isolated posts</li>
+    </ol>
+
+    <h3>What it's not</h3>
+    <ul>
+      <li>A generic blog with flat archives and no structure</li>
+      <li>A content farm flooding pages with AI filler</li>
+      <li>An over-engineered SaaS tool that needs a developer to publish a post</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 2. ARCHITECTURE -->
+    <h2 id="architecture">2. Technical Architecture</h2>
+
+    <p>Your magazine lives at <strong>cafecito-ai.com/magazine</strong>. Here's how it works under the hood.</p>
+
+    <h3>Stack</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <tbody>
+        <tr><td><strong>Framework</strong></td><td>Astro 5.x — static site generator. Every page is pre-rendered HTML.</td></tr>
+        <tr><td><strong>Hosting</strong></td><td>Cloudflare Workers + KV storage. Global CDN, edge-cached, near-instant loads.</td></tr>
+        <tr><td><strong>Content</strong></td><td>Markdown files with YAML frontmatter. No database. Files live in <code>src/content/posts/</code>.</td></tr>
+        <tr><td><strong>CMS</strong></td><td>File-based. Edit markdown directly, or use the growth engine CLI to generate drafts.</td></tr>
+        <tr><td><strong>Styling</strong></td><td>Single <code>global.css</code>. No CSS framework. Custom editorial design.</td></tr>
+        <tr><td><strong>JavaScript</strong></td><td>Minimal. Only for nav toggle, scroll behavior, and analytics events. No JS frameworks.</td></tr>
+        <tr><td><strong>Growth Engine</strong></td><td>Separate Node.js CLI (<code>aileen</code> command) for AI-assisted content creation.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Why this matters</h3>
+    <ul>
+      <li><strong>Every page is static HTML</strong> — Google sees exactly what readers see. No client-side rendering hiding content.</li>
+      <li><strong>Metadata is in the initial HTML</strong> — titles, descriptions, Open Graph, structured data all render server-side.</li>
+      <li><strong>No blocking third-party JavaScript</strong> — article pages load fast. Analytics loads async.</li>
+      <li><strong>Edge-cached globally</strong> — pages serve from the Cloudflare node closest to the reader.</li>
+      <li><strong>Small bundle</strong> — no React, no Vue, no framework JS. Just content.</li>
+    </ul>
+
+    <h3>Rendering and crawlability</h3>
+    <ul>
+      <li>All content pages are prerendered HTML (SSG)</li>
+      <li>H1, intro copy, internal links, and category links are present in HTML output</li>
+      <li>Canonical URLs are deterministic on every page</li>
+      <li>XML sitemap auto-generates at build time</li>
+      <li>Robots.txt is explicit</li>
+    </ul>
+
+    <h3>Performance targets</h3>
+    <ul>
+      <li>Responsive images with lazy loading for below-the-fold media</li>
+      <li>Minimal layout shift (no JavaScript-dependent content)</li>
+      <li>Preconnected font strategy (Google Fonts with <code>preconnect</code>)</li>
+      <li>Article body width capped at 680px for comfortable reading</li>
+      <li>Template rhythm designed to accommodate future ad insertion without layout breakage</li>
+    </ul>
+
+    <h3>Build &amp; deploy</h3>
+    <p>One command to build, one command to deploy:</p>
+    <pre><code>npm run build        # Builds all pages to dist/
+npx wrangler deploy  # Pushes to Cloudflare</code></pre>
+    <p>Or use the growth engine shortcut: <code>aileen publish</code></p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 3. INFORMATION ARCHITECTURE -->
+    <h2 id="information-architecture">3. Information Architecture</h2>
+
+    <p>The site replaces a shallow blog model with a true editorial information architecture — sections with intent, destination taxonomy, and content types that serve different search queries.</p>
+
+    <h3>Primary navigation</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Section</th><th>URL</th><th>Intent</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><a href={`${base}/travel/`}>Travel</a></td><td>/magazine/travel/</td><td>Destination guides, itineraries, where-to-eat and where-to-stay roundups</td></tr>
+        <tr><td><a href={`${base}/style/`}>Style</a></td><td>/magazine/style/</td><td>Quiet luxury, capsule wardrobes, outfit guides, seasonal edits</td></tr>
+        <tr><td><a href={`${base}/recipes/`}>Recipes</a></td><td>/magazine/recipes/</td><td>Signature recipes, weeknight staples, dinner party menus</td></tr>
+        <tr><td><a href={`${base}/lifestyle/`}>Lifestyle</a></td><td>/magazine/lifestyle/</td><td>Intentional living, morning routines, home aesthetics</td></tr>
+        <tr><td><a href={`${base}/destinations/`}>Destinations</a></td><td>/magazine/destinations/</td><td>City hub pages aggregating cross-category content</td></tr>
+        <tr><td><a href={`${base}/about/`}>About</a></td><td>/magazine/about/</td><td>Who you are. Trust signals for readers and Google.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Section intent</h3>
+
+    <p><strong>Travel</strong> covers search-led destination and restaurant guides. Page types: best restaurants in [city], travel guide for [destination], weekend itinerary, things to do, seasonal guides. Also hotel reviews and where-to-stay roundups.</p>
+
+    <p><strong>Style</strong> covers search-friendly but editorial fashion content. Page types: what to wear in [destination] in [season], quiet luxury brands, capsule wardrobe guides, dinner outfit guides, travel outfit edits, style icon breakdowns.</p>
+
+    <p><strong>Recipes</strong> covers narrow, high-quality recipe-markup-enabled utility content. Signature recipes, practical family staples, repeatable kitchen winners. Every recipe gets Recipe structured data.</p>
+
+    <p><strong>Lifestyle</strong> covers editorial lifestyle content. Intentional living, morning routines, home aesthetics, personal essays, trend commentary.</p>
+
+    <h3>Destination taxonomy</h3>
+
+    <p>Destinations are a first-class taxonomy separate from category. A post about "best restaurants in Miami" is a <em>restaurant guide</em> (content type) in the <em>travel</em> pillar tagged with the <em>Miami</em> destination. The Miami destination hub then aggregates restaurant guides, hotel reviews, travel guides, and style guides for that city — all in one page.</p>
+
+    <p>Current destinations:</p>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Destination</th><th>Hub URL</th><th>Hub Page Sections</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><a href={`${base}/destinations/miami/`}>Miami</a></td><td>/magazine/destinations/miami/</td><td>Where to Eat, Where to Stay, Travel Guides, What to Wear</td></tr>
+        <tr><td><a href={`${base}/destinations/palm-beach/`}>Palm Beach</a></td><td>/magazine/destinations/palm-beach/</td><td>Same structure, fills as content is published</td></tr>
+        <tr><td><a href={`${base}/destinations/boston/`}>Boston</a></td><td>/magazine/destinations/boston/</td><td>Same</td></tr>
+        <tr><td><a href={`${base}/destinations/nyc/`}>NYC</a></td><td>/magazine/destinations/nyc/</td><td>Same</td></tr>
+        <tr><td><a href={`${base}/destinations/maine/`}>Maine</a></td><td>/magazine/destinations/maine/</td><td>Same</td></tr>
+        <tr><td><a href={`${base}/destinations/aspen/`}>Aspen</a></td><td>/magazine/destinations/aspen/</td><td>Same</td></tr>
+      </tbody>
+    </table>
+
+    <p>Each hub page includes: hero image, editorial intro, featured guides, Where to Eat, Where to Stay, What to Wear, Travel Guides, and a newsletter CTA. As you tag more posts with a destination, the hub populates itself automatically.</p>
+
+    <h3>Category pages</h3>
+    <p>Each category page (Travel, Style, Recipes, Lifestyle) is a real landing page with editorial intro copy, a hero area, and a post grid — not a raw archive. These pages have their own SEO titles and meta descriptions so they can rank for broad category queries.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 4. URL STRUCTURE -->
+    <h2 id="url-structure">4. URL Structure</h2>
+
+    <p>Clean, human-readable, no date-based cruft.</p>
+
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Pattern</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Homepage</td><td><code>/magazine/</code></td></tr>
+        <tr><td>Category page</td><td><code>/magazine/travel/</code></td></tr>
+        <tr><td>Post</td><td><code>/magazine/travel/best-restaurants-miami/</code></td></tr>
+        <tr><td>Destination hub</td><td><code>/magazine/destinations/miami/</code></td></tr>
+        <tr><td>Destinations index</td><td><code>/magazine/destinations/</code></td></tr>
+        <tr><td>About</td><td><code>/magazine/about/</code></td></tr>
+        <tr><td>Admin dashboards</td><td><code>/magazine/admin/</code>, <code>/admin/seo/</code>, etc.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>URL rules</h3>
+    <ul>
+      <li>Slugs are human-readable: <code>best-restaurants-miami</code>, not <code>post-12345</code></li>
+      <li>No date segments in URLs — content stays evergreen</li>
+      <li>No nested category/subcategory cruft</li>
+      <li>Posts live under their pillar: <code>/magazine/[pillar]/[slug]/</code></li>
+      <li>Trailing slashes are consistent</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 5. CONTENT MODELS -->
+    <h2 id="content-models">5. Content Models</h2>
+
+    <p>Every post is a markdown file with YAML frontmatter. The schema is enforced at build time — if required fields are missing or invalid, the build fails and tells you exactly what's wrong.</p>
+
+    <h3>Core fields (required on every post)</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>title</code></td><td>String</td><td>H1 headline and browser tab title</td></tr>
+        <tr><td><code>metaDescription</code></td><td>String</td><td>Google search snippet (150-160 chars ideal)</td></tr>
+        <tr><td><code>targetKeyword</code></td><td>String</td><td>Primary SEO keyword. Used by audit tools.</td></tr>
+        <tr><td><code>pillar</code></td><td>travel | style | recipes | lifestyle</td><td>Which category the post belongs to</td></tr>
+        <tr><td><code>date</code></td><td>String (YYYY-MM-DD)</td><td>Publish date. Used for sorting and schema.</td></tr>
+        <tr><td><code>image</code></td><td>URL</td><td>Hero image. Used in cards, OG tags, schema.</td></tr>
+        <tr><td><code>imageAlt</code></td><td>String</td><td>Alt text for the hero image (SEO + accessibility)</td></tr>
+        <tr><td><code>excerpt</code></td><td>String</td><td>Card text and dek/intro summary</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Content type (defaults to "article")</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Content Type</th><th>When to Use</th><th>Special Features</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>restaurant-guide</code></td><td>Best restaurants in [city], dining roundups</td><td>Reservation CTAs, destination tagging</td></tr>
+        <tr><td><code>hotel-review</code></td><td>Where to stay guides, hotel roundups</td><td>Booking CTAs, destination tagging</td></tr>
+        <tr><td><code>travel-guide</code></td><td>City guides, itineraries, things to do</td><td>Booking + reservation + affiliate CTAs</td></tr>
+        <tr><td><code>style-guide</code></td><td>What to wear, capsule wardrobes, brand edits</td><td>Product grid with affiliate links</td></tr>
+        <tr><td><code>recipe</code></td><td>Recipes with full instructions</td><td>Recipe JSON-LD schema, cookware affiliate links</td></tr>
+        <tr><td><code>the-edit</code></td><td>Curated shopping roundups, product picks</td><td>Product grid, heavy affiliate</td></tr>
+        <tr><td><code>article</code></td><td>General editorial, lifestyle, trends</td><td>Standard template</td></tr>
+        <tr><td><code>destination-hub</code></td><td>City overview pages</td><td>Auto-aggregates by destination tag</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Optional fields</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>contentType</code></td><td>Enum (see above)</td><td>Controls template behavior and voice conditioning</td></tr>
+        <tr><td><code>updatedDate</code></td><td>String (YYYY-MM-DD)</td><td>Shows "Updated" date on the post + <code>dateModified</code> in schema</td></tr>
+        <tr><td><code>author</code></td><td>String</td><td>Defaults to "Aileen Lavin"</td></tr>
+        <tr><td><code>draft</code></td><td>Boolean</td><td>If <code>true</code>, the post is excluded from all pages and the sitemap</td></tr>
+        <tr><td><code>featured</code></td><td>Boolean</td><td>If <code>true</code>, the post appears in the homepage hero</td></tr>
+        <tr><td><code>featuredOrder</code></td><td>Number</td><td>Controls order among multiple featured posts</td></tr>
+        <tr><td><code>destinations</code></td><td>Array of strings</td><td>Tags the post for destination hubs: <code>["miami"]</code>, <code>["boston", "maine"]</code></td></tr>
+        <tr><td><code>toc</code></td><td>Boolean</td><td>If <code>true</code>, shows an auto-generated Table of Contents from H2 headings</td></tr>
+        <tr><td><code>affiliateDisclosure</code></td><td>Boolean</td><td>If <code>true</code>, shows FTC-compliant affiliate disclosure at the top</td></tr>
+        <tr><td><code>relatedPosts</code></td><td>Array of slugs</td><td>Manual override for related content (otherwise auto-resolved)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Monetization fields</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>What It Renders</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>products</code></td><td>Array of objects</td><td>"Shop the Edit" product grid with name, brand, price, URL, image</td></tr>
+        <tr><td><code>bookingLinks</code></td><td>Array of objects</td><td>Hotel booking CTA buttons with name, platform, URL</td></tr>
+        <tr><td><code>reservationLinks</code></td><td>Array of objects</td><td>Restaurant reservation CTA buttons with name, platform, URL</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Tracking fields (managed by growth engine)</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Field</th><th>What It Tracks</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>voiceScore</code></td><td>Voice validator score (0-100) from last check</td></tr>
+        <tr><td><code>seoScore</code></td><td>SEO audit score from last audit</td></tr>
+        <tr><td><code>pinsGenerated</code></td><td>Number of Pinterest pin variations created</td></tr>
+        <tr><td><code>newsletterIncluded</code></td><td>Whether this post has been included in a newsletter</td></tr>
+      </tbody>
+    </table>
+
+    <h3>FAQ field</h3>
+    <p>Add an <code>faq</code> array for FAQ sections with structured data. Each entry has a <code>question</code> and <code>answer</code>. This renders a styled FAQ section with FAQPage JSON-LD schema — which gives you a shot at Google featured snippets.</p>
+    <pre><code>faq:
+  - question: "What are the best restaurants in Miami?"
+    answer: "The best restaurants in Miami include..."
+  - question: "Do I need reservations?"
+    answer: "For most restaurants on this list, yes."</code></pre>
+
+    <h3>Example frontmatter (restaurant guide)</h3>
+    <pre><code>---
+title: "Best Restaurants in Miami (A Local's Guide for 2026)"
+metaDescription: "The best restaurants in Miami — from Aventura to Brickell."
+targetKeyword: "best restaurants in miami"
+pillar: "travel"
+contentType: "restaurant-guide"
+date: "2026-03-05"
+image: "https://images.unsplash.com/photo-..."
+imageAlt: "Elegant restaurant interior with warm lighting"
+excerpt: "A local's guide to Miami dining worth the reservation."
+draft: false
+featured: true
+featuredOrder: 1
+destinations: ["miami"]
+toc: true
+affiliateDisclosure: false
+faq:
+  - question: "What are the best restaurants in Miami?"
+    answer: "Daniel's Steakhouse, Makoto, Sunny's..."
+reservationLinks:
+  - name: "Makoto"
+    platform: "Resy"
+    url: "https://resy.com/cities/mia/makoto"
+---</code></pre>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 6. PAGE TEMPLATES -->
+    <h2 id="page-templates">6. Page Templates</h2>
+
+    <h3>Homepage (<code>/magazine/</code>)</h3>
+    <p>Features a hero section with positioning copy, a featured post hero card, and a "Worth Your Time" grid of latest posts. The featured post is controlled by the <code>featured: true</code> frontmatter flag. The homepage drives readers into evergreen clusters, not just the newest posts.</p>
+
+    <h3>Category pages (<code>/magazine/travel/</code>, etc.)</h3>
+    <p>Each category page is a real landing page with editorial intro copy, a hero area with the pillar's positioning statement, and a post grid. These have their own SEO titles and meta descriptions so they can rank for broad queries like "luxury travel guides" or "elegant recipes."</p>
+
+    <h3>Article template (<code>/magazine/[pillar]/[slug]/</code>)</h3>
+    <p>The article template renders every post. Modules in order:</p>
+    <ol>
+      <li><strong>Breadcrumb</strong> — Home &gt; Pillar &gt; Post title (with BreadcrumbList JSON-LD)</li>
+      <li><strong>Content type label</strong> — "Restaurant Guide", "Travel Guide", "Style Guide", etc.</li>
+      <li><strong>H1 headline</strong></li>
+      <li><strong>Meta line</strong> — Author, date, updated date, reading time</li>
+      <li><strong>Destination links</strong> — If tagged, links to destination hub pages</li>
+      <li><strong>Hero image</strong> — Full-width with alt text</li>
+      <li><strong>Affiliate disclosure</strong> — If <code>affiliateDisclosure: true</code></li>
+      <li><strong>Table of contents</strong> — If <code>toc: true</code>, auto-generated from H2 headings</li>
+      <li><strong>Body content</strong> — Your markdown, rendered to HTML</li>
+      <li><strong>Product grid</strong> — If <code>products</code> array is populated</li>
+      <li><strong>Booking CTAs</strong> — If <code>bookingLinks</code> array is populated</li>
+      <li><strong>Reservation CTAs</strong> — If <code>reservationLinks</code> array is populated</li>
+      <li><strong>FAQ section</strong> — If <code>faq</code> array is populated (with FAQPage JSON-LD)</li>
+      <li><strong>Share bar</strong> — Pinterest, email, copy link</li>
+      <li><strong>Related posts</strong> — 2 same-pillar + 1 cross-pillar, prefers same-destination</li>
+    </ol>
+
+    <h3>Destination hub (<code>/magazine/destinations/[city]/</code>)</h3>
+    <p>Each hub has a hero image with editorial intro, then sections: Where to Eat (restaurant guides), Where to Stay (hotel reviews), Travel Guides, What to Wear (style guides), and More (everything else). Sections only appear when there's content to show. Empty hubs show "Guides coming soon."</p>
+
+    <h3>Destinations index (<code>/magazine/destinations/</code>)</h3>
+    <p>Shows all destination hubs as cards with post counts, so readers can browse by city.</p>
+
+    <h3>About page (<code>/magazine/about/</code>)</h3>
+    <p>Your editorial bio, trust signals, and positioning. Important for E-E-A-T (Google's quality signals).</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 7. COMPONENTS -->
+    <h2 id="components">7. Component Library</h2>
+
+    <p>Reusable UI components that maintain consistency across every page:</p>
+
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Component</th><th>File</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>PostCard</strong></td><td><code>PostCard.astro</code></td><td>Article card with image, pillar badge, title, excerpt, date. Used in all grids.</td></tr>
+        <tr><td><strong>PostGrid</strong></td><td><code>PostGrid.astro</code></td><td>Responsive grid wrapper for PostCards. Used on category and destination pages.</td></tr>
+        <tr><td><strong>Breadcrumbs</strong></td><td><code>Breadcrumbs.astro</code></td><td>Home &gt; Pillar &gt; Title breadcrumb navigation for SEO and UX.</td></tr>
+        <tr><td><strong>FAQ</strong></td><td><code>FAQ.astro</code></td><td>FAQ section with FAQPage JSON-LD schema markup.</td></tr>
+        <tr><td><strong>ProductGrid</strong></td><td><code>ProductGrid.astro</code></td><td>"Shop the Edit" section with product cards showing brand, price, and affiliate links.</td></tr>
+        <tr><td><strong>BookingCTA</strong></td><td><code>BookingCTA.astro</code></td><td>Hotel booking call-to-action buttons with platform badges.</td></tr>
+        <tr><td><strong>ReservationCTA</strong></td><td><code>ReservationCTA.astro</code></td><td>Restaurant reservation call-to-action buttons with platform badges.</td></tr>
+        <tr><td><strong>AffiliateDisclosure</strong></td><td><code>AffiliateDisclosure.astro</code></td><td>FTC-compliant disclosure block placed above the fold when needed.</td></tr>
+        <tr><td><strong>TableOfContents</strong></td><td><code>TableOfContents.astro</code></td><td>Auto-generated from H2 headings. Helps readers scan long guides.</td></tr>
+        <tr><td><strong>ShareBar</strong></td><td><code>ShareBar.astro</code></td><td>Pinterest save, email, and copy-link buttons with clipboard integration.</td></tr>
+      </tbody>
+    </table>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 8. INTERNAL LINKING -->
+    <h2 id="internal-linking">8. Internal Linking System</h2>
+
+    <p>Internal linking is a core part of SEO. Every article needs to link to other articles so Google can discover and evaluate your content clusters.</p>
+
+    <h3>Automatic related content</h3>
+    <p>Every article shows a "More Worth Your Time" section at the bottom with 3 related posts, automatically resolved:</p>
+    <ol>
+      <li><strong>2 same-pillar posts</strong> — prefers posts sharing the same destination</li>
+      <li><strong>1 cross-pillar post</strong> — creates bridges between content clusters</li>
+    </ol>
+    <p>You can override this with the <code>relatedPosts</code> frontmatter array for editorial control.</p>
+
+    <h3>Destination hub linking</h3>
+    <p>When a post has <code>destinations: ["miami"]</code>, it appears on the Miami hub and the post header links back to the hub. This creates two-way linking between posts and their destination clusters.</p>
+
+    <h3>In-body linking</h3>
+    <p>Within the markdown body of each post, include manual links to related content. The build spec calls for at minimum:</p>
+    <ul>
+      <li>2 related articles in the same category</li>
+      <li>1 destination page if the post is destination-specific</li>
+      <li>1 adjacent-cluster page where relevant (e.g., a restaurant guide links to the hotel guide for the same city)</li>
+    </ul>
+
+    <h3>Persistent navigation links</h3>
+    <p>The footer links to all pillars, destinations, and the most popular guides — creating persistent internal links on every page.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 9. SEO -->
+    <h2 id="seo">9. SEO Infrastructure</h2>
+
+    <p>SEO isn't a plugin. It's built into every layer of the site.</p>
+
+    <h3>On-page SEO</h3>
+    <p>Every page has:</p>
+    <ul>
+      <li><strong>SEO title</strong> — <code>[Title] | AILEEN Magazine</code> in the <code>&lt;title&gt;</code> tag</li>
+      <li><strong>Meta description</strong> — from <code>metaDescription</code> field, 150-160 chars ideal</li>
+      <li><strong>Canonical URL</strong> — deterministic, on every page</li>
+      <li><strong>Open Graph tags</strong> — og:title, og:description, og:image, og:url, og:site_name</li>
+      <li><strong>Twitter card tags</strong> — summary_large_image format</li>
+    </ul>
+
+    <h3>Structured data (JSON-LD)</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Schema Type</th><th>Where It Appears</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>WebSite</code></td><td>Every page (via Base layout)</td><td>Identifies the site to Google, enables sitelinks</td></tr>
+        <tr><td><code>BlogPosting</code></td><td>Every article</td><td>Headline, description, author, dates, publisher</td></tr>
+        <tr><td><code>Recipe</code></td><td>Posts with <code>contentType: "recipe"</code></td><td>Recipe schema for rich results in search</td></tr>
+        <tr><td><code>BreadcrumbList</code></td><td>Every article</td><td>Breadcrumb trail in search results</td></tr>
+        <tr><td><code>FAQPage</code></td><td>Posts with FAQ sections</td><td>FAQ rich results / featured snippets</td></tr>
+      </tbody>
+    </table>
+
+    <h3>XML sitemap</h3>
+    <p>Auto-generated at build time. Lists all published pages. Submitted to Google Search Console.</p>
+
+    <h3>Robots.txt</h3>
+    <p>Allows crawl of all public content. Blocks admin/preview paths.</p>
+
+    <h3>Canonical URLs</h3>
+    <p>Every page has a <code>&lt;link rel="canonical"&gt;</code> tag pointing to its definitive URL at <code>cafecito-ai.com/magazine/...</code>. Prevents duplicate content issues.</p>
+
+    <h3>Image SEO</h3>
+    <p>Every image supports <code>alt</code> text through the <code>imageAlt</code> field. Hero images use <code>loading="eager"</code> for above-the-fold rendering. Grid images use <code>loading="lazy"</code>.</p>
+
+    <h3>SEO Dashboard</h3>
+    <p>The <a href={`${base}/admin/seo/`}>SEO Dashboard</a> runs 7 automated checks on every post: missing meta descriptions, thin content (&lt;500 words), missing keywords in titles, keyword in intro, H2 keyword coverage, internal link count, and image alt text. Fix what's red.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 10. MONETIZATION -->
+    <h2 id="monetization">10. Monetization Surfaces</h2>
+
+    <p>Monetization is built into the content models, not bolted on after the fact. Every relevant post type has commerce surfaces that feel editorial, not pushy.</p>
+
+    <h3>Affiliate products</h3>
+    <p>Add a <code>products</code> array to frontmatter for a "Shop the Edit" section. Each product shows name, brand, price, and a link. Best for style guides, The Edit posts, and recipe cookware recommendations.</p>
+    <pre><code>products:
+  - name: "The Row Margaux Bag"
+    brand: "The Row"
+    price: "$3,890"
+    url: "https://..."
+    image: "https://..."</code></pre>
+
+    <h3>Hotel booking CTAs</h3>
+    <p>Add <code>bookingLinks</code> for hotel booking buttons. Best for hotel reviews and travel guides.</p>
+    <pre><code>bookingLinks:
+  - name: "The Breakers Palm Beach"
+    platform: "Hotels.com"
+    url: "https://..."</code></pre>
+
+    <h3>Restaurant reservation CTAs</h3>
+    <p>Add <code>reservationLinks</code> for reservation buttons. Best for restaurant guides.</p>
+    <pre><code>reservationLinks:
+  - name: "Makoto"
+    platform: "Resy"
+    url: "https://resy.com/..."</code></pre>
+
+    <h3>Affiliate disclosure</h3>
+    <p>Set <code>affiliateDisclosure: true</code> on any post with affiliate links. Shows a tasteful FTC-compliant disclosure above the content.</p>
+
+    <h3>Click tracking</h3>
+    <p>Every outbound affiliate, booking, and reservation click fires a GA4 event with the click type and destination URL. This means you can see exactly which links earn revenue.</p>
+
+    <h3>Priority monetizable pages</h3>
+    <ul>
+      <li>Where to stay guides (booking links)</li>
+      <li>Hotel roundups (booking links)</li>
+      <li>Style shopping guides (product affiliate links)</li>
+      <li>Product edits / The Edit (product affiliate links)</li>
+      <li>Restaurant guides (reservation links)</li>
+      <li>Recipes with cookware recommendations (product affiliate links)</li>
+    </ul>
+
+    <h3>Ad readiness</h3>
+    <p>Templates are designed with future display ad insertion in mind. Content width and paragraph rhythm can accommodate in-content ad units. The 680px article body creates natural ad break points. When you hit 50K sessions and qualify for Mediavine, ads can be added without layout surgery.</p>
+
+    <h3>Monetization Dashboard</h3>
+    <p>The <a href={`${base}/admin/monetization/`}>Monetization Dashboard</a> shows which posts have affiliate links, booking CTAs, and reservation CTAs — and which posts are missing revenue opportunities.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 11. NEWSLETTER -->
+    <h2 id="newsletter">11. Newsletter &amp; Audience Capture</h2>
+
+    <p>Email is part of the product. The newsletter is called <strong>"The AILEEN Edit"</strong> and the CTA language uses your "worth" framing: what's worth booking, what's worth packing, what's worth your time.</p>
+
+    <h3>Signup surfaces</h3>
+    <p>Newsletter signup appears in multiple locations:</p>
+    <ul>
+      <li><strong>Global footer CTA</strong> — appears on every page, dark background, prominent</li>
+      <li><strong>Destination hubs</strong> — contextual signup on city pages</li>
+      <li><strong>Article end</strong> — after reading, before related posts</li>
+    </ul>
+
+    <h3>Form behavior</h3>
+    <p>Currently the form shows a "Thank you!" confirmation after submission and fires a <code>newsletter_signup</code> GA4 event with the source page. To connect it to your email provider (Mailchimp, ConvertKit, etc.), the form submission handler in <code>Base.astro</code> needs your email provider's API endpoint.</p>
+
+    <h3>Newsletter content (via growth engine)</h3>
+    <p>Run <code>aileen newsletter</code> to generate a draft of "The AILEEN Edit" with:</p>
+    <ul>
+      <li>Personal greeting</li>
+      <li>Featured post</li>
+      <li>"Worth Your Time" section (2-3 posts)</li>
+      <li>"The Edit" section (3-5 product picks)</li>
+      <li>Personal note placeholder</li>
+      <li>Sign-off</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 12. ANALYTICS -->
+    <h2 id="analytics">12. Analytics &amp; Instrumentation</h2>
+
+    <h3>GA4 integration</h3>
+    <p>Google Analytics 4 is integrated via the <code>PUBLIC_GA_ID</code> environment variable. When set, the tracking script loads async on every page (no render blocking).</p>
+
+    <h3>Custom events tracked</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Event</th><th>Category</th><th>When It Fires</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>newsletter_signup</code></td><td>engagement</td><td>Newsletter form submission, with source page URL</td></tr>
+        <tr><td><code>outbound_click</code></td><td>affiliate</td><td>Click on any <code>data-affiliate</code> link</td></tr>
+        <tr><td><code>outbound_click</code></td><td>booking</td><td>Click on any <code>data-booking</code> link</td></tr>
+        <tr><td><code>outbound_click</code></td><td>reservation</td><td>Click on any <code>data-reservation</code> link</td></tr>
+      </tbody>
+    </table>
+
+    <h3>What you can answer with this data</h3>
+    <ul>
+      <li>Which destinations attract the most entrances?</li>
+      <li>Which content types perform best?</li>
+      <li>Which posts drive subscriber signups?</li>
+      <li>Which outbound links get clicked (and drive revenue)?</li>
+      <li>Which pages are readers engaging with longest?</li>
+    </ul>
+
+    <h3>Additional instrumentation to add</h3>
+    <p>These are recommended additions once the base analytics are confirmed working:</p>
+    <ul>
+      <li>Google Search Console — verify ownership for search performance data</li>
+      <li>Pinterest tag — for rich pin verification and pin analytics</li>
+      <li>Scroll depth tracking on article pages</li>
+      <li>TOC click tracking</li>
+      <li>Related article click tracking</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 13. DASHBOARDS -->
+    <h2 id="dashboards">13. Admin Dashboards</h2>
+
+    <p>Six dashboards give you visibility into every part of the operation. These read directly from your content files at build time — no separate database, no third-party tool.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin: 2rem 0;">
+      <a href={`${base}/admin/`} class="post-card" style="text-decoration: none; color: inherit;">
+        <div class="post-card-body">
+          <h3>Editorial Dashboard</h3>
+          <p class="post-card-excerpt">Content pipeline at a glance. Total posts, published vs. draft, posts per pillar, posts per content type, stale content alerts (nothing updated in 90+ days), and a timeline bar chart.</p>
+        </div>
+      </a>
+      <a href={`${base}/admin/seo/`} class="post-card" style="text-decoration: none; color: inherit;">
+        <div class="post-card-body">
+          <h3>SEO Dashboard</h3>
+          <p class="post-card-excerpt">7 automated health checks: missing meta descriptions, thin content, missing keywords in titles, keyword in intro, H2 keyword coverage, internal link audit, image alt text. Each check shows pass/fail per post.</p>
+        </div>
+      </a>
+      <a href={`${base}/admin/opportunities/`} class="post-card" style="text-decoration: none; color: inherit;">
+        <div class="post-card-body">
+          <h3>Content Opportunities</h3>
+          <p class="post-card-excerpt">Destination coverage gaps (which cities are missing which content types), cluster depth analysis, and follow-up suggestions for strengthening topical authority.</p>
+        </div>
+      </a>
+      <a href={`${base}/admin/distribution/`} class="post-card" style="text-decoration: none; color: inherit;">
+        <div class="post-card-body">
+          <h3>Distribution</h3>
+          <p class="post-card-excerpt">Pinterest pin status per post, newsletter inclusion tracking, channel coverage overview. Shows which posts still need pins or newsletter placement.</p>
+        </div>
+      </a>
+      <a href={`${base}/admin/monetization/`} class="post-card" style="text-decoration: none; color: inherit;">
+        <div class="post-card-body">
+          <h3>Monetization</h3>
+          <p class="post-card-excerpt">Which posts have products, booking links, and reservation links. Which content types are missing revenue opportunities. Revenue readiness score per post.</p>
+        </div>
+      </a>
+      <a href={`${base}/admin/performance/`} class="post-card" style="text-decoration: none; color: inherit;">
+        <div class="post-card-body">
+          <h3>Performance</h3>
+          <p class="post-card-excerpt">50K session goal tracker with visual progress bar, content velocity (posts per month), Mediavine readiness checklist, growth trajectory estimates.</p>
+        </div>
+      </a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 14. VOICE ENGINE -->
+    <h2 id="voice-engine">14. The Voice Engine</h2>
+
+    <p>Everything you publish goes through a voice system that ensures it sounds like you — not like generic SEO copy, not like an influencer, not like a content farm.</p>
+
+    <h3>Components</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Component</th><th>File</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Voice Profile</strong></td><td><code>voice-profile.md</code></td><td>Your tone, rhythm, vocabulary, and editorial positioning codified as a reusable reference</td></tr>
+        <tr><td><strong>Voice Rules</strong></td><td><code>voice-rules.json</code></td><td>Structured config: 30+ blocked words, 28 blocked phrases, 8 regex patterns, preferred constructions, scoring weights</td></tr>
+        <tr><td><strong>Prompt Templates</strong></td><td><code>prompts/</code> directory</td><td>13 content-type and channel-specific templates that condition AI output</td></tr>
+        <tr><td><strong>Voice Validator</strong></td><td><code>src/voice-validator.js</code></td><td>Two-layer scoring: instant rule-based check + optional LLM-based deep analysis</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Prompt templates available</h3>
+    <ul>
+      <li><strong>Blog:</strong> restaurant-guide, style-guide, travel-guide, hotel-review, recipe, the-edit</li>
+      <li><strong>Newsletter:</strong> weekly-edit</li>
+      <li><strong>Social:</strong> instagram-caption, pinterest-pin</li>
+      <li><strong>SEO:</strong> meta-description</li>
+      <li><strong>Editorial:</strong> brief-generator, refresh-suggestions</li>
+    </ul>
+
+    <h3>Voice validation scoring</h3>
+    <p><strong>Layer 1 (rule-based, instant):</strong> Checks blocklist words/phrases, exclamation marks, hedging language, sentence rhythm variety, paragraph length, preferred vocabulary usage. Returns a 0-100 score.</p>
+    <p><strong>Layer 2 (LLM-based, optional):</strong> Scores tone (0-20), specificity (0-20), rhythm (0-20), confidence (0-20), and anti-patterns (0-20). Total 0-100.</p>
+    <p><strong>75+ is publish-ready.</strong> Below 75, revise. Below 50, rewrite.</p>
+
+    <h3>Blocked language examples</h3>
+    <p>The voice engine blocks words like: vibes, hack, obsessed, game-changer, slay, nestled, boasts, plethora, delve, "let's dive in", "comprehensive guide", "look no further", "without further ado", "it's important to note." These are the hallmarks of generic content. Your voice doesn't use them.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 15. AI ASSIST -->
+    <h2 id="ai-assist">15. AI Assist Commands</h2>
+
+    <p>Your growth engine CLI (<code>aileen</code>) has 20+ commands that use AI to accelerate content creation — always conditioned on your voice, always producing drafts for your review. Nothing auto-publishes.</p>
+
+    <h3>Content creation</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Command</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>aileen plan</code></td><td>Generate a weekly 3-post plan from your keyword bank, balanced across pillars</td></tr>
+        <tr><td><code>aileen write</code></td><td>Draft a full post (1500-2500 words) with voice conditioning + SEO optimization</td></tr>
+        <tr><td><code>aileen outline "Title"</code></td><td>Generate a detailed article outline before writing</td></tr>
+        <tr><td><code>aileen titles "keyword"</code></td><td>Generate 5 SEO title options in your voice</td></tr>
+        <tr><td><code>aileen meta "Title"</code></td><td>Generate meta description options (150-160 chars with keyword)</td></tr>
+        <tr><td><code>aileen faq "Title"</code></td><td>Generate FAQ questions and answers for featured snippet opportunities</td></tr>
+        <tr><td><code>aileen rewrite file.md</code></td><td>Rewrite content for stronger voice alignment</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Distribution</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Command</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>aileen pins</code></td><td>Generate 8 Pinterest pin variations per post (title, description, text overlay, board)</td></tr>
+        <tr><td><code>aileen social "Title"</code></td><td>Generate Instagram or TikTok captions in your voice</td></tr>
+        <tr><td><code>aileen newsletter</code></td><td>Draft "The AILEEN Edit" weekly newsletter</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Quality &amp; strategy</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Command</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>aileen voice-check file.md</code></td><td>Score a draft 0-100 on voice alignment, with specific issues flagged</td></tr>
+        <tr><td><code>aileen audit</code></td><td>SEO audit scoring 1-100 with ranked, actionable recommendations</td></tr>
+        <tr><td><code>aileen refresh file.md</code></td><td>Generate refresh suggestions for stale content (update stats, add sections, improve linking)</td></tr>
+        <tr><td><code>aileen follow-up "Title"</code></td><td>Suggest follow-up articles to strengthen the cluster around this topic</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Publishing</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Command</th><th>What It Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>aileen deploy slug-name</code></td><td>Copy a reviewed draft from <code>output/drafts/</code> to the Astro site content directory</td></tr>
+        <tr><td><code>aileen deploy slug-name --draft</code></td><td>Same, but sets <code>draft: true</code> so it doesn't go live until you're ready</td></tr>
+        <tr><td><code>aileen publish</code></td><td>Build the Astro site and deploy to Cloudflare (one command)</td></tr>
+        <tr><td><code>aileen import-astro</code></td><td>Sync published posts back to the content database for planning and auditing</td></tr>
+      </tbody>
+    </table>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 16. EDITORIAL WORKFLOW -->
+    <h2 id="editorial-workflow">16. Editorial Workflow</h2>
+
+    <h3>Publishing a new post</h3>
+    <ol>
+      <li><strong>Plan</strong> — Run <code>aileen plan</code> to see keyword-driven post suggestions, or choose your own topic</li>
+      <li><strong>Write</strong> — Run <code>aileen write</code> for an AI draft, or write directly in markdown. Save to <code>output/drafts/your-slug.md</code></li>
+      <li><strong>Check voice</strong> — Run <code>aileen voice-check output/drafts/your-slug.md</code>. Aim for 75+.</li>
+      <li><strong>Edit</strong> — Review the draft. Add your personal experience, real details, specific recommendations. The AI provides structure; you provide soul.</li>
+      <li><strong>Deploy</strong> — Run <code>aileen deploy your-slug</code> to copy it to the site's content directory</li>
+      <li><strong>Review</strong> — Run <code>npm run build</code> locally to preview, or deploy as draft first with <code>--draft</code></li>
+      <li><strong>Publish</strong> — Run <code>aileen publish</code> to build and push live to Cloudflare</li>
+      <li><strong>Distribute</strong> — Run <code>aileen pins</code> for Pinterest, <code>aileen social</code> for Instagram/TikTok</li>
+    </ol>
+
+    <h3>Refreshing an existing post</h3>
+    <ol>
+      <li>Run <code>aileen refresh src/content/posts/travel/your-post.md</code> for specific suggestions</li>
+      <li>Update the content in the markdown file</li>
+      <li>Set <code>updatedDate</code> in frontmatter to today's date</li>
+      <li>Run <code>aileen publish</code> to push the update live</li>
+    </ol>
+
+    <h3>Required fields before publishing</h3>
+    <p>The build will fail if any of these are missing or invalid:</p>
+    <ul>
+      <li><code>title</code>, <code>metaDescription</code>, <code>targetKeyword</code></li>
+      <li><code>pillar</code> (must be travel, style, recipes, or lifestyle)</li>
+      <li><code>date</code>, <code>image</code>, <code>imageAlt</code>, <code>excerpt</code></li>
+    </ul>
+
+    <h3>Editorial quality checklist</h3>
+    <p>Before publishing, every post should pass these questions:</p>
+    <ul>
+      <li>Does it have a clear search intent it's serving?</li>
+      <li>Is it part of a destination or topic cluster?</li>
+      <li>Does it link to at least 2-3 other posts on the site?</li>
+      <li>Does it include original perspective or firsthand experience?</li>
+      <li>Does it include at least one conversion path (newsletter CTA, affiliate link, booking link)?</li>
+      <li>Does the voice score pass 75+?</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 17. CONTENT STRATEGY -->
+    <h2 id="content-strategy">17. Content Strategy</h2>
+
+    <p>The platform supports a cluster-based publishing model. Every post belongs to a cluster — either a destination or a topic — and strengthens the others around it.</p>
+
+    <h3>Core clusters (initial priorities)</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Cluster</th><th>Content types to build</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Miami</strong></td><td>Best restaurants, where to stay, travel guide, what to wear, date night spots, brunch guide</td></tr>
+        <tr><td><strong>Palm Beach</strong></td><td>Best restaurants, where to stay, travel guide, what to wear, romantic restaurants</td></tr>
+        <tr><td><strong>New York</strong></td><td>Best restaurants, where to stay, travel guide, what to wear, neighborhood guides</td></tr>
+        <tr><td><strong>Boston / New England</strong></td><td>Travel guide, best restaurants, where to stay, what to wear, weekend itineraries</td></tr>
+        <tr><td><strong>Maine</strong></td><td>Bar Harbor guide, best restaurants, where to stay, summer travel guide</td></tr>
+        <tr><td><strong>Aspen / Colorado</strong></td><td>Travel guide, where to stay, best restaurants, what to wear (winter), aprés-ski guide</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Content archetypes</h3>
+    <p>These are the repeatable formats the system is built to produce efficiently:</p>
+    <ul>
+      <li>Best restaurants in [city]</li>
+      <li>Best brunch in [city]</li>
+      <li>Best date night restaurants in [city]</li>
+      <li>Travel guide to [destination]</li>
+      <li>2 days in [city] / weekend itinerary</li>
+      <li>Where to stay in [city]</li>
+      <li>Best luxury hotels in [city]</li>
+      <li>What to wear in [destination] in [season]</li>
+      <li>Quiet luxury / capsule / brand edit pages</li>
+      <li>Core recipe pages</li>
+    </ul>
+
+    <h3>Pillar balance</h3>
+    <p>Aim for roughly 40% travel, 25% style, 20% recipes, 15% lifestyle. Travel has the highest search volume and monetization potential. Style has the best affiliate revenue. Recipes have strong engagement and Recipe schema advantages. Lifestyle builds personal brand.</p>
+
+    <h3>Cornerstone content</h3>
+    <p>Use <code>featured: true</code> and <code>featuredOrder</code> to pin cornerstone content on the homepage. The strongest evergreen pages should remain visible even after newer posts go live.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 18. DESIGN -->
+    <h2 id="design">18. Design Direction</h2>
+
+    <h3>Visual tone</h3>
+    <p>The design is black, white, and gray — editorial restraint, not decorative warmth. Think Vogue's digital presence, not a lifestyle blogger's Squarespace template.</p>
+
+    <h3>Typography</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <tbody>
+        <tr><td><strong>Headings</strong></td><td>Playfair Display — classic serif with editorial weight</td></tr>
+        <tr><td><strong>Body</strong></td><td>Georgia — proven, readable, timeless</td></tr>
+        <tr><td><strong>UI elements</strong></td><td>Inter — clean sans-serif for nav, labels, buttons</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Color palette</h3>
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <tbody>
+        <tr><td><strong>Background</strong></td><td><code>#FFFFFF</code> (white)</td></tr>
+        <tr><td><strong>Background alt</strong></td><td><code>#F7F7F7</code> (barely gray)</td></tr>
+        <tr><td><strong>Text</strong></td><td><code>#1A1A1A</code> (near-black)</td></tr>
+        <tr><td><strong>Text secondary</strong></td><td><code>#666666</code> (gray)</td></tr>
+        <tr><td><strong>Borders</strong></td><td><code>#E5E5E5</code> (light gray)</td></tr>
+        <tr><td><strong>Accent</strong></td><td><code>#1A1A1A</code> (black — no gold, no color)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Layout details</h3>
+    <ul>
+      <li>Article body: 680px max-width for comfortable reading</li>
+      <li>Sharp edges — no border-radius (editorial, not app-like)</li>
+      <li>Cards use subtle shadow on hover, no bouncy animations</li>
+      <li>Images use minimal scale on hover (1.02x, not 1.05x)</li>
+      <li>Sticky desktop nav with subtle shadow on scroll</li>
+      <li>Drop caps on article first paragraphs</li>
+      <li>Section dividers between major content blocks</li>
+      <li>Responsive breakpoints at 1200px, 1024px, 768px, 480px</li>
+    </ul>
+
+    <h3>UX details</h3>
+    <ul>
+      <li>Breadcrumbs on every article page</li>
+      <li>Visible category and destination labels</li>
+      <li>Reading time in article meta</li>
+      <li>Table of contents on long guides</li>
+      <li>Share bar (Pinterest, email, copy link)</li>
+      <li>Newsletter CTA feels native to editorial design</li>
+      <li>Mobile nav with hamburger toggle at 900px</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 19. 50K ROADMAP -->
+    <h2 id="50k-roadmap">19. The 50K Session Roadmap</h2>
+
+    <p>The goal: 50,000 monthly sessions to qualify for Mediavine premium display ads. Here's the 6-month plan.</p>
+
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Month</th><th>New Posts</th><th>Total Posts</th><th>Target Sessions</th><th>Focus</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Month 1</strong></td><td>12</td><td>16</td><td>~1,000</td><td>Foundation — low-difficulty keywords across all pillars</td></tr>
+        <tr><td><strong>Month 2</strong></td><td>12</td><td>28</td><td>3,000-5,000</td><td>Fill gaps — cluster depth, every destination gets 3+ posts</td></tr>
+        <tr><td><strong>Month 3</strong></td><td>12</td><td>40</td><td>8,000-12,000</td><td>Authority — attack competitive keywords, create mega guides</td></tr>
+        <tr><td><strong>Month 4</strong></td><td>12</td><td>52</td><td>15,000-20,000</td><td>Refresh Month 1 posts + summer content + FAQ sections</td></tr>
+        <tr><td><strong>Month 5</strong></td><td>12</td><td>64</td><td>25,000-35,000</td><td>Pinterest at scale — 400+ pins live, 10-15/day</td></tr>
+        <tr><td><strong>Month 6</strong></td><td>12</td><td>76</td><td>40,000-50,000</td><td>Push to 50K — striking-distance keyword optimization</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pinterest strategy</h3>
+    <ul>
+      <li>8 pin variations per post (via <code>aileen pins</code>)</li>
+      <li>5-10 pins per day, increasing to 10-15 by Month 5</li>
+      <li>Boards: Luxury Travel Guides, Timeless Style, Where to Eat, Elegant Recipes, Intentional Living</li>
+      <li>Enable article rich pins via Open Graph (already implemented)</li>
+      <li>Join 5-10 relevant group boards in months 2-3</li>
+    </ul>
+
+    <h3>SEO refresh cycle</h3>
+    <ul>
+      <li>Month 4: audit all Month 1 posts, update internal links, add FAQ sections</li>
+      <li>Ongoing: use GSC to find "striking distance" keywords (positions 5-20) and optimize</li>
+      <li>Stale content alert on the Editorial Dashboard flags posts not updated in 90+ days</li>
+    </ul>
+
+    <p>Track progress on the <a href={`${base}/admin/performance/`}>Performance Dashboard</a>.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 20. FEATURE INVENTORY -->
+    <h2 id="feature-inventory">20. Feature Inventory: What's New vs. the Old Site</h2>
+
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Feature</th><th>Old Site (WordPress)</th><th>New Site (AILEEN OS)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hosting</td><td>WordPress hosting</td><td>Cloudflare edge (global CDN, near-instant)</td></tr>
+        <tr><td>Content management</td><td>WordPress editor</td><td>Markdown + AI-assisted CLI</td></tr>
+        <tr><td>Content types</td><td>One type: "post"</td><td>8 types with distinct templates and monetization</td></tr>
+        <tr><td>Destination taxonomy</td><td>None</td><td>6 destination hubs with auto-aggregation</td></tr>
+        <tr><td>Category pages</td><td>Raw archives</td><td>Editorial landing pages with intro copy</td></tr>
+        <tr><td>Homepage</td><td>Basic grid</td><td>Featured hero + curated grid + editorial sections</td></tr>
+        <tr><td>Internal linking</td><td>Manual only</td><td>Automatic related posts + destination cross-linking</td></tr>
+        <tr><td>SEO metadata</td><td>Plugin-dependent</td><td>Built into every template (title, meta, OG, Twitter, canonical)</td></tr>
+        <tr><td>Structured data</td><td>Plugin-dependent</td><td>Built-in: WebSite, BlogPosting, Recipe, BreadcrumbList, FAQPage</td></tr>
+        <tr><td>Breadcrumbs</td><td>None</td><td>On every article with JSON-LD</td></tr>
+        <tr><td>FAQ support</td><td>None</td><td>Structured FAQ with FAQPage schema</td></tr>
+        <tr><td>Table of contents</td><td>None</td><td>Auto-generated from H2 headings</td></tr>
+        <tr><td>Affiliate modules</td><td>Manual HTML</td><td>Product grid, booking CTA, reservation CTA components</td></tr>
+        <tr><td>Click tracking</td><td>None</td><td>GA4 events for affiliate, booking, reservation clicks</td></tr>
+        <tr><td>Newsletter signup</td><td>Plugin widget</td><td>Integrated CTA on every page + GA4 tracking</td></tr>
+        <tr><td>Voice consistency</td><td>None</td><td>Voice engine with rules, templates, and 0-100 scoring</td></tr>
+        <tr><td>Content planning</td><td>Manual</td><td>AI-assisted keyword-driven planning</td></tr>
+        <tr><td>Pinterest</td><td>Manual pin creation</td><td>8 pin variations generated per post</td></tr>
+        <tr><td>Editorial dashboards</td><td>None</td><td>6 dashboards: editorial, SEO, opportunities, distribution, monetization, performance</td></tr>
+        <tr><td>Reading time</td><td>None</td><td>Calculated and displayed on every article</td></tr>
+        <tr><td>Share functionality</td><td>Plugin</td><td>Built-in: Pinterest, email, copy link</td></tr>
+        <tr><td>Build time</td><td>PHP rendering</td><td>~1 second static build, edge-cached globally</td></tr>
+      </tbody>
+    </table>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 21. SETUP -->
+    <h2 id="setup">21. Setup Items You Need to Provide</h2>
+
+    <table class="admin-table" style="margin: 1.5rem 0 2rem;">
+      <thead>
+        <tr><th>Item</th><th>Where It Goes</th><th>Why</th><th>Priority</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Google Analytics 4 ID</td><td><code>.env</code>: <code>PUBLIC_GA_ID</code></td><td>Track all traffic, clicks, and newsletter signups</td><td>High — do first</td></tr>
+        <tr><td>Google Search Console</td><td>Verify domain ownership</td><td>See which queries you rank for, find striking-distance opportunities</td><td>High</td></tr>
+        <tr><td>Pinterest verification code</td><td><code>Base.astro</code>: <code>p:domain_verify</code> meta tag</td><td>Enable rich pins and domain verification</td><td>High</td></tr>
+        <tr><td>Anthropic API key</td><td>Growth engine <code>.env</code>: <code>ANTHROPIC_API_KEY</code></td><td>Power all AI Assist commands</td><td>High</td></tr>
+        <tr><td>Email provider API</td><td>Growth engine <code>.env</code>: <code>MAILCHIMP_API_KEY</code> (or equivalent)</td><td>Connect newsletter signups to your email list</td><td>Medium</td></tr>
+        <tr><td>Real affiliate URLs</td><td>Post frontmatter: <code>products[].url</code>, <code>bookingLinks[].url</code>, <code>reservationLinks[].url</code></td><td>Activate revenue from product, booking, and reservation links</td><td>Medium</td></tr>
+        <tr><td>Your photography</td><td>Replace Unsplash placeholder URLs in post frontmatter</td><td>Real images make the brand unmistakably yours</td><td>Ongoing</td></tr>
+        <tr><td>About page content</td><td><code>src/pages/about.astro</code></td><td>Real bio, photo, trust signals for E-E-A-T</td><td>Medium</td></tr>
+      </tbody>
+    </table>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <!-- 22. FLYWHEEL -->
+    <h2 id="flywheel">22. The Flywheel</h2>
+
+    <p>Every piece of this system feeds the next:</p>
+
+    <ol>
+      <li><strong>Your voice</strong> produces consistent, branded content that readers trust and return to</li>
+      <li><strong>Content</strong> is placed into clusters by destination and type, building topical depth</li>
+      <li><strong>Clusters</strong> build topical authority that Google rewards with higher rankings</li>
+      <li><strong>Rankings</strong> drive organic traffic that you don't pay for</li>
+      <li><strong>Traffic</strong> converts to email subscribers (newsletter) and affiliate revenue (product/booking/reservation clicks)</li>
+      <li><strong>Data</strong> from analytics and dashboards tells you what's working and what to write next</li>
+      <li><strong>The refresh loop</strong> keeps old content earning — nothing rots, everything compounds</li>
+      <li><strong>At 50K sessions</strong>, Mediavine display ads add a significant passive revenue stream</li>
+    </ol>
+
+    <p>Each loop makes the next one faster. That's the flywheel. That's what this entire platform is built to do.</p>
+
+    <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
+
+    <h2>Quick Reference: File Structure</h2>
+
+    <pre><code>aileen-site/
+  src/
+    content/
+      posts/
+        travel/        ← Travel posts (markdown)
+        style/         ← Style posts
+        recipes/       ← Recipe posts
+        lifestyle/     ← Lifestyle posts
+    components/        ← 10 reusable UI components
+    layouts/
+      Base.astro       ← Global layout (nav, footer, newsletter, analytics)
+    pages/
+      index.astro      ← Homepage
+      about.astro      ← About page
+      overview.astro   ← This page
+      [pillar]/
+        index.astro    ← Category landing pages
+        [slug].astro   ← Article template (renders all posts)
+      destinations/
+        index.astro    ← Destinations index
+        [destination].astro  ← Destination hub template
+      admin/
+        index.astro    ← Editorial Dashboard
+        seo.astro      ← SEO Dashboard
+        opportunities.astro
+        distribution.astro
+        monetization.astro
+        performance.astro
+    styles/
+      global.css       ← All styles (2300+ lines)
+    content.config.ts  ← Content schema definition
+  astro.config.mjs     ← Site config (base: /magazine)
+  worker.js            ← Cloudflare Worker for deployment
+  .env.example         ← Environment variables reference</code></pre>
+
+    <p style="margin-top: 3rem; font-style: italic; color: var(--color-text-secondary);">No fluff, no filler. Just what's actually worth building.</p>
+
+  </div>
+
+</Base>

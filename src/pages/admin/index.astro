@@ -1,0 +1,227 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import AdminActions from '../../components/AdminActions.astro';
+
+const allPosts = await getCollection('posts');
+const published = allPosts.filter(p => !p.data.draft);
+const drafts = allPosts.filter(p => p.data.draft);
+const featured = allPosts.filter(p => p.data.featured);
+const cornerstones = allPosts.filter(p => p.data.cornerstone);
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Posts by pillar
+const byPillar: Record<string, number> = {};
+for (const p of published) {
+  byPillar[p.data.pillar] = (byPillar[p.data.pillar] || 0) + 1;
+}
+
+// Posts by content type
+const byType: Record<string, number> = {};
+for (const p of published) {
+  const t = p.data.contentType || 'article';
+  byType[t] = (byType[t] || 0) + 1;
+}
+
+// Stale posts (no updatedDate and older than 90 days)
+const ninetyDaysAgo = new Date();
+ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+const stale = published.filter(p => {
+  const postDate = new Date(p.data.updatedDate || p.data.date);
+  return postDate < ninetyDaysAgo;
+});
+
+// Missing hero image (placeholder URLs)
+const missingImage = published.filter(p => p.data.image.includes('placeholder') || !p.data.image);
+
+// Missing FAQ
+const missingFaq = published.filter(p => !p.data.faq || p.data.faq.length === 0);
+
+// Recently published (last 10)
+const recent = [...published].sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()).slice(0, 10);
+
+// Sort drafts by date
+drafts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+---
+
+<Base title="Editorial Dashboard | Admin" noindex={true}>
+  <div class="admin-layout">
+    <h1>Editorial Dashboard</h1>
+    <p class="admin-subtitle">Content pipeline at a glance</p>
+
+    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+
+    <div class="admin-actions-bar">
+      <button class="admin-btn" data-action="plan">Generate Content Plan</button>
+      <button class="admin-btn" data-action="write">Write Next Post</button>
+      <button class="admin-btn" data-action="import-astro">Import Astro Posts</button>
+      <button class="admin-btn" data-action="publish">Build &amp; Deploy</button>
+    </div>
+    <pre id="action-output"></pre>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`} class="admin-nav-link active">Editorial</a>
+      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
+      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
+      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
+      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
+      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
+      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
+      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
+    </nav>
+
+    <!-- Stats row -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat">
+        <span class="admin-stat-number">{published.length}</span>
+        <span class="admin-stat-label">Published</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{drafts.length}</span>
+        <span class="admin-stat-label">Drafts</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{featured.length}</span>
+        <span class="admin-stat-label">Featured</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{cornerstones.length}</span>
+        <span class="admin-stat-label">Cornerstone</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{stale.length}</span>
+        <span class="admin-stat-label">Need Refresh</span>
+      </div>
+    </div>
+
+    <!-- Content by pillar -->
+    <div class="admin-card">
+      <h2>Content by Pillar</h2>
+      <div class="admin-bar-chart">
+        {Object.entries(byPillar).sort((a,b) => b[1] - a[1]).map(([pillar, count]) => (
+          <div class="admin-bar-row">
+            <span class="admin-bar-label">{pillar.charAt(0).toUpperCase() + pillar.slice(1)}</span>
+            <div class="admin-bar-track">
+              <div class="admin-bar-fill" style={`width: ${Math.round(count / published.length * 100)}%`}></div>
+            </div>
+            <span class="admin-bar-count">{count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Content by type -->
+    <div class="admin-card">
+      <h2>Content by Type</h2>
+      <div class="admin-bar-chart">
+        {Object.entries(byType).sort((a,b) => b[1] - a[1]).map(([type, count]) => (
+          <div class="admin-bar-row">
+            <span class="admin-bar-label">{type.replace(/-/g, ' ')}</span>
+            <div class="admin-bar-track">
+              <div class="admin-bar-fill" style={`width: ${Math.round(count / published.length * 100)}%`}></div>
+            </div>
+            <span class="admin-bar-count">{count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Drafts -->
+    {drafts.length > 0 && (
+      <div class="admin-card">
+        <h2>Drafts</h2>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Pillar</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Voice Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {drafts.map(p => (
+              <tr>
+                <td>{p.data.title}</td>
+                <td><span class="status-badge">{p.data.pillar}</span></td>
+                <td>{p.data.contentType || 'article'}</td>
+                <td>{p.data.date}</td>
+                <td>
+                  {p.data.voiceScore ? (
+                    <span class={`voice-score ${p.data.voiceScore >= 75 ? 'voice-score--good' : p.data.voiceScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>
+                      {p.data.voiceScore}
+                    </span>
+                  ) : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <!-- Recently published -->
+    <div class="admin-card">
+      <h2>Recently Published</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Pillar</th>
+            <th>Type</th>
+            <th>Published</th>
+            <th>Destinations</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recent.map(p => {
+            const [pillar, ...rest] = p.id.split('/');
+            const slug = rest.join('/');
+            return (
+              <tr>
+                <td><a href={`${base}/${pillar}/${slug}/`}>{p.data.title}</a></td>
+                <td><span class="status-badge">{p.data.pillar}</span></td>
+                <td>{p.data.contentType || 'article'}</td>
+                <td>{p.data.date}</td>
+                <td>{p.data.destinations?.join(', ') || '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Alerts -->
+    <div class="admin-alerts-grid">
+      {stale.length > 0 && (
+        <div class="admin-card admin-card--alert">
+          <h3>Stale Content ({stale.length})</h3>
+          <ul>
+            {stale.slice(0, 5).map(p => (
+              <li>{p.data.title} — last updated {p.data.updatedDate || p.data.date}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {missingImage.length > 0 && (
+        <div class="admin-card admin-card--alert">
+          <h3>Missing Hero Image ({missingImage.length})</h3>
+          <ul>
+            {missingImage.map(p => <li>{p.data.title}</li>)}
+          </ul>
+        </div>
+      )}
+      {missingFaq.length > 0 && (
+        <div class="admin-card admin-card--alert">
+          <h3>Missing FAQ ({missingFaq.length})</h3>
+          <ul>
+            {missingFaq.slice(0, 5).map(p => <li>{p.data.title}</li>)}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+  <AdminActions />
+</Base>

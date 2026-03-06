@@ -1,0 +1,285 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import PostCard from '../../components/PostCard.astro';
+import FAQ from '../../components/FAQ.astro';
+import ProductGrid from '../../components/ProductGrid.astro';
+import BookingCTA from '../../components/BookingCTA.astro';
+import ReservationCTA from '../../components/ReservationCTA.astro';
+import AffiliateDisclosure from '../../components/AffiliateDisclosure.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
+import ShareBar from '../../components/ShareBar.astro';
+import NewsletterCTA from '../../components/NewsletterCTA.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  return posts.map(post => {
+    const [pillar, ...rest] = post.id.split('/');
+    const slug = rest.join('/');
+    return {
+      params: { pillar, slug },
+      props: { post },
+    };
+  });
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const {
+  title, metaDescription, pillar, contentType, date, updatedDate,
+  image, imageAlt, author, faq, products, bookingLinks, reservationLinks,
+  affiliateDisclosure, toc, destinations,
+  prepTime, cookTime, totalTime, servings, ingredients, instructions, nutrition,
+  ogTitle, ogDescription, canonicalOverride, imageCaption, imageCredit,
+  relatedPosts: manualRelatedPosts, cornerstone,
+} = post.data;
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const canonicalURL = `https://cafecito-ai.com/magazine/${post.id}/`;
+
+const readingTime = Math.ceil((post.body?.split(/\s+/).length || 1000) / 200);
+const formattedDate = new Date(date).toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+const formattedUpdated = updatedDate ? new Date(updatedDate).toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric',
+}) : null;
+const pillarLabel = pillar.charAt(0).toUpperCase() + pillar.slice(1);
+
+// Content type label for display
+const typeLabels: Record<string, string> = {
+  'restaurant-guide': 'Restaurant Guide',
+  'hotel-review': 'Hotel Review',
+  'travel-guide': 'Travel Guide',
+  'style-guide': 'Style Guide',
+  'recipe': 'Recipe',
+  'the-edit': 'The Edit',
+  'destination-hub': 'Destination Hub',
+  'article': pillarLabel,
+};
+const typeLabel = typeLabels[contentType || 'article'] || pillarLabel;
+
+// Related posts: use manual override if provided, otherwise auto (2 same-pillar + 1 cross-pillar)
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+
+let relatedPosts: typeof allPosts = [];
+if (manualRelatedPosts && manualRelatedPosts.length > 0) {
+  // Manual override: resolve post IDs (e.g. "travel/best-restaurants-miami")
+  relatedPosts = manualRelatedPosts
+    .map(id => allPosts.find(p => p.id === id))
+    .filter((p): p is typeof allPosts[0] => !!p);
+}
+if (relatedPosts.length === 0) {
+  // Auto: 2 same-pillar + 1 cross-pillar, prefer same destination
+  const samePillar = allPosts
+    .filter(p => p.data.pillar === pillar && p.id !== post.id)
+    .sort((a, b) => {
+      const aMatch = a.data.destinations?.some((d: string) => destinations?.includes(d)) ? 1 : 0;
+      const bMatch = b.data.destinations?.some((d: string) => destinations?.includes(d)) ? 1 : 0;
+      return bMatch - aMatch;
+    })
+    .slice(0, 2);
+  const crossPillar = allPosts
+    .filter(p => p.data.pillar !== pillar)
+    .slice(0, 1);
+  relatedPosts = [...samePillar, ...crossPillar];
+}
+
+// Cluster modules: posts sharing same destination (for "More in [dest]", "Where to Stay", etc.)
+const primaryDest = destinations?.[0];
+const destLabel = primaryDest ? primaryDest.charAt(0).toUpperCase() + primaryDest.slice(1).replace(/-/g, ' ') : '';
+const clusterPosts = primaryDest
+  ? allPosts
+      .filter(p => p.id !== post.id && p.data.destinations?.includes(primaryDest))
+      .slice(0, 6)
+  : [];
+const clusterRestaurants = clusterPosts.filter(p => p.data.contentType === 'restaurant-guide');
+const clusterHotels = clusterPosts.filter(p => p.data.contentType === 'hotel-review');
+const clusterOther = clusterPosts.filter(p => !['restaurant-guide', 'hotel-review'].includes(p.data.contentType || ''));
+const clusterSections = [
+  { label: `Where to Eat in ${destLabel}`, posts: clusterRestaurants },
+  { label: `Where to Stay in ${destLabel}`, posts: clusterHotels },
+  { label: `More in ${destLabel}`, posts: clusterOther },
+].filter(s => s.posts.length > 0);
+---
+
+<Base title={title} description={metaDescription} ogImage={image} canonicalURL={canonicalURL} ogTitle={ogTitle} ogDescription={ogDescription} canonicalOverride={canonicalOverride}>
+
+  <Breadcrumbs pillar={pillar} title={title} />
+
+  <article>
+    <header class="article-header">
+      <span class="pillar-badge">{typeLabel}</span>
+      <h1>{title}</h1>
+      <p class="article-meta">
+        By {author} &middot; {formattedDate}
+        {formattedUpdated && <span> &middot; Updated {formattedUpdated}</span>}
+        &middot; {readingTime} min read
+      </p>
+      {destinations.length > 0 && (
+        <p class="article-destinations">
+          {destinations.map((d: string, i: number) => (
+            <span>
+              <a href={`${base}/destinations/${d}/`}>{d.charAt(0).toUpperCase() + d.slice(1)}</a>
+              {i < destinations.length - 1 && ', '}
+            </span>
+          ))}
+        </p>
+      )}
+    </header>
+
+    <div class="article-hero-image">
+      <figure>
+        <img src={image} alt={imageAlt} loading="eager" width="1200" height="675" />
+        {(imageCaption || imageCredit) && (
+          <figcaption style="font-family: var(--font-ui); font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.5rem; padding: 0 1.5rem;">
+            {imageCaption && <span>{imageCaption}</span>}
+            {imageCaption && imageCredit && <span> &mdash; </span>}
+            {imageCredit && <span style="font-style: italic;">{imageCredit}</span>}
+          </figcaption>
+        )}
+      </figure>
+    </div>
+
+    {affiliateDisclosure && <div class="article-body"><AffiliateDisclosure /></div>}
+
+    {toc && headings && (
+      <div class="article-body" style="padding-bottom: 0;">
+        <TableOfContents headings={headings} />
+      </div>
+    )}
+
+    <div class="article-body">
+      <Content />
+    </div>
+
+    <!-- Mid-article newsletter CTA -->
+    <div class="article-body">
+      <NewsletterCTA variant={destinations.length > 0 ? 'destination' : 'inline'} destination={destinations[0] ? destinations[0].charAt(0).toUpperCase() + destinations[0].slice(1) : undefined} />
+    </div>
+
+    <!-- Monetization modules -->
+    <div class="article-body">
+      {products.length > 0 && <ProductGrid products={products} />}
+      {bookingLinks.length > 0 && <BookingCTA links={bookingLinks} />}
+      {reservationLinks.length > 0 && <ReservationCTA links={reservationLinks} />}
+    </div>
+
+    <!-- FAQ -->
+    {faq.length > 0 && (
+      <div class="article-body">
+        <FAQ items={faq} />
+      </div>
+    )}
+
+    <!-- Share -->
+    <div class="article-body">
+      <ShareBar title={title} url={canonicalURL} />
+    </div>
+  </article>
+
+  <!-- Related Posts -->
+  {relatedPosts.length > 0 && (
+    <section class="container" style="padding: 2rem 0 1rem;">
+      <div class="section-header">
+        <p class="section-label">Keep Reading</p>
+        <h2>More Worth Your Time</h2>
+      </div>
+      <div class="post-grid">
+        {relatedPosts.map(rp => {
+          const [rPillar, ...rRest] = rp.id.split('/');
+          const rSlug = rRest.join('/');
+          return (
+            <PostCard
+              title={rp.data.title}
+              href={`${base}/${rPillar}/${rSlug}/`}
+              pillar={rp.data.pillar}
+              excerpt={rp.data.excerpt}
+              date={rp.data.date}
+              image={rp.data.image.replace('1200', '600').replace('675', '400')}
+            />
+          );
+        })}
+      </div>
+    </section>
+  )}
+
+  <!-- Persistent Cluster Modules (destination-based) -->
+  {clusterSections.length > 0 && (
+    <section class="container" style="padding: 1rem 0 4rem;">
+      {clusterSections.map(section => (
+        <div style="margin-bottom: 2rem;">
+          <div class="section-header" style="text-align: left; margin-bottom: 1rem;">
+            <p class="section-label">{section.label}</p>
+          </div>
+          <div class="post-grid">
+            {section.posts.slice(0, 3).map(cp => {
+              const [cpPillar, ...cpRest] = cp.id.split('/');
+              return (
+                <PostCard
+                  title={cp.data.title}
+                  href={`${base}/${cpPillar}/${cpRest.join('/')}/`}
+                  pillar={cp.data.pillar}
+                  excerpt={cp.data.excerpt}
+                  date={cp.data.date}
+                  image={cp.data.image.replace('1200', '600').replace('675', '400')}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {primaryDest && (
+        <div style="text-align: center; margin-top: 1rem;">
+          <a href={`${base}/destinations/${primaryDest}/`} class="read-more" style="text-decoration: none;">All {destLabel} Guides &rarr;</a>
+        </div>
+      )}
+    </section>
+  )}
+
+  <!-- JSON-LD BlogPosting / Recipe -->
+  <script type="application/ld+json" set:html={JSON.stringify(
+    contentType === 'recipe' ? {
+      "@context": "https://schema.org",
+      "@type": "Recipe",
+      "name": title,
+      "description": metaDescription,
+      "image": image,
+      "datePublished": date,
+      "dateModified": updatedDate || date,
+      "author": { "@type": "Person", "name": author, "url": "https://cafecito-ai.com/magazine/about/" },
+      "publisher": { "@type": "Organization", "name": "AILEEN Magazine", "url": "https://cafecito-ai.com/magazine" },
+      ...(prepTime ? { "prepTime": prepTime } : {}),
+      ...(cookTime ? { "cookTime": cookTime } : {}),
+      ...(totalTime ? { "totalTime": totalTime } : {}),
+      ...(servings ? { "recipeYield": servings } : {}),
+      ...(ingredients.length > 0 ? { "recipeIngredient": ingredients } : {}),
+      ...(instructions.length > 0 ? { "recipeInstructions": instructions.map((step, i) => ({ "@type": "HowToStep", "position": i + 1, "text": step })) } : {}),
+      ...(nutrition ? { "nutrition": { "@type": "NutritionInformation", ...(nutrition.calories ? { "calories": nutrition.calories } : {}), ...(nutrition.servingSize ? { "servingSize": nutrition.servingSize } : {}) } } : {}),
+    } : {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": title,
+      "description": metaDescription,
+      "image": image,
+      "datePublished": date,
+      "dateModified": updatedDate || date,
+      "author": { "@type": "Person", "name": author, "url": "https://cafecito-ai.com/magazine/about/" },
+      "publisher": { "@type": "Organization", "name": "AILEEN Magazine", "url": "https://cafecito-ai.com/magazine" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": canonicalURL }
+    }
+  )} />
+
+  <!-- BreadcrumbList JSON-LD -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cafecito-ai.com/magazine/" },
+      { "@type": "ListItem", "position": 2, "name": pillarLabel, "item": `https://cafecito-ai.com/magazine/${pillar}/` },
+      { "@type": "ListItem", "position": 3, "name": title }
+    ]
+  })} />
+
+</Base>

@@ -1,0 +1,50 @@
+---
+interface Props {
+  title: string;
+  url: string;
+}
+
+const { title, url } = Astro.props;
+const encodedTitle = encodeURIComponent(title);
+const encodedUrl = encodeURIComponent(url);
+---
+
+<div class="share-bar">
+  <span class="share-bar-label">Share</span>
+  <a
+    href={`https://pinterest.com/pin/create/button/?url=${encodedUrl}&description=${encodedTitle}`}
+    class="share-btn"
+    target="_blank"
+    rel="noopener"
+    aria-label="Save to Pinterest"
+  >
+    Pinterest
+  </a>
+  <a
+    href={`mailto:?subject=${encodedTitle}&body=${encodedUrl}`}
+    class="share-btn"
+    aria-label="Share via email"
+  >
+    Email
+  </a>
+  <button
+    class="share-btn"
+    data-copy-url={url}
+    aria-label="Copy link"
+  >
+    Copy Link
+  </button>
+</div>
+
+<script>
+  document.querySelectorAll('[data-copy-url]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const url = (btn as HTMLElement).dataset.copyUrl;
+      if (url) {
+        await navigator.clipboard.writeText(url);
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
+      }
+    });
+  });
+</script>

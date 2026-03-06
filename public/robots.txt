@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /magazine/admin/
+Disallow: /magazine/overview/
+
+Sitemap: https://cafecito-ai.com/magazine/sitemap-index.xml

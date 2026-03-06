@@ -3,6 +3,11 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://aileen-demo.pages.dev',
-  integrations: [sitemap()],
+  site: 'https://cafecito-ai.com',
+  base: '/magazine',
+  integrations: [
+    sitemap({
+      filter: (page) => !page.includes('/admin') && !page.includes('/overview'),
+    }),
+  ],
 });
