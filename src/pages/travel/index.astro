@@ -1,0 +1,83 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const posts = [
+  {
+    title: 'Best Restaurants in Miami (A Local\'s Guide for 2026)',
+    slug: '/travel/best-restaurants-miami/',
+    excerpt: 'These are the spots I go back to — elegant rooms, standout dishes, and places that never disappoint.',
+    date: 'March 2026',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Boston Travel Guide: Where to Stay, Eat, and Spend Your Time',
+    slug: '/travel/boston-travel-guide/',
+    excerpt: 'Boston is the kind of city that rewards a slower pace. The cobblestone streets, the brownstones, the way every neighborhood feels like its own world.',
+    date: 'February 2026',
+    image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'The Lost Kitchen, Maine: Worth Every Effort to Get There',
+    slug: '/travel/lost-kitchen-maine/',
+    excerpt: 'You send a postcard. You wait. And if you\'re lucky, you get a seat at the most intentional dining experience in New England.',
+    date: 'January 2026',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Best Restaurants in Palm Beach (The Ones Worth the Reservation)',
+    slug: '/travel/best-restaurants-palm-beach/',
+    excerpt: 'Palm Beach dining is its own category — somewhere between classic elegance and Florida ease. These are the restaurants that get it right.',
+    date: 'December 2025',
+    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Where to Stay in Bar Harbor, Maine',
+    slug: '/travel/where-to-stay-bar-harbor/',
+    excerpt: 'The kind of hotels that feel like coming home to a beautiful place you\'ve never been. My guide to Bar Harbor\'s best stays.',
+    date: 'November 2025',
+    image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Things to Do in Aspen (Beyond the Slopes)',
+    slug: '/travel/things-to-do-aspen/',
+    excerpt: 'Aspen in summer might be even better than Aspen in winter. The hiking, the restaurants, the light — it\'s a different kind of mountain town.',
+    date: 'October 2025',
+    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop',
+  },
+];
+---
+
+<Base title="Travel" description="Luxury travel guides, restaurant recommendations, and hotel reviews. The places worth going — from someone who's actually been.">
+
+  <section class="pillar-hero">
+    <div class="container">
+      <p class="section-label">Travel</p>
+      <h1>The places worth going.</h1>
+      <p class="pillar-description">
+        Honest guides to the hotels worth booking, the restaurants worth the reservation,
+        and the destinations that earn a place on your list. From Miami to Maine, Palm Beach to Aspen.
+      </p>
+    </div>
+  </section>
+
+  <section class="container" style="padding-top: 3rem;">
+    <div class="post-grid">
+      {posts.map(post => (
+        <article class="post-card">
+          <a href={post.slug} style="text-decoration:none; color:inherit;">
+            <div class="post-card-image">
+              <img src={post.image} alt={post.title} loading="lazy" />
+              <span class="pillar-badge">Travel</span>
+            </div>
+            <div class="post-card-body">
+              <h3><span>{post.title}</span></h3>
+              <p class="post-card-excerpt">{post.excerpt}</p>
+              <p class="post-card-meta">{post.date}</p>
+            </div>
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+</Base>

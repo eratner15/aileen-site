@@ -1,0 +1,112 @@
+---
+import Base from '../layouts/Base.astro';
+
+const posts = [
+  {
+    title: 'Best Restaurants in Miami (A Local\'s Guide for 2026)',
+    slug: '/travel/best-restaurants-miami/',
+    pillar: 'Travel',
+    excerpt: 'These are the spots I go back to — elegant rooms, standout dishes, and places that never disappoint. A local\'s guide to Miami dining worth the reservation.',
+    date: 'March 2026',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Quiet Luxury Brands Worth Knowing in 2026',
+    slug: '/style/quiet-luxury-brands/',
+    pillar: 'Style',
+    excerpt: 'The brands that whisper instead of shout. Timeless pieces that earn their place in your closet — investment-worthy, understated, and built to last.',
+    date: 'February 2026',
+    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Boston Travel Guide: Where to Stay, Eat, and Spend Your Time',
+    slug: '/travel/boston-travel-guide/',
+    pillar: 'Travel',
+    excerpt: 'Boston is the kind of city that rewards a slower pace. The cobblestone streets, the brownstones, the way every neighborhood feels like its own world.',
+    date: 'February 2026',
+    image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'The Butter Mom Aesthetic: What It Actually Means',
+    slug: '/lifestyle/butter-mom-aesthetic/',
+    pillar: 'Lifestyle',
+    excerpt: 'It\'s not about perfection. It\'s about warmth, ease, and the kind of elegance that comes from actually living in your home — not just styling it.',
+    date: 'January 2026',
+    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Sourdough Bread Recipe (The One I Actually Use)',
+    slug: '/recipes/sourdough-bread/',
+    pillar: 'Recipes',
+    excerpt: 'After dozens of failed loaves and more flour than I care to admit, this is the sourdough recipe I go back to every single week.',
+    date: 'January 2026',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Carolyn Bessette-Kennedy Style: The Definitive Guide',
+    slug: '/style/carolyn-bessette-kennedy-style/',
+    pillar: 'Style',
+    excerpt: 'Her wardrobe was deceptively simple. A handful of pieces, always in proportion, always unhurried. The kind of style that doesn\'t try.',
+    date: 'January 2026',
+    image: 'https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=600&h=400&fit=crop',
+  },
+];
+
+const featured = posts[0];
+const grid = posts.slice(1);
+---
+
+<Base title="AILEEN Magazine" description="Elegant travel, timeless style, and food that feels like home. The ones worth knowing.">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <p class="hero-tagline">Elegant Travel &middot; Timeless Style &middot; Food That Feels Like Home</p>
+      <h1>The ones worth knowing.</h1>
+      <p class="hero-subtitle">
+        Curated guides to the places, pieces, and recipes that earn their place in your life. No fluff, no filler.
+      </p>
+    </div>
+  </section>
+
+  <!-- Featured Post -->
+  <section class="featured-section container">
+    <a href={featured.slug} class="featured-card" style="text-decoration:none; color:inherit;">
+      <div class="featured-image">
+        <img src={featured.image} alt={featured.title} loading="eager" />
+      </div>
+      <div class="featured-content">
+        <p class="featured-label">Featured</p>
+        <h2><span>{featured.title}</span></h2>
+        <p class="featured-excerpt">{featured.excerpt}</p>
+        <span class="read-more">Read the Guide</span>
+      </div>
+    </a>
+  </section>
+
+  <!-- Latest Posts -->
+  <section class="container" style="padding-bottom: 1rem;">
+    <div class="section-header">
+      <p class="section-label">Latest</p>
+      <h2>Worth Your Time</h2>
+    </div>
+    <div class="post-grid">
+      {grid.map(post => (
+        <article class="post-card">
+          <a href={post.slug} style="text-decoration:none; color:inherit;">
+            <div class="post-card-image">
+              <img src={post.image} alt={post.title} loading="lazy" />
+              <span class="pillar-badge">{post.pillar}</span>
+            </div>
+            <div class="post-card-body">
+              <h3><span>{post.title}</span></h3>
+              <p class="post-card-excerpt">{post.excerpt}</p>
+              <p class="post-card-meta">{post.date}</p>
+            </div>
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+</Base>

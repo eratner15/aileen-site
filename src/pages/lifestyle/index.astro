@@ -1,0 +1,62 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const posts = [
+  {
+    title: 'The Butter Mom Aesthetic: What It Actually Means',
+    slug: '/lifestyle/butter-mom-aesthetic/',
+    excerpt: 'It\'s not about perfection. It\'s about warmth, ease, and the kind of elegance that comes from actually living in your home.',
+    date: 'January 2026',
+    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'The Nancy Meyers Aesthetic: A Guide to the Look',
+    slug: '/lifestyle/nancy-meyers-aesthetic/',
+    excerpt: 'Oversized kitchens, cream turtlenecks, and homes that feel like a hug. Why we\'re all still trying to live inside a Nancy Meyers movie.',
+    date: 'December 2025',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop',
+  },
+  {
+    title: 'Best Beach Reads for 2026 (The Ones Worth Packing)',
+    slug: '/lifestyle/best-beach-reads/',
+    excerpt: 'Books that earn their place in your carry-on. Smart, absorbing, and the kind of reading that makes you forget what time it is.',
+    date: 'November 2025',
+    image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&h=400&fit=crop',
+  },
+];
+---
+
+<Base title="Lifestyle" description="Intentional living, home aesthetics, and the kind of life worth designing on purpose.">
+
+  <section class="pillar-hero">
+    <div class="container">
+      <p class="section-label">Lifestyle</p>
+      <h1>Living on purpose.</h1>
+      <p class="pillar-description">
+        Intentional living, beautiful homes, and the kind of thoughtful choices
+        that make everyday life feel a little more elegant.
+      </p>
+    </div>
+  </section>
+
+  <section class="container" style="padding-top: 3rem;">
+    <div class="post-grid">
+      {posts.map(post => (
+        <article class="post-card">
+          <a href={post.slug} style="text-decoration:none; color:inherit;">
+            <div class="post-card-image">
+              <img src={post.image} alt={post.title} loading="lazy" />
+              <span class="pillar-badge">Lifestyle</span>
+            </div>
+            <div class="post-card-body">
+              <h3><span>{post.title}</span></h3>
+              <p class="post-card-excerpt">{post.excerpt}</p>
+              <p class="post-card-meta">{post.date}</p>
+            </div>
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+</Base>

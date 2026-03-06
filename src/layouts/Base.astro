@@ -1,0 +1,148 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  canonicalURL?: string;
+}
+
+const {
+  title,
+  description = 'Elegant travel, timeless style, and food that feels like home.',
+  ogImage = '/og-image.jpg',
+  canonicalURL = Astro.url.href,
+} = Astro.props;
+
+const siteTitle = title === 'AILEEN Magazine' ? title : `${title} | AILEEN Magazine`;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{siteTitle}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={siteTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:url" content={canonicalURL} />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={siteTitle} />
+  <meta name="twitter:description" content={description} />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Preconnect to Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "AILEEN Magazine",
+    "url": "https://aileenlavin.com",
+    "description": "Elegant travel, timeless style, and food that feels like home.",
+    "author": {
+      "@type": "Person",
+      "name": "Aileen Lavin"
+    }
+  })} />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">
+        AILEEN
+        <span>Magazine</span>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <nav>
+        <ul class="main-nav">
+          <li><a href="/travel/">Travel</a></li>
+          <li><a href="/style/">Style</a></li>
+          <li><a href="/recipes/">Recipes</a></li>
+          <li><a href="/lifestyle/">Lifestyle</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <!-- Newsletter CTA -->
+  <section class="newsletter-cta">
+    <h2>The AILEEN Edit</h2>
+    <p>A weekly letter on what's worth your time — in travel, style, and everything in between.</p>
+    <form class="newsletter-form" onsubmit="return false;">
+      <input type="email" placeholder="Your email address" aria-label="Email address" />
+      <button type="submit">Subscribe</button>
+    </form>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="site-logo">AILEEN<span>Magazine</span></div>
+        <p>Elegant travel, timeless style, and food that feels like home. No fluff, no filler.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="/travel/">Travel</a></li>
+          <li><a href="/style/">Style</a></li>
+          <li><a href="/recipes/">Recipes</a></li>
+          <li><a href="/lifestyle/">Lifestyle</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Popular</h4>
+        <ul>
+          <li><a href="/travel/best-restaurants-miami/">Best Restaurants in Miami</a></li>
+          <li><a href="/style/quiet-luxury-brands/">Quiet Luxury Brands</a></li>
+          <li><a href="/travel/boston-travel-guide/">Boston Travel Guide</a></li>
+          <li><a href="/recipes/sourdough-bread/">Sourdough Bread</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <ul>
+          <li><a href="/about/">About</a></li>
+          <li><a href="https://instagram.com/aileenlavin" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://pinterest.com/aileenlavin" target="_blank" rel="noopener">Pinterest</a></li>
+          <li><a href="https://tiktok.com/@aileenlavin" target="_blank" rel="noopener">TikTok</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; {new Date().getFullYear()} AILEEN Magazine. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    document.querySelector('.nav-toggle')?.addEventListener('click', () => {
+      document.querySelector('.main-nav')?.classList.toggle('open');
+    });
+
+    const header = document.querySelector('.site-header');
+    window.addEventListener('scroll', () => {
+      header?.classList.toggle('scrolled', window.scrollY > 20);
+    });
+  </script>
+</body>
+</html>
