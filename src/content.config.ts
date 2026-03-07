@@ -101,4 +101,42 @@ const posts = defineCollection({
   }),
 });
 
-export const collections = { posts };
+const archive = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/archive' }),
+  schema: z.object({
+    title: z.string(),
+    originalDate: z.string(),
+    excerpt: z.string().default(''),
+    source: z.enum(['ratlinks', 'substack', 'wordpress', 'other']).default('substack'),
+    sourceUrl: z.string().optional(),
+    canonicalRef: z.string().optional(),
+    postId: z.string().optional(),
+    subtitle: z.string().optional(),
+    // Classification
+    pillar: z.enum(['culture', 'business', 'travel', 'lifestyle', 'tech', 'finance', 'food', 'entertainment', 'general']).default('general'),
+    tags: z.array(z.string()).default([]),
+    evergreenClass: z.enum(['evergreen', 'refresh-needed', 'archive-only', 'derivative-candidate']).default('archive-only'),
+    // Priority & potential
+    refreshPriority: z.enum(['high', 'medium', 'low', 'none']).default('none'),
+    monetizationPotential: z.enum(['high', 'medium', 'low', 'none']).default('none'),
+    derivativePotential: z.enum(['high', 'medium', 'low', 'none']).default('none'),
+    // Reactivation tracking
+    suggestedInternalLinks: z.array(z.string()).default([]),
+    suggestedDerivatives: z.array(z.string()).default([]),
+    suggestedAffiliates: z.array(z.string()).default([]),
+    // Status
+    reactivated: z.boolean().default(false),
+    refreshedDate: z.string().optional(),
+    bundleId: z.string().optional(),
+    // Engagement data from Substack
+    emailSentAt: z.string().optional(),
+    type: z.string().default('newsletter'),
+    audience: z.string().default('everyone'),
+    // Content stats
+    wordCount: z.number().default(0),
+    hasImages: z.boolean().default(false),
+    imageCount: z.number().default(0),
+  }),
+});
+
+export const collections = { posts, archive };
