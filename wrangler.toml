@@ -1,4 +1,4 @@
-name = "aileen-magazine-worker"
+name = "evan-magazine-worker"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
