@@ -8,7 +8,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   <section class="article-header">
     <span class="pillar-badge">Your Platform</span>
-    <h1>AILEEN OS: The Complete Guide</h1>
+    <h1>EVAN OS: The Complete Guide</h1>
     <p class="article-meta">Everything you need to understand, operate, and grow your editorial publishing system.</p>
   </section>
 
@@ -94,7 +94,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         <tr><td><strong>CMS</strong></td><td>File-based. Edit markdown directly, or use the growth engine CLI to generate drafts.</td></tr>
         <tr><td><strong>Styling</strong></td><td>Single <code>global.css</code>. No CSS framework. Custom editorial design.</td></tr>
         <tr><td><strong>JavaScript</strong></td><td>Minimal. Only for nav toggle, scroll behavior, and analytics events. No JS frameworks.</td></tr>
-        <tr><td><strong>Growth Engine</strong></td><td>Separate Node.js CLI (<code>aileen</code> command) for AI-assisted content creation.</td></tr>
+        <tr><td><strong>Growth Engine</strong></td><td>Separate Node.js CLI (<code>evan</code> command) for AI-assisted content creation.</td></tr>
       </tbody>
     </table>
 
@@ -129,7 +129,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <p>One command to build, one command to deploy:</p>
     <pre><code>npm run build        # Builds all pages to dist/
 npx wrangler deploy  # Pushes to Cloudflare</code></pre>
-    <p>Or use the growth engine shortcut: <code>aileen publish</code></p>
+    <p>Or use the growth engine shortcut: <code>evan publish</code></p>
 
     <hr style="border: none; border-top: 1px solid var(--color-border); margin: 3rem 0;" />
 
@@ -267,7 +267,7 @@ npx wrangler deploy  # Pushes to Cloudflare</code></pre>
       <tbody>
         <tr><td><code>contentType</code></td><td>Enum (see above)</td><td>Controls template behavior and voice conditioning</td></tr>
         <tr><td><code>updatedDate</code></td><td>String (YYYY-MM-DD)</td><td>Shows "Updated" date on the post + <code>dateModified</code> in schema</td></tr>
-        <tr><td><code>author</code></td><td>String</td><td>Defaults to "Aileen Lavin"</td></tr>
+        <tr><td><code>author</code></td><td>String</td><td>Defaults to "Evan Ratner"</td></tr>
         <tr><td><code>draft</code></td><td>Boolean</td><td>If <code>true</code>, the post is excluded from all pages and the sitemap</td></tr>
         <tr><td><code>featured</code></td><td>Boolean</td><td>If <code>true</code>, the post appears in the homepage hero</td></tr>
         <tr><td><code>featuredOrder</code></td><td>Number</td><td>Controls order among multiple featured posts</td></tr>
@@ -441,7 +441,7 @@ reservationLinks:
     <h3>On-page SEO</h3>
     <p>Every page has:</p>
     <ul>
-      <li><strong>SEO title</strong> — <code>[Title] | AILEEN Magazine</code> in the <code>&lt;title&gt;</code> tag</li>
+      <li><strong>SEO title</strong> — <code>[Title] | EVAN Magazine</code> in the <code>&lt;title&gt;</code> tag</li>
       <li><strong>Meta description</strong> — from <code>metaDescription</code> field, 150-160 chars ideal</li>
       <li><strong>Canonical URL</strong> — deterministic, on every page</li>
       <li><strong>Open Graph tags</strong> — og:title, og:description, og:image, og:url, og:site_name</li>
@@ -534,7 +534,7 @@ reservationLinks:
     <!-- 11. NEWSLETTER -->
     <h2 id="newsletter">11. Newsletter &amp; Audience Capture</h2>
 
-    <p>Email is part of the product. The newsletter is called <strong>"The AILEEN Edit"</strong> and the CTA language uses your "worth" framing: what's worth booking, what's worth packing, what's worth your time.</p>
+    <p>Email is part of the product. The newsletter is called <strong>"The EVAN Edit"</strong> and the CTA language uses your "worth" framing: what's worth booking, what's worth packing, what's worth your time.</p>
 
     <h3>Signup surfaces</h3>
     <p>Newsletter signup appears in multiple locations:</p>
@@ -548,7 +548,7 @@ reservationLinks:
     <p>Currently the form shows a "Thank you!" confirmation after submission and fires a <code>newsletter_signup</code> GA4 event with the source page. To connect it to your email provider (Mailchimp, ConvertKit, etc.), the form submission handler in <code>Base.astro</code> needs your email provider's API endpoint.</p>
 
     <h3>Newsletter content (via growth engine)</h3>
-    <p>Run <code>aileen newsletter</code> to generate a draft of "The AILEEN Edit" with:</p>
+    <p>Run <code>evan newsletter</code> to generate a draft of "The EVAN Edit" with:</p>
     <ul>
       <li>Personal greeting</li>
       <li>Featured post</li>
@@ -686,7 +686,7 @@ reservationLinks:
     <!-- 15. AI ASSIST -->
     <h2 id="ai-assist">15. AI Assist Commands</h2>
 
-    <p>Your growth engine CLI (<code>aileen</code>) has 20+ commands that use AI to accelerate content creation — always conditioned on your voice, always producing drafts for your review. Nothing auto-publishes.</p>
+    <p>Your growth engine CLI (<code>evan</code>) has 20+ commands that use AI to accelerate content creation — always conditioned on your voice, always producing drafts for your review. Nothing auto-publishes.</p>
 
     <h3>Content creation</h3>
     <table class="admin-table" style="margin: 1.5rem 0 2rem;">
@@ -694,13 +694,13 @@ reservationLinks:
         <tr><th>Command</th><th>What It Does</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>aileen plan</code></td><td>Generate a weekly 3-post plan from your keyword bank, balanced across pillars</td></tr>
-        <tr><td><code>aileen write</code></td><td>Draft a full post (1500-2500 words) with voice conditioning + SEO optimization</td></tr>
-        <tr><td><code>aileen outline "Title"</code></td><td>Generate a detailed article outline before writing</td></tr>
-        <tr><td><code>aileen titles "keyword"</code></td><td>Generate 5 SEO title options in your voice</td></tr>
-        <tr><td><code>aileen meta "Title"</code></td><td>Generate meta description options (150-160 chars with keyword)</td></tr>
-        <tr><td><code>aileen faq "Title"</code></td><td>Generate FAQ questions and answers for featured snippet opportunities</td></tr>
-        <tr><td><code>aileen rewrite file.md</code></td><td>Rewrite content for stronger voice alignment</td></tr>
+        <tr><td><code>evan plan</code></td><td>Generate a weekly 3-post plan from your keyword bank, balanced across pillars</td></tr>
+        <tr><td><code>evan write</code></td><td>Draft a full post (1500-2500 words) with voice conditioning + SEO optimization</td></tr>
+        <tr><td><code>evan outline "Title"</code></td><td>Generate a detailed article outline before writing</td></tr>
+        <tr><td><code>evan titles "keyword"</code></td><td>Generate 5 SEO title options in your voice</td></tr>
+        <tr><td><code>evan meta "Title"</code></td><td>Generate meta description options (150-160 chars with keyword)</td></tr>
+        <tr><td><code>evan faq "Title"</code></td><td>Generate FAQ questions and answers for featured snippet opportunities</td></tr>
+        <tr><td><code>evan rewrite file.md</code></td><td>Rewrite content for stronger voice alignment</td></tr>
       </tbody>
     </table>
 
@@ -710,9 +710,9 @@ reservationLinks:
         <tr><th>Command</th><th>What It Does</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>aileen pins</code></td><td>Generate 8 Pinterest pin variations per post (title, description, text overlay, board)</td></tr>
-        <tr><td><code>aileen social "Title"</code></td><td>Generate Instagram or TikTok captions in your voice</td></tr>
-        <tr><td><code>aileen newsletter</code></td><td>Draft "The AILEEN Edit" weekly newsletter</td></tr>
+        <tr><td><code>evan pins</code></td><td>Generate 8 Pinterest pin variations per post (title, description, text overlay, board)</td></tr>
+        <tr><td><code>evan social "Title"</code></td><td>Generate Instagram or TikTok captions in your voice</td></tr>
+        <tr><td><code>evan newsletter</code></td><td>Draft "The EVAN Edit" weekly newsletter</td></tr>
       </tbody>
     </table>
 
@@ -722,10 +722,10 @@ reservationLinks:
         <tr><th>Command</th><th>What It Does</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>aileen voice-check file.md</code></td><td>Score a draft 0-100 on voice alignment, with specific issues flagged</td></tr>
-        <tr><td><code>aileen audit</code></td><td>SEO audit scoring 1-100 with ranked, actionable recommendations</td></tr>
-        <tr><td><code>aileen refresh file.md</code></td><td>Generate refresh suggestions for stale content (update stats, add sections, improve linking)</td></tr>
-        <tr><td><code>aileen follow-up "Title"</code></td><td>Suggest follow-up articles to strengthen the cluster around this topic</td></tr>
+        <tr><td><code>evan voice-check file.md</code></td><td>Score a draft 0-100 on voice alignment, with specific issues flagged</td></tr>
+        <tr><td><code>evan audit</code></td><td>SEO audit scoring 1-100 with ranked, actionable recommendations</td></tr>
+        <tr><td><code>evan refresh file.md</code></td><td>Generate refresh suggestions for stale content (update stats, add sections, improve linking)</td></tr>
+        <tr><td><code>evan follow-up "Title"</code></td><td>Suggest follow-up articles to strengthen the cluster around this topic</td></tr>
       </tbody>
     </table>
 
@@ -735,10 +735,10 @@ reservationLinks:
         <tr><th>Command</th><th>What It Does</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>aileen deploy slug-name</code></td><td>Copy a reviewed draft from <code>output/drafts/</code> to the Astro site content directory</td></tr>
-        <tr><td><code>aileen deploy slug-name --draft</code></td><td>Same, but sets <code>draft: true</code> so it doesn't go live until you're ready</td></tr>
-        <tr><td><code>aileen publish</code></td><td>Build the Astro site and deploy to Cloudflare (one command)</td></tr>
-        <tr><td><code>aileen import-astro</code></td><td>Sync published posts back to the content database for planning and auditing</td></tr>
+        <tr><td><code>evan deploy slug-name</code></td><td>Copy a reviewed draft from <code>output/drafts/</code> to the Astro site content directory</td></tr>
+        <tr><td><code>evan deploy slug-name --draft</code></td><td>Same, but sets <code>draft: true</code> so it doesn't go live until you're ready</td></tr>
+        <tr><td><code>evan publish</code></td><td>Build the Astro site and deploy to Cloudflare (one command)</td></tr>
+        <tr><td><code>evan import-astro</code></td><td>Sync published posts back to the content database for planning and auditing</td></tr>
       </tbody>
     </table>
 
@@ -749,22 +749,22 @@ reservationLinks:
 
     <h3>Publishing a new post</h3>
     <ol>
-      <li><strong>Plan</strong> — Run <code>aileen plan</code> to see keyword-driven post suggestions, or choose your own topic</li>
-      <li><strong>Write</strong> — Run <code>aileen write</code> for an AI draft, or write directly in markdown. Save to <code>output/drafts/your-slug.md</code></li>
-      <li><strong>Check voice</strong> — Run <code>aileen voice-check output/drafts/your-slug.md</code>. Aim for 75+.</li>
+      <li><strong>Plan</strong> — Run <code>evan plan</code> to see keyword-driven post suggestions, or choose your own topic</li>
+      <li><strong>Write</strong> — Run <code>evan write</code> for an AI draft, or write directly in markdown. Save to <code>output/drafts/your-slug.md</code></li>
+      <li><strong>Check voice</strong> — Run <code>evan voice-check output/drafts/your-slug.md</code>. Aim for 75+.</li>
       <li><strong>Edit</strong> — Review the draft. Add your personal experience, real details, specific recommendations. The AI provides structure; you provide soul.</li>
-      <li><strong>Deploy</strong> — Run <code>aileen deploy your-slug</code> to copy it to the site's content directory</li>
+      <li><strong>Deploy</strong> — Run <code>evan deploy your-slug</code> to copy it to the site's content directory</li>
       <li><strong>Review</strong> — Run <code>npm run build</code> locally to preview, or deploy as draft first with <code>--draft</code></li>
-      <li><strong>Publish</strong> — Run <code>aileen publish</code> to build and push live to Cloudflare</li>
-      <li><strong>Distribute</strong> — Run <code>aileen pins</code> for Pinterest, <code>aileen social</code> for Instagram/TikTok</li>
+      <li><strong>Publish</strong> — Run <code>evan publish</code> to build and push live to Cloudflare</li>
+      <li><strong>Distribute</strong> — Run <code>evan pins</code> for Pinterest, <code>evan social</code> for Instagram/TikTok</li>
     </ol>
 
     <h3>Refreshing an existing post</h3>
     <ol>
-      <li>Run <code>aileen refresh src/content/posts/travel/your-post.md</code> for specific suggestions</li>
+      <li>Run <code>evan refresh src/content/posts/travel/your-post.md</code> for specific suggestions</li>
       <li>Update the content in the markdown file</li>
       <li>Set <code>updatedDate</code> in frontmatter to today's date</li>
-      <li>Run <code>aileen publish</code> to push the update live</li>
+      <li>Run <code>evan publish</code> to push the update live</li>
     </ol>
 
     <h3>Required fields before publishing</h3>
@@ -904,7 +904,7 @@ reservationLinks:
 
     <h3>Pinterest strategy</h3>
     <ul>
-      <li>8 pin variations per post (via <code>aileen pins</code>)</li>
+      <li>8 pin variations per post (via <code>evan pins</code>)</li>
       <li>5-10 pins per day, increasing to 10-15 by Month 5</li>
       <li>Boards: Luxury Travel Guides, Timeless Style, Where to Eat, Elegant Recipes, Intentional Living</li>
       <li>Enable article rich pins via Open Graph (already implemented)</li>
@@ -927,7 +927,7 @@ reservationLinks:
 
     <table class="admin-table" style="margin: 1.5rem 0 2rem;">
       <thead>
-        <tr><th>Feature</th><th>Old Site (WordPress)</th><th>New Site (AILEEN OS)</th></tr>
+        <tr><th>Feature</th><th>Old Site (WordPress)</th><th>New Site (EVAN OS)</th></tr>
       </thead>
       <tbody>
         <tr><td>Hosting</td><td>WordPress hosting</td><td>Cloudflare edge (global CDN, near-instant)</td></tr>
@@ -1000,7 +1000,7 @@ reservationLinks:
 
     <h2>Quick Reference: File Structure</h2>
 
-    <pre><code>aileen-site/
+    <pre><code>evan-site/
   src/
     content/
       posts/

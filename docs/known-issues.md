@@ -28,7 +28,7 @@
 4. Replace Unsplash placeholders with real photography
 
 ### Priority 2: Features
-5. Author page (`/magazine/about/aileen/`)
+5. Author page (`/magazine/about/evan/`)
 6. Favorites/shop page for curated product links
 7. Trending/popular module based on actual traffic data
 8. Promo banner system for seasonal campaigns

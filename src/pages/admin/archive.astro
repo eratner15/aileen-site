@@ -1,515 +1,333 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import { getCollection } from 'astro:content';
 
-const allArchive = await getCollection('archive');
 const allPosts = await getCollection('posts');
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Sort by original date desc
-allArchive.sort((a, b) => new Date(b.data.originalDate).getTime() - new Date(a.data.originalDate).getTime());
+// Focus on archive/evergreen content
+const archivePosts = allPosts.filter(p => p.data.source !== 'original' || p.data.evergreenScore > 0);
 
-// Classification counts
-const evergreen = allArchive.filter(a => a.data.evergreenClass === 'evergreen');
-const refreshNeeded = allArchive.filter(a => a.data.evergreenClass === 'refresh-needed');
-const derivativeCandidate = allArchive.filter(a => a.data.evergreenClass === 'derivative-candidate');
-const archiveOnly = allArchive.filter(a => a.data.evergreenClass === 'archive-only');
+// Best Evergreen Posts (sorted by evergreenScore desc)
+const bestEvergreen = [...archivePosts]
+  .filter(p => p.data.evergreenScore > 0)
+  .sort((a, b) => b.data.evergreenScore - a.data.evergreenScore);
 
-// Priority queues
-const highRefresh = allArchive.filter(a => a.data.refreshPriority === 'high');
-const medRefresh = allArchive.filter(a => a.data.refreshPriority === 'medium');
+// Refresh Queue
+const refreshQueue = archivePosts
+  .filter(p => ['high', 'medium'].includes(p.data.refreshPriority))
+  .sort((a, b) => {
+    const order = { high: 0, medium: 1, low: 2, none: 3 };
+    return (order[a.data.refreshPriority] || 3) - (order[b.data.refreshPriority] || 3);
+  });
 
-// Monetization opportunities
-const highMonetization = allArchive.filter(a => a.data.monetizationPotential === 'high');
-const medMonetization = allArchive.filter(a => a.data.monetizationPotential === 'medium');
+// Derivative Opportunities
+const derivativeOpps = archivePosts
+  .filter(p => p.data.derivativeScore > 60)
+  .sort((a, b) => b.data.derivativeScore - a.data.derivativeScore);
 
-// Derivative opportunities
-const highDerivative = allArchive.filter(a => a.data.derivativePotential === 'high');
+// Monetization Gaps
+const monetizationGaps = archivePosts
+  .filter(p => p.data.monetizationPotential === 'high' && p.data.products.length === 0);
 
-// By pillar
-const byPillar: Record<string, number> = {};
-for (const a of allArchive) {
-  byPillar[a.data.pillar] = (byPillar[a.data.pillar] || 0) + 1;
-}
+// Re-share Queue
+const reshareQueue = archivePosts
+  .filter(p => p.data.evergreenScore > 50 && !p.data.newsletterIncluded)
+  .sort((a, b) => b.data.evergreenScore - a.data.evergreenScore);
 
-// By tag (top 15)
-const tagCounts: Record<string, number> = {};
-for (const a of allArchive) {
-  for (const t of a.data.tags) {
-    tagCounts[t] = (tagCounts[t] || 0) + 1;
-  }
-}
-const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
-
-// Word count stats
-const totalWords = allArchive.reduce((s, a) => s + a.data.wordCount, 0);
-const avgWords = Math.round(totalWords / allArchive.length);
-
-// Posts not yet reactivated
-const notReactivated = allArchive.filter(a => !a.data.reactivated);
-
-// Content needing internal links (no suggested links yet)
-const needsLinks = allArchive.filter(a => a.data.suggestedInternalLinks.length === 0 && a.data.evergreenClass !== 'archive-only');
-
-// Potential bundles by pillar
-type BundleGroup = { pillar: string; posts: typeof allArchive };
-const bundleGroups: BundleGroup[] = Object.entries(byPillar)
-  .filter(([, count]) => count >= 3)
-  .map(([pillar]) => ({
-    pillar,
-    posts: allArchive.filter(a => a.data.pillar === pillar && a.data.evergreenClass !== 'archive-only'),
-  }))
-  .filter(g => g.posts.length >= 2)
-  .sort((a, b) => b.posts.length - a.posts.length);
-
-// Year distribution
-const byYear: Record<string, number> = {};
-for (const a of allArchive) {
-  const year = a.data.originalDate.slice(0, 4);
-  byYear[year] = (byYear[year] || 0) + 1;
-}
+// Stats
+const totalArchive = archivePosts.length;
+const classified = archivePosts.filter(p => p.data.status !== 'imported').length;
 ---
 
-<Base title="Archive & Evergreen | Admin" noindex={true}>
-  <div class="admin-layout">
-    <h1>Archive & Evergreen Engine</h1>
-    <p class="admin-subtitle">Turn the back catalog into an active traffic, distribution, and monetization asset</p>
-
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+<Base title="Evergreen Engine | Admin" noindex={true}>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>Evergreen Engine</h1>
+    </div>
 
     <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/archive/`} class="admin-nav-link active">Archive</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
+      <a href={`${base}/admin/`}>Command Center</a>
+      <a href={`${base}/admin/content/`}>Content</a>
+      <a href={`${base}/admin/archive/`} class="active">Evergreen</a>
+      <a href={`${base}/admin/seo/`}>SEO</a>
+      <a href={`${base}/admin/distribution/`}>Distribution</a>
+      <a href={`${base}/admin/revenue/`}>Revenue</a>
+      <a href={`${base}/admin/performance/`}>Performance</a>
+      <a href={`${base}/admin/ai-assist/`}>AI Assist</a>
+      <a href={`${base}/admin/settings/`}>Settings</a>
     </nav>
 
     <!-- Stats -->
-    <div class="admin-stats-grid">
-      <div class="admin-stat">
-        <span class="admin-stat-number">{allArchive.length}</span>
-        <span class="admin-stat-label">Archive Posts</span>
+    <section class="admin-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{totalArchive}</div>
+          <div class="stat-label">Archive Posts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{classified}</div>
+          <div class="stat-label">Classified</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{refreshQueue.length}</div>
+          <div class="stat-label">Needs Refresh</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{derivativeOpps.length}</div>
+          <div class="stat-label">Derivative Opps</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{monetizationGaps.length}</div>
+          <div class="stat-label">Monetization Gaps</div>
+        </div>
       </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{evergreen.length}</span>
-        <span class="admin-stat-label">Evergreen</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{refreshNeeded.length}</span>
-        <span class="admin-stat-label">Refresh Needed</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{derivativeCandidate.length}</span>
-        <span class="admin-stat-label">Derivative Candidates</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{Math.round(totalWords / 1000)}k</span>
-        <span class="admin-stat-label">Total Words</span>
-      </div>
-    </div>
+    </section>
 
     <!-- Best Evergreen Posts -->
-    <div class="admin-card">
-      <h2>Best Evergreen Posts ({evergreen.length})</h2>
-      <p class="admin-subtitle">Highest-value archive content for reactivation</p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Date</th>
-            <th>Pillar</th>
-            <th>Words</th>
-            <th>Monetization</th>
-            <th>Derivative</th>
-          </tr>
-        </thead>
-        <tbody>
-          {evergreen
-            .filter(a => a.data.monetizationPotential !== 'none' || a.data.derivativePotential === 'high')
-            .slice(0, 25)
-            .map(a => (
+    <section class="admin-section">
+      <h2>Best Evergreen Posts ({bestEvergreen.length})</h2>
+      {bestEvergreen.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td>
-                  <strong>{a.data.title}</strong>
-                  {a.data.subtitle && <div class="archive-subtitle">{a.data.subtitle}</div>}
-                </td>
-                <td>{a.data.originalDate}</td>
-                <td><span class={`pillar-badge pillar-badge--${a.data.pillar}`}>{a.data.pillar}</span></td>
-                <td>{a.data.wordCount.toLocaleString()}</td>
-                <td><span class={`priority-badge priority--${a.data.monetizationPotential}`}>{a.data.monetizationPotential}</span></td>
-                <td><span class={`priority-badge priority--${a.data.derivativePotential}`}>{a.data.derivativePotential}</span></td>
+                <th>Title</th>
+                <th>Evergreen</th>
+                <th>Distribution</th>
+                <th>Monetization</th>
+                <th>Derivative</th>
+                <th>Actions</th>
               </tr>
-            ))}
-        </tbody>
-      </table>
-    </div>
+            </thead>
+            <tbody>
+              {bestEvergreen.slice(0, 30).map(p => {
+                const [pillar, ...rest] = p.id.split('/');
+                const slug = rest.join('/');
+                return (
+                  <tr>
+                    <td><a href={`${base}/${pillar}/${slug}/`} target="_blank">{p.data.title}</a></td>
+                    <td class="score">{p.data.evergreenScore}</td>
+                    <td class="score">{p.data.distributionScore}</td>
+                    <td class="score">{p.data.monetizationScore}</td>
+                    <td class="score">{p.data.derivativeScore}</td>
+                    <td class="actions-cell">
+                      <button class="btn btn-sm api-action" data-endpoint="/api/refresh-brief" data-slug={p.id}>Refresh</button>
+                      <button class="btn btn-sm api-action" data-endpoint="/api/derivative" data-slug={p.id}>Derive</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">No evergreen posts scored yet. Run classification first.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
 
     <!-- Refresh Queue -->
-    <div class="admin-card admin-card--alert">
-      <h2>Refresh Queue ({highRefresh.length + medRefresh.length})</h2>
-      <p class="admin-subtitle">Posts worth updating and republishing</p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Date</th>
-            <th>Priority</th>
-            <th>Pillar</th>
-            <th>Why Refresh</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[...highRefresh, ...medRefresh].slice(0, 20).map(a => (
-            <tr>
-              <td>
-                <strong>{a.data.title}</strong>
-                {a.data.subtitle && <div class="archive-subtitle">{a.data.subtitle}</div>}
-              </td>
-              <td>{a.data.originalDate}</td>
-              <td><span class={`priority-badge priority--${a.data.refreshPriority}`}>{a.data.refreshPriority}</span></td>
-              <td><span class={`pillar-badge pillar-badge--${a.data.pillar}`}>{a.data.pillar}</span></td>
-              <td>{a.data.evergreenClass === 'refresh-needed' ? 'Content dated, topic still relevant' : 'High monetization + derivative potential'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <section class="admin-section">
+      <h2>Refresh Queue ({refreshQueue.length})</h2>
+      {refreshQueue.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Priority</th>
+                <th>Last Refreshed</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {refreshQueue.slice(0, 20).map(p => (
+                <tr>
+                  <td>{p.data.title}</td>
+                  <td><span class={`priority priority-${p.data.refreshPriority}`}>{p.data.refreshPriority}</span></td>
+                  <td>{p.data.refreshedDate || 'Never'}</td>
+                  <td class="actions-cell">
+                    <button class="btn btn-sm api-action" data-endpoint="/api/refresh-brief" data-slug={p.id}>Generate Refresh Brief</button>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/mark-refreshed" data-slug={p.id}>Mark Refreshed</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">No posts in the refresh queue.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
 
     <!-- Derivative Opportunities -->
-    <div class="admin-card">
-      <h2>Derivative Opportunities ({derivativeCandidate.length + highDerivative.length})</h2>
-      <p class="admin-subtitle">Archive content that can spawn new posts, guides, or series</p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Source Post</th>
-            <th>Date</th>
-            <th>Pillar</th>
-            <th>Potential</th>
-            <th>Suggested Derivatives</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[...highDerivative, ...derivativeCandidate].slice(0, 20).map(a => {
-            const derivSuggestions: string[] = [];
-            if (a.data.tags.includes('travel')) derivSuggestions.push('destination guide', 'hotel review');
-            if (a.data.tags.includes('food')) derivSuggestions.push('restaurant guide', 'recipe post');
-            if (a.data.tags.includes('business')) derivSuggestions.push('how-to guide', 'listicle');
-            if (a.data.tags.includes('culture')) derivSuggestions.push('the-edit roundup', 'trend piece');
-            if (a.data.tags.includes('markets') || a.data.tags.includes('crypto')) derivSuggestions.push('explainer', 'updated analysis');
-            if (a.data.tags.includes('books')) derivSuggestions.push('book review', 'reading list');
-            if (derivSuggestions.length === 0) derivSuggestions.push('updated essay', 'compilation piece');
-            return (
+    <section class="admin-section">
+      <h2>Derivative Opportunities ({derivativeOpps.length})</h2>
+      {derivativeOpps.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td>
-                  <strong>{a.data.title}</strong>
-                  {a.data.subtitle && <div class="archive-subtitle">{a.data.subtitle}</div>}
-                </td>
-                <td>{a.data.originalDate}</td>
-                <td><span class={`pillar-badge pillar-badge--${a.data.pillar}`}>{a.data.pillar}</span></td>
-                <td><span class={`priority-badge priority--${a.data.derivativePotential}`}>{a.data.derivativePotential}</span></td>
-                <td>{derivSuggestions.join(', ')}</td>
+                <th>Title</th>
+                <th>Score</th>
+                <th>Suggested Derivatives</th>
+                <th>Actions</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Monetization Opportunities from Archive -->
-    <div class="admin-card">
-      <h2>Monetization Opportunities ({highMonetization.length + medMonetization.length})</h2>
-      <p class="admin-subtitle">Archive posts with affiliate, product, or resource potential</p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Potential</th>
-            <th>Pillar</th>
-            <th>Tags</th>
-            <th>Suggested Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[...highMonetization, ...medMonetization].slice(0, 20).map(a => {
-            const actions: string[] = [];
-            if (a.data.tags.includes('books')) actions.push('Add Amazon affiliate links');
-            if (a.data.tags.includes('food')) actions.push('Add restaurant/recipe links');
-            if (a.data.tags.includes('travel')) actions.push('Add booking/hotel links');
-            if (a.data.tags.includes('technology')) actions.push('Add tool/product links');
-            if (a.data.tags.includes('holiday')) actions.push('Seasonal gift guide refresh');
-            if (actions.length === 0) actions.push('Add relevant product recommendations');
-            return (
-              <tr>
-                <td><strong>{a.data.title}</strong></td>
-                <td><span class={`priority-badge priority--${a.data.monetizationPotential}`}>{a.data.monetizationPotential}</span></td>
-                <td><span class={`pillar-badge pillar-badge--${a.data.pillar}`}>{a.data.pillar}</span></td>
-                <td>{a.data.tags.slice(0, 4).join(', ')}</td>
-                <td>{actions.join('; ')}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Archive Bundles by Topic -->
-    <div class="admin-card">
-      <h2>Archive Bundles by Pillar</h2>
-      <p class="admin-subtitle">Group related archive posts into themed collections or series pages</p>
-      {bundleGroups.map(({ pillar, posts: bundlePosts }) => (
-        <div class="bundle-group">
-          <h3><span class={`pillar-badge pillar-badge--${pillar}`}>{pillar}</span> — {bundlePosts.length} posts</h3>
-          <ul class="bundle-list">
-            {bundlePosts.slice(0, 8).map(p => (
-              <li>
-                <span class="bundle-title">{p.data.title}</span>
-                <span class="bundle-date">{p.data.originalDate}</span>
-                <span class={`priority-badge priority--${p.data.evergreenClass === 'evergreen' ? 'high' : p.data.evergreenClass === 'refresh-needed' ? 'medium' : 'low'}`}>
-                  {p.data.evergreenClass}
-                </span>
-              </li>
-            ))}
-            {bundlePosts.length > 8 && <li class="bundle-more">...and {bundlePosts.length - 8} more</li>}
-          </ul>
+            </thead>
+            <tbody>
+              {derivativeOpps.slice(0, 20).map(p => (
+                <tr>
+                  <td>{p.data.title}</td>
+                  <td class="score">{p.data.derivativeScore}</td>
+                  <td>{p.data.suggestedDerivatives.length > 0 ? p.data.suggestedDerivatives.join(', ') : 'None suggested'}</td>
+                  <td>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/derivative" data-slug={p.id}>Generate Derivative Brief</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
-    </div>
+      ) : (
+        <p class="empty-state">No derivative opportunities above threshold.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
 
-    <!-- Content by Pillar -->
-    <div class="admin-card">
-      <h2>Archive by Pillar</h2>
-      <div class="admin-bar-chart">
-        {Object.entries(byPillar).sort((a, b) => b[1] - a[1]).map(([pillar, count]) => (
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">{pillar}</span>
-            <div class="admin-bar-track">
-              <div class={`admin-bar-fill pillar-fill--${pillar}`} style={`width: ${Math.round(count / allArchive.length * 100)}%`}></div>
-            </div>
-            <span class="admin-bar-count">{count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <!-- Monetization Gaps -->
+    <section class="admin-section">
+      <h2>Monetization Gaps ({monetizationGaps.length})</h2>
+      {monetizationGaps.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Potential</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monetizationGaps.map(p => (
+                <tr>
+                  <td>{p.data.title}</td>
+                  <td><span class="priority priority-high">{p.data.monetizationPotential}</span></td>
+                  <td>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/affiliate-suggest" data-slug={p.id}>Add Affiliate Block</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">No monetization gaps found.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
 
-    <!-- Top Tags -->
-    <div class="admin-card">
-      <h2>Top Tags</h2>
-      <div class="tag-cloud">
-        {topTags.map(([tag, count]) => (
-          <span class="tag-item" style={`font-size: ${Math.max(0.7, Math.min(1.4, 0.6 + count / 15))}rem`}>
-            {tag} <span class="tag-count">{count}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-
-    <!-- Year Distribution -->
-    <div class="admin-card">
-      <h2>Archive by Year</h2>
-      <div class="admin-bar-chart">
-        {Object.entries(byYear).sort((a, b) => b[0].localeCompare(a[0])).map(([year, count]) => (
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">{year}</span>
-            <div class="admin-bar-track">
-              <div class="admin-bar-fill" style={`width: ${Math.round(count / Math.max(...Object.values(byYear)) * 100)}%`}></div>
-            </div>
-            <span class="admin-bar-count">{count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <!-- Full Archive Inventory -->
-    <div class="admin-card">
-      <h2>Full Archive ({allArchive.length} posts)</h2>
-      <div style="margin-bottom: 1rem;">
-        <input type="text" id="archive-search" placeholder="Search archive..." class="posts-search" />
-      </div>
-      <table class="admin-table" id="archive-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Date</th>
-            <th>Pillar</th>
-            <th>Classification</th>
-            <th>Refresh</th>
-            <th>Monetize</th>
-            <th>Words</th>
-          </tr>
-        </thead>
-        <tbody>
-          {allArchive.map(a => (
-            <tr class="archive-row" data-title={a.data.title.toLowerCase()} data-pillar={a.data.pillar}>
-              <td>
-                <strong>{a.data.title}</strong>
-                {a.data.tags.length > 0 && (
-                  <div class="archive-tags">
-                    {a.data.tags.slice(0, 3).map(t => <span class="mini-tag">{t}</span>)}
-                  </div>
-                )}
-              </td>
-              <td>{a.data.originalDate}</td>
-              <td><span class={`pillar-badge pillar-badge--${a.data.pillar}`}>{a.data.pillar}</span></td>
-              <td><span class={`class-badge class--${a.data.evergreenClass}`}>{a.data.evergreenClass.replace('-', ' ')}</span></td>
-              <td><span class={`priority-badge priority--${a.data.refreshPriority}`}>{a.data.refreshPriority}</span></td>
-              <td><span class={`priority-badge priority--${a.data.monetizationPotential}`}>{a.data.monetizationPotential}</span></td>
-              <td>{a.data.wordCount.toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <!-- Re-share Queue -->
+    <section class="admin-section">
+      <h2>Re-share Queue ({reshareQueue.length})</h2>
+      {reshareQueue.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Evergreen Score</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reshareQueue.slice(0, 20).map(p => (
+                <tr>
+                  <td>{p.data.title}</td>
+                  <td class="score">{p.data.evergreenScore}</td>
+                  <td class="actions-cell">
+                    <button class="btn btn-sm api-action" data-endpoint="/api/newsletter-copy" data-slug={p.id}>Newsletter Copy</button>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/social-copy" data-slug={p.id}>Social Copy</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">All evergreen posts have been included in the newsletter.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
   </div>
-  <AdminActions />
 </Base>
 
 <style>
-  .archive-subtitle {
-    font-size: 0.75rem;
-    color: var(--color-text-light);
-    margin-top: 0.15rem;
-    line-height: 1.3;
-  }
-  .pillar-badge {
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.1rem 0.4rem;
-    border-radius: 0.2rem;
-    white-space: nowrap;
-  }
-  .pillar-badge--business { background: #e3f2fd; color: #1565c0; }
-  .pillar-badge--finance { background: #e8f5e9; color: #2e7d32; }
-  .pillar-badge--tech { background: #f3e5f5; color: #6a1b9a; }
-  .pillar-badge--culture { background: #fce4ec; color: #c62828; }
-  .pillar-badge--travel { background: #e0f7fa; color: #00695c; }
-  .pillar-badge--food { background: #fff3e0; color: #e65100; }
-  .pillar-badge--entertainment { background: #fff8e1; color: #f57f17; }
-  .pillar-badge--lifestyle { background: #f1f8e9; color: #33691e; }
-  .pillar-badge--general { background: #f5f5f5; color: #616161; }
-
-  .pillar-fill--business { background: #1565c0; }
-  .pillar-fill--finance { background: #2e7d32; }
-  .pillar-fill--tech { background: #6a1b9a; }
-  .pillar-fill--culture { background: #c62828; }
-  .pillar-fill--travel { background: #00695c; }
-  .pillar-fill--food { background: #e65100; }
-  .pillar-fill--entertainment { background: #f57f17; }
-  .pillar-fill--lifestyle { background: #33691e; }
-  .pillar-fill--general { background: #616161; }
-
-  .priority-badge {
-    font-size: 0.65rem;
-    font-weight: 600;
-    padding: 0.1rem 0.35rem;
-    border-radius: 0.2rem;
-    white-space: nowrap;
-  }
-  .priority--high { background: #e8f5e9; color: #2e7d32; }
-  .priority--medium { background: #fff3e0; color: #e65100; }
-  .priority--low { background: #f5f5f5; color: #9e9e9e; }
-  .priority--none { background: #fafafa; color: #bdbdbd; }
-
-  .class-badge {
-    font-size: 0.6rem;
-    font-weight: 600;
-    padding: 0.1rem 0.35rem;
-    border-radius: 0.2rem;
-    text-transform: capitalize;
-    white-space: nowrap;
-  }
-  .class--evergreen { background: #e8f5e9; color: #2e7d32; }
-  .class--refresh-needed { background: #fff3e0; color: #e65100; }
-  .class--archive-only { background: #f5f5f5; color: #9e9e9e; }
-  .class--derivative-candidate { background: #e3f2fd; color: #1565c0; }
-
-  .bundle-group {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--color-border);
-  }
-  .bundle-group:last-child { border-bottom: none; }
-  .bundle-group h3 {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-  }
-  .bundle-list {
-    list-style: none;
-    padding: 0;
-    font-size: 0.8rem;
-  }
-  .bundle-list li {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0;
-    border-bottom: 1px solid #f5f5f5;
-  }
-  .bundle-title { flex: 1; }
-  .bundle-date { color: var(--color-text-light); font-size: 0.7rem; }
-  .bundle-more { color: var(--color-text-light); font-style: italic; }
-
-  .tag-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .tag-item {
-    background: #f5f5f5;
-    padding: 0.2rem 0.6rem;
-    border-radius: 1rem;
-    font-family: var(--font-ui);
-    white-space: nowrap;
-  }
-  .tag-count {
-    font-size: 0.65rem;
-    color: var(--color-text-light);
-  }
-
-  .archive-tags {
-    display: flex;
-    gap: 0.25rem;
-    margin-top: 0.2rem;
-  }
-  .mini-tag {
-    font-size: 0.6rem;
-    background: #f0f0f0;
-    padding: 0.05rem 0.3rem;
-    border-radius: 0.2rem;
-    color: var(--color-text-light);
-  }
-
-  .posts-search {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    font-family: var(--font-ui);
-    font-size: 0.85rem;
-    border: 1px solid var(--color-border);
-    background: var(--color-bg);
-  }
-
-  .archive-row.hidden { display: none; }
+  .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+  .admin-header { margin-bottom: 1rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+  .admin-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; margin: 0; }
+  .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.75rem; }
+  .admin-nav a { padding: 0.4rem 0.75rem; text-decoration: none; color: #666; font-size: 0.85rem; border-radius: 4px; transition: all 0.15s; }
+  .admin-nav a:hover { background: #f5f5f5; color: #000; }
+  .admin-nav a.active { background: #000; color: #fff; }
+  .admin-section { margin-bottom: 2.5rem; }
+  .admin-section h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; margin: 0 0 1rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.5rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
+  .stat-card { background: #f5f5f5; padding: 1rem; text-align: center; border: 1px solid #e8e8e8; }
+  .stat-number { font-size: 1.75rem; font-weight: 700; color: #000; }
+  .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #e8e8e8; }
+  th { font-weight: 600; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; color: #666; background: #f5f5f5; }
+  td a { color: #000; }
+  .score { font-weight: 700; font-family: monospace; }
+  .priority { font-size: 0.7rem; padding: 0.15rem 0.4rem; text-transform: uppercase; font-weight: 600; }
+  .priority-high { background: #000; color: #fff; }
+  .priority-medium { background: #666; color: #fff; }
+  .priority-low { background: #e8e8e8; color: #666; }
+  .priority-none { background: #f5f5f5; color: #999; }
+  .actions-cell { white-space: nowrap; }
+  .btn { padding: 0.4rem 0.75rem; border: 1px solid #000; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: all 0.15s; text-decoration: none; display: inline-block; background: #fff; color: #000; }
+  .btn-sm { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .result-panel { margin-top: 1rem; padding: 1rem; background: #f5f5f5; border: 1px solid #e8e8e8; font-size: 0.85rem; white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-family: monospace; }
+  .empty-state { color: #999; font-style: italic; font-size: 0.9rem; }
 </style>
 
 <script>
-  const searchInput = document.getElementById('archive-search') as HTMLInputElement;
-  const rows = document.querySelectorAll('.archive-row');
+  const API_BASE = 'http://localhost:3001';
 
-  searchInput?.addEventListener('input', () => {
-    const q = searchInput.value.toLowerCase();
-    rows.forEach(row => {
-      const el = row as HTMLElement;
-      const match = !q || el.dataset.title!.includes(q) || el.dataset.pillar!.includes(q);
-      el.classList.toggle('hidden', !match);
+  async function apiCall(endpoint: string, method = 'POST', body?: object) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return await res.json();
+    } catch (e: any) {
+      return { error: true, message: e.message || 'API unavailable. Is the growth engine running on localhost:3001?' };
+    }
+  }
+
+  document.querySelectorAll('.api-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = (btn as HTMLElement).dataset.endpoint!;
+      const slug = (btn as HTMLElement).dataset.slug;
+      const origText = btn.textContent;
+      btn.textContent = 'Working...';
+      (btn as HTMLButtonElement).disabled = true;
+      const result = await apiCall(endpoint, 'POST', slug ? { slug } : undefined);
+      const panel = btn.closest('.admin-section')?.querySelector('.result-panel');
+      if (panel) {
+        (panel as HTMLElement).style.display = 'block';
+        (panel as HTMLElement).textContent = JSON.stringify(result, null, 2);
+      }
+      btn.textContent = origText;
+      (btn as HTMLButtonElement).disabled = false;
     });
   });
 </script>

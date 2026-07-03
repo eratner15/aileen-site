@@ -1,218 +1,277 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import { getCollection } from 'astro:content';
 
 const allPosts = await getCollection('posts');
-const published = allPosts.filter(p => !p.data.draft);
-const drafts = allPosts.filter(p => p.data.draft);
-
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Session goal tracker (placeholder — update manually)
-const currentSessions = 0; // Update this value manually or via analytics integration
-const sessionGoal = 50_000;
-const sessionPercent = Math.min(Math.round((currentSessions / sessionGoal) * 100), 100);
+// Content velocity
+const now = new Date();
+const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
-// Post count progress
-const postCountGoal = 100; // Adjust target as needed
-const postPercent = Math.min(Math.round((published.length / postCountGoal) * 100), 100);
-
-// Content velocity: posts per month
-const postsByMonth: Record<string, number> = {};
-for (const p of published) {
-  const d = new Date(p.data.date);
-  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  postsByMonth[key] = (postsByMonth[key] || 0) + 1;
-}
-const sortedMonths = Object.entries(postsByMonth).sort((a, b) => a[0].localeCompare(b[0]));
-const recentMonths = sortedMonths.slice(-12);
-
-// Average posts per month (last 6 months)
-const last6 = sortedMonths.slice(-6);
-const avgPerMonth = last6.length > 0 ? Math.round(last6.reduce((sum, [, count]) => sum + count, 0) / last6.length * 10) / 10 : 0;
+const postsThisMonth = allPosts.filter(p => p.data.date.startsWith(thisMonth)).length;
+const postsLastMonth = allPosts.filter(p => p.data.date.startsWith(lastMonth)).length;
 
 // Pillar distribution
 const byPillar: Record<string, number> = {};
-for (const p of published) {
+for (const p of allPosts) {
   byPillar[p.data.pillar] = (byPillar[p.data.pillar] || 0) + 1;
 }
+const maxPillarCount = Math.max(...Object.values(byPillar), 1);
 
-// Voice score stats
-const withVoiceScore = published.filter(p => p.data.voiceScore !== undefined && p.data.voiceScore !== null);
-const avgVoiceScore = withVoiceScore.length > 0 ? Math.round(withVoiceScore.reduce((sum, p) => sum + p.data.voiceScore!, 0) / withVoiceScore.length) : 0;
+// Quality scores
+const withVoice = allPosts.filter(p => p.data.voiceScore !== undefined && p.data.voiceScore !== null);
+const avgVoice = withVoice.length > 0 ? Math.round(withVoice.reduce((s, p) => s + p.data.voiceScore!, 0) / withVoice.length) : 0;
+const withSeo = allPosts.filter(p => p.data.seoScore !== undefined && p.data.seoScore !== null);
+const avgSeo = withSeo.length > 0 ? Math.round(withSeo.reduce((s, p) => s + p.data.seoScore!, 0) / withSeo.length) : 0;
 
-// SEO score stats
-const withSeoScore = published.filter(p => p.data.seoScore !== undefined && p.data.seoScore !== null);
-const avgSeoScore = withSeoScore.length > 0 ? Math.round(withSeoScore.reduce((sum, p) => sum + p.data.seoScore!, 0) / withSeoScore.length) : 0;
+// Classification coverage
+const classified = allPosts.filter(p => p.data.status !== 'imported').length;
+const unclassified = allPosts.length - classified;
 
-// Mediavine readiness checklist
-const mediavineChecks = [
-  { label: '50,000 sessions per month', pass: currentSessions >= 50_000, detail: `${currentSessions.toLocaleString()} / 50,000 sessions` },
-  { label: 'Original, long-form content', pass: published.length >= 30, detail: `${published.length} published posts` },
-  { label: 'No content policy violations', pass: true, detail: 'Manual check required' },
-  { label: 'Site loads fast (< 3s)', pass: true, detail: 'Manual check — run Lighthouse' },
-  { label: 'Good ad placement potential', pass: published.length >= 20, detail: 'Sufficient content depth' },
-  { label: 'SSL certificate active', pass: true, detail: 'Manual check required' },
-  { label: 'Content in English', pass: true, detail: 'Primary language is English' },
-  { label: 'Good standing with Google AdSense', pass: true, detail: 'Manual check required' },
-];
-const mediavinePassCount = mediavineChecks.filter(c => c.pass).length;
+// Mediavine readiness (placeholder)
+const currentSessions = 0;
+const sessionGoal = 50000;
+const sessionPct = Math.min(Math.round((currentSessions / sessionGoal) * 100), 100);
+
+// "What Should Evan Do Next?" - top 3
+const nextActions: Array<{ action: string; reason: string }> = [];
+const needsRefresh = allPosts.filter(p => ['high', 'medium'].includes(p.data.refreshPriority)).length;
+const unmonetized = allPosts.filter(p => p.data.monetizationPotential === 'high' && p.data.products.length === 0).length;
+const missingSEO = allPosts.filter(p => !p.data.metaDescription || !p.data.targetKeyword).length;
+const noPins = allPosts.filter(p => p.data.pinsGenerated === 0 && p.data.evergreenScore > 50).length;
+
+if (unclassified > 0) nextActions.push({ action: `Classify ${unclassified} posts`, reason: 'Classification unlocks all scoring and prioritization across every engine.' });
+if (missingSEO > 0) nextActions.push({ action: `Fix SEO on ${missingSEO} posts`, reason: 'Posts without meta descriptions or keywords get zero organic search visibility.' });
+if (needsRefresh > 0) nextActions.push({ action: `Refresh ${needsRefresh} stale posts`, reason: 'Refreshed content re-enters Google freshness ranking signals.' });
+if (unmonetized > 0) nextActions.push({ action: `Monetize ${unmonetized} high-potential posts`, reason: 'These posts have audience interest but zero revenue capture.' });
+if (noPins > 0) nextActions.push({ action: `Generate pins for ${noPins} evergreen posts`, reason: 'Pinterest drives passive long-tail traffic to evergreen content.' });
+
+const top3 = nextActions.slice(0, 3);
+
+// Monthly posts for chart
+const postsByMonth: Record<string, number> = {};
+for (const p of allPosts) {
+  const key = p.data.date.slice(0, 7);
+  postsByMonth[key] = (postsByMonth[key] || 0) + 1;
+}
+const recentMonths = Object.entries(postsByMonth).sort((a, b) => a[0].localeCompare(b[0])).slice(-12);
+const maxMonthly = Math.max(...recentMonths.map(([, c]) => c), 1);
 ---
 
-<Base title="Performance Dashboard | Admin" noindex={true}>
-  <div class="admin-layout">
-    <h1>Performance Dashboard</h1>
-    <p class="admin-subtitle">Growth metrics and Mediavine readiness</p>
-
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
-
-    <div class="admin-actions-bar">
-      <button class="admin-btn" data-action="import-astro">Sync Posts to DB</button>
+<Base title="Performance Engine | Admin" noindex={true}>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>Performance Engine</h1>
     </div>
-    <pre id="action-output"></pre>
 
     <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/archive/`} class="admin-nav-link">Archive</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link active">Performance</a>
+      <a href={`${base}/admin/`}>Command Center</a>
+      <a href={`${base}/admin/content/`}>Content</a>
+      <a href={`${base}/admin/archive/`}>Evergreen</a>
+      <a href={`${base}/admin/seo/`}>SEO</a>
+      <a href={`${base}/admin/distribution/`}>Distribution</a>
+      <a href={`${base}/admin/revenue/`}>Revenue</a>
+      <a href={`${base}/admin/performance/`} class="active">Performance</a>
+      <a href={`${base}/admin/ai-assist/`}>AI Assist</a>
+      <a href={`${base}/admin/settings/`}>Settings</a>
     </nav>
 
-    <!-- Stats row -->
-    <div class="admin-stats-grid">
-      <div class="admin-stat">
-        <span class="admin-stat-number">{published.length}</span>
-        <span class="admin-stat-label">Published Posts</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{drafts.length}</span>
-        <span class="admin-stat-label">In Pipeline</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{avgPerMonth}</span>
-        <span class="admin-stat-label">Posts/Month (6mo avg)</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{avgVoiceScore || '—'}</span>
-        <span class="admin-stat-label">Avg Voice Score</span>
-      </div>
-    </div>
-
-    <!-- 50K Session Goal Tracker -->
-    <div class="admin-card">
-      <h2>50K Session Goal</h2>
-      <p>Current sessions: <strong>{currentSessions.toLocaleString()}</strong> / {sessionGoal.toLocaleString()}</p>
-      <div class="admin-bar-track" style="height: 2rem; border-radius: 0.5rem; margin: 1rem 0;">
-        <div class={`admin-bar-fill ${sessionPercent >= 100 ? 'voice-score--good' : sessionPercent >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`} style={`width: ${sessionPercent}%; height: 100%; border-radius: 0.5rem;`}></div>
-      </div>
-      <p><strong>{sessionPercent}%</strong> of goal reached. Update the <code>currentSessions</code> value in this file with your actual analytics data.</p>
-    </div>
-
-    <!-- Post Count Progress -->
-    <div class="admin-card">
-      <h2>Post Count Progress</h2>
-      <p>Published: <strong>{published.length}</strong> / {postCountGoal} target posts</p>
-      <div class="admin-bar-track" style="height: 2rem; border-radius: 0.5rem; margin: 1rem 0;">
-        <div class={`admin-bar-fill ${postPercent >= 100 ? 'voice-score--good' : postPercent >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`} style={`width: ${postPercent}%; height: 100%; border-radius: 0.5rem;`}></div>
-      </div>
-      <p><strong>{postPercent}%</strong> of post count goal</p>
-    </div>
-
     <!-- Content Velocity -->
-    <div class="admin-card">
+    <section class="admin-section">
       <h2>Content Velocity</h2>
-      <p>Posts published per month (last 12 months)</p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Month</th>
-            <th>Posts</th>
-            <th>Visual</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recentMonths.map(([month, count]) => {
-            const maxCount = Math.max(...recentMonths.map(([, c]) => c));
-            const barWidth = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
-            return (
-              <tr>
-                <td>{month}</td>
-                <td>{count}</td>
-                <td>
-                  <div class="admin-bar-track" style="height: 1.25rem;">
-                    <div class="admin-bar-fill" style={`width: ${barWidth}%; height: 100%;`}></div>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pillar Distribution -->
-    <div class="admin-card">
-      <h2>Pillar Distribution</h2>
-      <div class="admin-bar-chart">
-        {Object.entries(byPillar).sort((a, b) => b[1] - a[1]).map(([pillar, count]) => (
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">{pillar.charAt(0).toUpperCase() + pillar.slice(1)}</span>
-            <div class="admin-bar-track">
-              <div class="admin-bar-fill" style={`width: ${Math.round(count / published.length * 100)}%`}></div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{postsThisMonth}</div>
+          <div class="stat-label">This Month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{postsLastMonth}</div>
+          <div class="stat-label">Last Month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{allPosts.length}</div>
+          <div class="stat-label">Total Posts</div>
+        </div>
+      </div>
+      <div class="month-chart">
+        {recentMonths.map(([month, count]) => (
+          <div class="month-bar-row">
+            <span class="month-label">{month}</span>
+            <div class="month-track">
+              <div class="month-fill" style={`width: ${Math.round((count / maxMonthly) * 100)}%`}></div>
             </div>
-            <span class="admin-bar-count">{count}</span>
+            <span class="month-count">{count}</span>
           </div>
         ))}
       </div>
-    </div>
+    </section>
+
+    <!-- Pillar Distribution -->
+    <section class="admin-section">
+      <h2>Pillar Distribution</h2>
+      <div class="bar-chart">
+        {Object.entries(byPillar).sort((a, b) => b[1] - a[1]).map(([pillar, count]) => (
+          <div class="bar-row">
+            <span class="bar-label">{pillar.charAt(0).toUpperCase() + pillar.slice(1)}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style={`width: ${Math.round((count / maxPillarCount) * 100)}%`}></div>
+            </div>
+            <span class="bar-count">{count} ({Math.round((count / allPosts.length) * 100)}%)</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Mediavine Readiness -->
+    <section class="admin-section">
+      <h2>Mediavine Readiness</h2>
+      <div class="progress-section">
+        <p>Sessions: <strong>{currentSessions.toLocaleString()}</strong> / {sessionGoal.toLocaleString()} (GA4 integration needed)</p>
+        <div class="progress-bar">
+          <div class="progress-fill" style={`width: ${sessionPct}%`}></div>
+        </div>
+        <p class="progress-label">{sessionPct}% to goal</p>
+      </div>
+    </section>
 
     <!-- Quality Scores -->
-    <div class="admin-card">
+    <section class="admin-section">
       <h2>Quality Scores</h2>
-      <div class="admin-stats-grid">
-        <div class="admin-stat">
-          <span class={`admin-stat-number ${avgVoiceScore >= 75 ? 'voice-score--good' : avgVoiceScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{avgVoiceScore || '—'}</span>
-          <span class="admin-stat-label">Avg Voice Score ({withVoiceScore.length} posts)</span>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class={`stat-number ${avgVoice >= 70 ? 'good' : avgVoice >= 40 ? 'warn' : 'bad'}`}>{avgVoice || '--'}</div>
+          <div class="stat-label">Avg Voice Score ({withVoice.length} posts)</div>
         </div>
-        <div class="admin-stat">
-          <span class={`admin-stat-number ${avgSeoScore >= 75 ? 'voice-score--good' : avgSeoScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{avgSeoScore || '—'}</span>
-          <span class="admin-stat-label">Avg SEO Score ({withSeoScore.length} posts)</span>
+        <div class="stat-card">
+          <div class={`stat-number ${avgSeo >= 70 ? 'good' : avgSeo >= 40 ? 'warn' : 'bad'}`}>{avgSeo || '--'}</div>
+          <div class="stat-label">Avg SEO Score ({withSeo.length} posts)</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Mediavine Readiness Checklist -->
-    <div class="admin-card">
-      <h2>Mediavine Readiness ({mediavinePassCount}/{mediavineChecks.length})</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Requirement</th>
-            <th>Detail</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mediavineChecks.map(check => (
-            <tr>
-              <td>{check.label}</td>
-              <td>{check.detail}</td>
-              <td>
-                <span class={`status-badge ${check.pass ? 'voice-score--good' : 'voice-score--bad'}`}>
-                  {check.pass ? 'Ready' : 'Not Ready'}
-                </span>
-              </td>
-            </tr>
+    <!-- What Should Evan Do Next? -->
+    <section class="admin-section">
+      <h2>What Should Evan Do Next?</h2>
+      {top3.length > 0 ? (
+        <div class="action-cards">
+          {top3.map((item, i) => (
+            <div class="action-card">
+              <div class="action-rank">#{i + 1}</div>
+              <div class="action-info">
+                <h3>{item.action}</h3>
+                <p>{item.reason}</p>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      ) : (
+        <p class="empty-state">Everything is in great shape.</p>
+      )}
+    </section>
+
+    <!-- Classification Coverage -->
+    <section class="admin-section">
+      <h2>Classification Coverage</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{classified}</div>
+          <div class="stat-label">Classified</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{unclassified}</div>
+          <div class="stat-label">Unclassified</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{allPosts.length > 0 ? Math.round((classified / allPosts.length) * 100) : 0}%</div>
+          <div class="stat-label">Coverage</div>
+        </div>
+      </div>
+      {unclassified > 0 && (
+        <div style="margin-top: 1rem;">
+          <button class="btn btn-primary api-action" data-endpoint="/api/classify">Classify All Unclassified</button>
+        </div>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
   </div>
-  <AdminActions />
 </Base>
+
+<style>
+  .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+  .admin-header { margin-bottom: 1rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+  .admin-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; margin: 0; }
+  .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.75rem; }
+  .admin-nav a { padding: 0.4rem 0.75rem; text-decoration: none; color: #666; font-size: 0.85rem; border-radius: 4px; transition: all 0.15s; }
+  .admin-nav a:hover { background: #f5f5f5; color: #000; }
+  .admin-nav a.active { background: #000; color: #fff; }
+  .admin-section { margin-bottom: 2.5rem; }
+  .admin-section h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; margin: 0 0 1rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.5rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
+  .stat-card { background: #f5f5f5; padding: 1rem; text-align: center; border: 1px solid #e8e8e8; }
+  .stat-number { font-size: 1.75rem; font-weight: 700; color: #000; }
+  .stat-number.good { color: #22c55e; }
+  .stat-number.warn { color: #f59e0b; }
+  .stat-number.bad { color: #ef4444; }
+  .stat-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .bar-chart, .month-chart { margin-top: 1rem; }
+  .bar-row, .month-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; }
+  .bar-label, .month-label { width: 100px; font-size: 0.8rem; font-weight: 600; }
+  .bar-track, .month-track { flex: 1; height: 1.25rem; background: #e8e8e8; }
+  .bar-fill, .month-fill { height: 100%; background: #000; transition: width 0.3s; }
+  .bar-count, .month-count { font-size: 0.75rem; color: #666; min-width: 80px; }
+  .progress-section { margin-top: 0.5rem; }
+  .progress-bar { height: 2rem; background: #e8e8e8; margin: 0.75rem 0; }
+  .progress-fill { height: 100%; background: #000; transition: width 0.3s; }
+  .progress-label { font-size: 0.85rem; color: #666; }
+  .action-cards { display: flex; flex-direction: column; gap: 0.75rem; }
+  .action-card { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; background: #f5f5f5; border: 1px solid #e8e8e8; }
+  .action-rank { font-size: 1.5rem; font-weight: 700; color: #999; min-width: 2.5rem; text-align: center; }
+  .action-info { flex: 1; }
+  .action-info h3 { margin: 0; font-size: 1rem; }
+  .action-info p { margin: 0.25rem 0 0; font-size: 0.85rem; color: #666; }
+  .btn { padding: 0.5rem 1rem; border: 1px solid #000; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: all 0.15s; background: #fff; color: #000; }
+  .btn-primary { background: #000; color: #fff; }
+  .btn-primary:hover { background: #333; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .result-panel { margin-top: 1rem; padding: 1rem; background: #f5f5f5; border: 1px solid #e8e8e8; font-size: 0.85rem; white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-family: monospace; }
+  .empty-state { color: #999; font-style: italic; font-size: 0.9rem; }
+</style>
+
+<script>
+  const API_BASE = 'http://localhost:3001';
+
+  async function apiCall(endpoint: string, method = 'POST', body?: object) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return await res.json();
+    } catch (e: any) {
+      return { error: true, message: e.message || 'API unavailable. Is the growth engine running on localhost:3001?' };
+    }
+  }
+
+  document.querySelectorAll('.api-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = (btn as HTMLElement).dataset.endpoint!;
+      const slug = (btn as HTMLElement).dataset.slug;
+      const origText = btn.textContent;
+      btn.textContent = 'Working...';
+      (btn as HTMLButtonElement).disabled = true;
+      const result = await apiCall(endpoint, 'POST', slug ? { slug } : undefined);
+      const panel = btn.closest('.admin-section')?.querySelector('.result-panel');
+      if (panel) {
+        (panel as HTMLElement).style.display = 'block';
+        (panel as HTMLElement).textContent = JSON.stringify(result, null, 2);
+      }
+      btn.textContent = origText;
+      (btn as HTMLButtonElement).disabled = false;
+    });
+  });
+</script>

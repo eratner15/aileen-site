@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The admin surface is what makes the difference between "a nice website Aileen needs a developer to update" and "a publishing operating system Aileen runs herself." Every dashboard, editor tool, and CMS control listed here must make the flywheel easier to operate and eliminate dependency on developer intervention.
+The admin surface is what makes the difference between "a nice website Evan needs a developer to update" and "a publishing operating system Evan runs herself." Every dashboard, editor tool, and CMS control listed here must make the flywheel easier to operate and eliminate dependency on developer intervention.
 
 WordPress gave her a publishing UI buried under plugin chaos. This must be simpler, faster, and more useful.
 
@@ -36,7 +36,7 @@ WordPress gave her a publishing UI buried under plugin chaos. This must be simpl
 ### URL: `/magazine/admin/`
 
 ### What it shows
-The command center. Everything Aileen needs to see at a glance when she sits down to work.
+The command center. Everything Evan needs to see at a glance when she sits down to work.
 
 ### Sections
 
@@ -72,7 +72,7 @@ The command center. Everything Aileen needs to see at a glance when she sits dow
 | Posts missing updated date | `updatedDate` field |
 
 ### How this strengthens the flywheel
-Aileen sees exactly what to work on today. No guessing, no logging into 5 different tools. Reduces the friction between "I have 30 minutes" and "I improved my site."
+Evan sees exactly what to work on today. No guessing, no logging into 5 different tools. Reduces the friction between "I have 30 minutes" and "I improved my site."
 
 ### How this preserves voice
 Pipeline view shows voice score for every draft — she can prioritize editing low-score drafts that need the most voice work.
@@ -117,7 +117,7 @@ Technical SEO health and content quality indicators.
 | SEO audit score per post | `seo_scores` table |
 | Posts scored below 70 (needs attention) | Filter |
 | Posts never audited | Left join |
-| "Run Audit" action button | Triggers `aileen audit` |
+| "Run Audit" action button | Triggers `evan audit` |
 
 **Internal Link Map**
 | Field | Source |
@@ -133,7 +133,7 @@ SEO is the primary traffic engine (80% target). Systematic SEO health monitoring
 Indirectly — SEO dashboard ensures voice-consistent content is technically optimized to be found. Great voice with bad SEO is great writing that nobody reads.
 
 ### How this improves client ownership
-Aileen can identify and fix SEO issues without hiring an SEO consultant. The dashboard tells her exactly what's wrong and what to fix first.
+Evan can identify and fix SEO issues without hiring an SEO consultant. The dashboard tells her exactly what's wrong and what to fix first.
 
 ---
 
@@ -152,7 +152,7 @@ What to publish next, based on data rather than guessing.
 | Top 20 unused keywords ranked by opportunity score | `keywords` table, `opportunity_score = volume / difficulty` |
 | Volume, difficulty, current ranking (if any) | `keywords` table |
 | Suggested pillar | `pillar` field |
-| "Generate Brief" action | Triggers `aileen plan` for specific keyword |
+| "Generate Brief" action | Triggers `evan plan` for specific keyword |
 
 **Cluster Gaps** (future — requires destination taxonomy)
 | Field | Source |
@@ -177,13 +177,13 @@ What to publish next, based on data rather than guessing.
 | Estimated keyword opportunity | From keyword bank |
 
 ### How this strengthens the flywheel
-This is the "what to write next" engine. Instead of Aileen thinking "hmm, what should I write about?", the system tells her "your Miami cluster needs a hotel review targeting 'best hotels miami' (vol: 3200, diff: 28)."
+This is the "what to write next" engine. Instead of Evan thinking "hmm, what should I write about?", the system tells her "your Miami cluster needs a hotel review targeting 'best hotels miami' (vol: 3200, diff: 28)."
 
 ### How this preserves voice
 Opportunity suggestions are strategic, not editorial. They identify what topics to cover; the Voice Engine determines how to cover them.
 
 ### How this improves client ownership
-Aileen becomes a strategic editor. She makes informed decisions about where to invest her time based on data, not gut feel.
+Evan becomes a strategic editor. She makes informed decisions about where to invest her time based on data, not gut feel.
 
 ### How this helps compounding
 Every post fills a gap that strengthens a cluster. Clusters compound authority. Authority compounds rankings. Rankings compound traffic. This dashboard ensures every new post is placed for maximum compound effect.
@@ -208,7 +208,7 @@ Which posts have been distributed through which channels, and what's missing.
 | TikTok | Has TikTok caption been generated? | `social_derivatives` table |
 
 **Visual: Distribution Completeness Grid**
-A matrix: rows = posts (last 20), columns = channels. Green = done, gray = not done. Aileen can see at a glance "oh, my last 5 posts have no Pinterest pins" and batch-generate them.
+A matrix: rows = posts (last 20), columns = channels. Green = done, gray = not done. Evan can see at a glance "oh, my last 5 posts have no Pinterest pins" and batch-generate them.
 
 **Pinterest Status**
 | Field | Source |
@@ -216,7 +216,7 @@ A matrix: rows = posts (last 20), columns = channels. Green = done, gray = not d
 | Total pins generated | `pins` table count |
 | Pins per post average | Computed |
 | Posts with 0 pins | Filter |
-| "Generate Pins" batch action | Triggers `aileen pins` for selected posts |
+| "Generate Pins" batch action | Triggers `evan pins` for selected posts |
 
 **Newsletter Status**
 | Field | Source |
@@ -224,7 +224,7 @@ A matrix: rows = posts (last 20), columns = channels. Green = done, gray = not d
 | This week's newsletter: drafted / not drafted | Check for recent newsletter output |
 | Subject line preview | From newsletter draft |
 | Posts featured in newsletter | From draft content |
-| "Draft Newsletter" action | Triggers `aileen newsletter` |
+| "Draft Newsletter" action | Triggers `evan newsletter` |
 
 ### How this strengthens the flywheel
 Content that isn't distributed doesn't compound. This dashboard ensures no post is published without being pushed through all relevant channels.
@@ -233,7 +233,7 @@ Content that isn't distributed doesn't compound. This dashboard ensures no post 
 Each channel derivative is generated through channel-specific voice variants (Component 3 of Voice Engine). The dashboard ensures derivatives exist, the Voice Engine ensures they sound right.
 
 ### How this improves client ownership
-Instead of logging into WordPress + Mailchimp + Pinterest + Instagram separately, Aileen sees all distribution status in one view and generates missing derivatives with one click.
+Instead of logging into WordPress + Mailchimp + Pinterest + Instagram separately, Evan sees all distribution status in one view and generates missing derivatives with one click.
 
 ---
 
@@ -277,7 +277,7 @@ Revenue funds content production. This dashboard ensures monetization isn't an a
 The dashboard identifies where monetization modules should exist but doesn't change how they're presented. The Voice Engine ensures affiliate mentions stay editorial, not salesy.
 
 ### How this improves client ownership
-Aileen sees her revenue infrastructure at a glance. She can batch-convert `[AFFILIATE: placeholder]` tags into live links without a developer.
+Evan sees her revenue infrastructure at a glance. She can batch-convert `[AFFILIATE: placeholder]` tags into live links without a developer.
 
 ---
 
@@ -323,9 +323,9 @@ Traffic, engagement, and growth metrics. This is the "is the flywheel working?" 
 
 ### Data Source Strategy (Phased)
 
-**Phase 1 (Now)**: Manual entry. Aileen tells the system "I got 18K sessions this month" and it's stored in `performance_snapshots`. Dashboard shows trend from manual data points.
+**Phase 1 (Now)**: Manual entry. Evan tells the system "I got 18K sessions this month" and it's stored in `performance_snapshots`. Dashboard shows trend from manual data points.
 
-**Phase 2 (Month 2-3)**: GSC data import. `aileen import-gsc` pulls search performance data. Rankings, impressions, clicks per page.
+**Phase 2 (Month 2-3)**: GSC data import. `evan import-gsc` pulls search performance data. Rankings, impressions, clicks per page.
 
 **Phase 3 (Month 4+)**: GA4 data import. Full traffic data per page. Automated refresh scoring based on performance trends.
 
@@ -336,7 +336,7 @@ This closes the loop. Performance data → identifies what's working → informs
 Performance data doesn't touch voice directly, but it validates that voice-consistent content is also traffic-generating content. If high-voice-score posts also rank well, the system is working.
 
 ### How this improves client ownership
-Aileen sees her business metrics without logging into GA4, GSC, or asking a consultant for a report. The data is actionable — not just "you got 18K sessions" but "your Palm Beach guide dropped from position 4 to 9, here's what to update."
+Evan sees her business metrics without logging into GA4, GSC, or asking a consultant for a report. The data is actionable — not just "you got 18K sessions" but "your Palm Beach guide dropped from position 4 to 9, here's what to update."
 
 ---
 
@@ -373,7 +373,7 @@ These are the content creation and editing tools that live inside the admin expe
 | Feature | Description |
 |---|---|
 | Markdown editor | Split-pane: source + preview |
-| AI Rewrite Block | Select text → "Rewrite in Aileen's voice" |
+| AI Rewrite Block | Select text → "Rewrite in Evan's voice" |
 | AI Expand | Select H2 → "Expand this section" |
 | AI FAQ Generator | "Suggest FAQ questions for this post" |
 | AI Internal Links | "Suggest internal links from existing content" |
@@ -404,7 +404,7 @@ These are the content creation and editing tools that live inside the admin expe
 
 ## CMS Controls
 
-These are the content management fields that Aileen can edit per post, beyond the body content.
+These are the content management fields that Evan can edit per post, beyond the body content.
 
 ### Post-Level Controls
 
@@ -468,22 +468,22 @@ Build 6 dashboard pages as Astro pages that read from the SQLite DB (or JSON fil
 | Performance | `performance_snapshots` table (manual input) | Low |
 
 **CLI commands remain primary workflow**:
-- `aileen plan` → generates plan, visible on Editorial Dashboard
-- `aileen write` → generates draft, visible on Editorial Dashboard
-- `aileen deploy` → deploys to Astro site
-- `aileen publish` → builds + deploys to Cloudflare
-- `aileen pins` → generates pins, visible on Distribution Dashboard
-- `aileen audit` → scores posts, visible on SEO Dashboard
-- `aileen newsletter` → drafts newsletter, visible on Distribution Dashboard
-- `aileen voice-check` → NEW: scores voice, visible on Editorial Dashboard
+- `evan plan` → generates plan, visible on Editorial Dashboard
+- `evan write` → generates draft, visible on Editorial Dashboard
+- `evan deploy` → deploys to Astro site
+- `evan publish` → builds + deploys to Cloudflare
+- `evan pins` → generates pins, visible on Distribution Dashboard
+- `evan audit` → scores posts, visible on SEO Dashboard
+- `evan newsletter` → drafts newsletter, visible on Distribution Dashboard
+- `evan voice-check` → NEW: scores voice, visible on Editorial Dashboard
 
 ### Phase 2: Interactive Dashboards (Month 3-4)
 
 Add action buttons that trigger CLI commands via API routes:
-- "Generate Brief" button calls `aileen plan` for a specific keyword
-- "Generate Pins" button calls `aileen pins` for a specific post
-- "Run Audit" button calls `aileen audit` for a specific post
-- "Draft Newsletter" button calls `aileen newsletter`
+- "Generate Brief" button calls `evan plan` for a specific keyword
+- "Generate Pins" button calls `evan pins` for a specific post
+- "Run Audit" button calls `evan audit` for a specific post
+- "Draft Newsletter" button calls `evan newsletter`
 
 ### Phase 3: Full Editor Experience (Month 5-6)
 
@@ -496,7 +496,7 @@ Build the content editor, AI Assist sidebar, and image management:
 
 ### Phase 4: Self-Service Publishing (Month 6+)
 
-Aileen can do everything from the browser:
+Evan can do everything from the browser:
 - Create new posts from briefs
 - Edit with AI assistance
 - Deploy and publish
@@ -508,19 +508,19 @@ Aileen can do everything from the browser:
 
 ## What Success Looks Like
 
-1. **Month 1**: Aileen can see her content pipeline, keyword opportunities, and SEO health in dashboards. She still uses the CLI to create content but has visibility into the operation.
+1. **Month 1**: Evan can see her content pipeline, keyword opportunities, and SEO health in dashboards. She still uses the CLI to create content but has visibility into the operation.
 
-2. **Month 3**: Aileen can trigger content operations from dashboard buttons. She clicks "Generate Brief" → sees the brief → clicks "Write Draft" → reviews the draft → clicks "Deploy." No terminal needed.
+2. **Month 3**: Evan can trigger content operations from dashboard buttons. She clicks "Generate Brief" → sees the brief → clicks "Write Draft" → reviews the draft → clicks "Deploy." No terminal needed.
 
-3. **Month 6**: Aileen operates her entire content business from a browser. She publishes 3 posts/week, generates derivatives for all channels, monitors performance, and knows exactly what to write next — all without developer help.
+3. **Month 6**: Evan operates her entire content business from a browser. She publishes 3 posts/week, generates derivatives for all channels, monitors performance, and knows exactly what to write next — all without developer help.
 
 4. **Ongoing**: The system gets smarter. Better voice scoring, better keyword suggestions, better refresh priorities. Each piece of content makes the next one easier to produce and more likely to compound.
 
 ---
 
-## Comparison: WordPress vs. Aileen OS
+## Comparison: WordPress vs. Evan OS
 
-| Capability | WordPress + Plugins | Aileen OS |
+| Capability | WordPress + Plugins | Evan OS |
 |---|---|---|
 | Write a post | Gutenberg editor (clunky blocks) | Markdown editor + AI Assist + voice scoring |
 | SEO optimization | Yoast sidebar (generic advice) | Keyword-specific scoring + internal link suggestions |

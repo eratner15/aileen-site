@@ -1,7 +1,7 @@
 # Deployment Guide
 
 ## Overview
-AILEEN Magazine is an Astro 5.x static site deployed to Cloudflare Workers + KV. The build produces static HTML/CSS/JS that is served via a Cloudflare Worker that maps `/magazine/*` URLs to KV-stored assets.
+EVAN Magazine is an Astro 5.x static site deployed to Cloudflare Workers + KV. The build produces static HTML/CSS/JS that is served via a Cloudflare Worker that maps `/magazine/*` URLs to KV-stored assets.
 
 ## Prerequisites
 - Node.js 18+
@@ -67,8 +67,8 @@ Content is Markdown files in `src/content/posts/{pillar}/`. To publish new conte
 
 Or use the growth engine:
 ```bash
-aileen deploy --slug <slug>   # Copy draft to Astro content dir
-aileen publish                # Build + wrangler deploy
+evan deploy --slug <slug>   # Copy draft to Astro content dir
+evan publish                # Build + wrangler deploy
 ```
 
 ## Rollback

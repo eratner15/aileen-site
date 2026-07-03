@@ -1,4 +1,4 @@
-# AILEEN Magazine — Editor Guide
+# EVAN Magazine — Editor Guide
 
 ## How to Publish a New Post
 
@@ -6,39 +6,39 @@
 
 1. **Plan what to write**
    ```bash
-   aileen plan
+   evan plan
    ```
    This generates a weekly 3-post plan based on keyword opportunities.
 
 2. **Write a draft**
    ```bash
-   aileen write [post-id]
+   evan write [post-id]
    ```
    AI Assist generates a voice-aligned draft. Review and edit the output in `output/drafts/`.
 
 3. **Check voice alignment**
    ```bash
-   aileen voice-check output/drafts/your-post.md
+   evan voice-check output/drafts/your-post.md
    ```
    Aim for 75+ voice score before publishing.
 
 4. **Deploy to site**
    ```bash
-   aileen deploy your-post-slug
+   evan deploy your-post-slug
    ```
    This copies the markdown to the Astro content directory.
 
 5. **Build and publish**
    ```bash
-   aileen publish
+   evan publish
    ```
    Builds the Astro site and deploys to Cloudflare.
 
 6. **Generate derivatives**
    ```bash
-   aileen pins --id [post-id]     # Pinterest pins
-   aileen social "Post Title"     # Instagram captions
-   aileen newsletter              # Weekly newsletter
+   evan pins --id [post-id]     # Pinterest pins
+   evan social "Post Title"     # Instagram captions
+   evan newsletter              # Weekly newsletter
    ```
 
 ### Option B: Manual (Direct Markdown)
@@ -67,7 +67,7 @@ excerpt: "Short description for cards and social"
 ```yaml
 contentType: "restaurant-guide"  # Defaults to "article"
 updatedDate: "2026-04-01"        # Show "Updated" date
-author: "Aileen Lavin"           # Defaults to Aileen
+author: "Evan Ratner"           # Defaults to Evan
 draft: true                      # Hide from site
 featured: true                   # Show on homepage hero
 featuredOrder: 1                 # Homepage position
@@ -110,7 +110,7 @@ reservationLinks:
 ```yaml
 faq:
   - question: "What are the best restaurants in Miami?"
-    answer: "Concise 2-3 sentence answer in Aileen's voice."
+    answer: "Concise 2-3 sentence answer in Evan's voice."
 ```
 
 ## Managing Featured Content
@@ -135,8 +135,8 @@ Posts tagged with destinations appear on destination hub pages at `/magazine/des
 
 1. Edit the markdown file directly in `src/content/posts/`
 2. Update the `updatedDate` field
-3. Run `aileen voice-check` on the updated file
-4. Rebuild and deploy: `aileen publish`
+3. Run `evan voice-check` on the updated file
+4. Rebuild and deploy: `evan publish`
 
 ## Admin Dashboards
 
@@ -150,13 +150,13 @@ Visit `/magazine/admin/` to see:
 
 ## Voice Rules
 
-Every piece of content must sound like Aileen. Key rules:
+Every piece of content must sound like Evan. Key rules:
 - Confident but not loud
 - Specific (name dishes, rooms, pieces)
 - Short sentences mixed with longer ones
 - "Worth the reservation" language
 - Never: "let's dive in", "comprehensive guide", "obsessed", "game-changer"
-- Run `aileen voice-check` before publishing
+- Run `evan voice-check` before publishing
 
 ## Image Guidelines
 

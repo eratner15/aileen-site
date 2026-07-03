@@ -1,4 +1,4 @@
-# AILEEN Magazine — 6-Month SEO Roadmap to 50K Sessions
+# EVAN Magazine — 6-Month SEO Roadmap to 50K Sessions
 
 ## Month 1 (March): Foundation — 12 new posts
 | Week | Post 1 (Style) | Post 2 (Travel) | Post 3 (Lifestyle/Food) |
@@ -39,10 +39,10 @@ Target: 76 posts, ~40-50K sessions -> Mediavine application
 - Join 5-10 relevant group boards in months 2-3
 
 ## Content Pipeline
-1. `aileen plan` — generates weekly 3-post plan from keyword bank
-2. `aileen write` — drafts post with SEO optimization
-3. Review & edit in Aileen's voice
-4. `aileen deploy --slug <slug>` — copies to Astro content dir
-5. `aileen publish` — builds Astro + deploys to Cloudflare
-6. `aileen pins --id <id>` — generates Pinterest pins
-7. `aileen audit` — SEO audit for published posts
+1. `evan plan` — generates weekly 3-post plan from keyword bank
+2. `evan write` — drafts post with SEO optimization
+3. Review & edit in Evan's voice
+4. `evan deploy --slug <slug>` — copies to Astro content dir
+5. `evan publish` — builds Astro + deploys to Cloudflare
+6. `evan pins --id <id>` — generates Pinterest pins
+7. `evan audit` — SEO audit for published posts

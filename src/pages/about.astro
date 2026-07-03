@@ -1,36 +1,40 @@
 ---
 import Base from '../layouts/Base.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
-<Base title="About" description="AILEEN Magazine — elegant travel, timeless style, and food that feels like home. Written by Aileen Lavin.">
+<Base title="About" description="EVAN is a personal media brand by Evan Ratner — essays, guides, experiments, and tools on business, culture, markets, and technology.">
 
   <section class="article-header">
-    <h1>About AILEEN</h1>
-    <p class="article-meta">The ones worth knowing</p>
+    <h1>About EVAN</h1>
+    <p class="article-meta">By Evan Ratner</p>
   </section>
 
   <div class="article-body">
-    <p>AILEEN Magazine is a luxury lifestyle journal focused on the things that earn their place in your life. Elegant travel, timeless style, recipes that feel like home, and the kind of intentional living that makes everyday a little more beautiful.</p>
+    <p>EVAN is a personal media brand. It started as RatLinks — a newsletter collecting the stories, links, and ideas worth paying attention to. Business, culture, markets, music, food, and everything in between.</p>
 
-    <p>I'm Aileen Lavin. I started this site because I was tired of content that felt like it was written for algorithms instead of people. Every restaurant guide that listed 47 places when you only needed five. Every "capsule wardrobe" that still had 200 pieces. Every travel guide that told you to "explore like a local" and then recommended tourist traps.</p>
-
-    <p>AILEEN is the antidote. We focus on what's actually worth your time, your money, and your attention. Every recommendation is honest, personal, and tested. If it's on this site, it's because I've been there, tried it, or lived with it — and I'd recommend it to a friend.</p>
+    <p>I'm Evan Ratner. I write about the things I'm thinking about, reading, and paying attention to. No niche, no formula — just the stuff that's actually interesting.</p>
 
     <h2>What You'll Find Here</h2>
 
-    <p><strong>Travel</strong> — Hotel reviews, restaurant guides, and city itineraries for people who like to travel with intention. From Palm Beach to Bar Harbor, Boston to Aspen.</p>
+    <p><strong><a href={`${base}/essays/`}>Essays</a></strong> — Analysis and opinion on business, culture, markets, and technology. The stories behind the headlines.</p>
 
-    <p><strong>Style</strong> — Timeless wardrobe guides, quiet luxury picks, and the kind of style advice that ages well. No fast fashion, no trend-chasing.</p>
+    <p><strong><a href={`${base}/guides/`}>Guides</a></strong> — In-depth resources, playbooks, and how-to content on topics worth going deeper on.</p>
 
-    <p><strong>Recipes</strong> — Simple, elegant recipes that feel like home. The kind of food you make for the people you love.</p>
+    <p><strong><a href={`${base}/experiments/`}>Experiments</a></strong> — Real experiments in media, business, and technology. What worked, what didn't, documented honestly.</p>
 
-    <p><strong>Lifestyle</strong> — Intentional living, beautiful homes, book recommendations, and the small choices that make everyday life feel more considered.</p>
+    <p><strong><a href={`${base}/tools/`}>Tools</a></strong> — Curated recommendations for tools, stacks, and resources I actually use.</p>
 
-    <h2>Work With Us</h2>
+    <p><strong><a href={`${base}/ratlinks/`}>RatLinks Archive</a></strong> — The complete newsletter archive. 100+ editions of business, culture, markets, and everything in between.</p>
 
-    <p>For collaborations, partnerships, and press inquiries: <a href="mailto:collaborations@aileenlavin.com">collaborations@aileenlavin.com</a></p>
+    <h2>The Newsletter</h2>
 
-    <p>We work with brands that align with AILEEN's editorial values — quality, elegance, and authenticity. We don't promote anything we wouldn't use ourselves.</p>
+    <p>The EVAN Edit goes out weekly. Sharp takes on business, culture, markets, and the things worth paying attention to. <a href={`${base}/subscribe/`}>Subscribe here</a> or on <a href="https://ratlinks.substack.com" target="_blank" rel="noopener">Substack</a>.</p>
+
+    <h2>Get in Touch</h2>
+
+    <p>Email: <a href="mailto:evan.ratner@gmail.com">evan.ratner@gmail.com</a></p>
+    <p>Substack: <a href="https://ratlinks.substack.com" target="_blank" rel="noopener">ratlinks.substack.com</a></p>
   </div>
 
 </Base>

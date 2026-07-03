@@ -25,14 +25,14 @@
     const buttons = document.querySelectorAll('[data-action]');
 
     if (indicator) {
-      indicator.textContent = apiOnline ? 'API Connected' : 'API Offline — run: aileen serve';
+      indicator.textContent = apiOnline ? 'API Connected' : 'API Offline — run: evan serve';
       indicator.className = `api-status ${apiOnline ? 'api-status--online' : 'api-status--offline'}`;
     }
 
     buttons.forEach(btn => {
       if (!apiOnline) {
         (btn as HTMLButtonElement).disabled = true;
-        (btn as HTMLButtonElement).title = 'Start the API server: aileen serve';
+        (btn as HTMLButtonElement).title = 'Start the API server: evan serve';
         return;
       }
 

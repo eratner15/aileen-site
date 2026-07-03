@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Voice Engine is the system that extracts, stores, validates, and enforces Aileen's editorial voice across every piece of content — whether written by her, by a freelancer, or by AI Assist. It is the single most important differentiator between "another lifestyle blog" and a brand readers trust and return to.
+The Voice Engine is the system that extracts, stores, validates, and enforces Evan's editorial voice across every piece of content — whether written by her, by a freelancer, or by AI Assist. It is the single most important differentiator between "another lifestyle blog" and a brand readers trust and return to.
 
 ---
 
@@ -41,7 +41,7 @@ The Voice Engine is the system that extracts, stores, validates, and enforces Ai
 ## Component 1: Voice Profile (Prose)
 
 ### What it is
-A human-readable document that captures how Aileen writes — her tone, rhythm, vocabulary, perspective, and editorial instincts. This is the document a new writer or freelancer would read before writing for the brand.
+A human-readable document that captures how Evan writes — her tone, rhythm, vocabulary, perspective, and editorial instincts. This is the document a new writer or freelancer would read before writing for the brand.
 
 ### Current state
 `growth-engine/voice-profile.md` — EXISTS. Covers tone, sentence structure, word preferences, blocklist, post structure by type, and example phrases. Solid foundation but needs expansion.
@@ -51,7 +51,7 @@ A human-readable document that captures how Aileen writes — her tone, rhythm, 
 **A. Editorial Positioning Model**
 Codify the brand's editorial identity as explicit axes:
 
-| Axis | Aileen's Position | Anti-Position |
+| Axis | Evan's Position | Anti-Position |
 |------|-------------------|---------------|
 | Breadth vs. Depth | Curated, not exhaustive | "50 Best Restaurants" listicles |
 | Volume vs. Selection | Selective, not maximalist | Covering everything in a city |
@@ -62,7 +62,7 @@ Codify the brand's editorial identity as explicit axes:
 | Commercial Tone | Editorial, not salesy | "Shop my link" / affiliate-first |
 
 **B. Content Heuristics**
-How Aileen makes recommendations, codified as decision rules:
+How Evan makes recommendations, codified as decision rules:
 
 | Content Type | "Worth It" Signal | Red Flag |
 |---|---|---|
@@ -83,7 +83,7 @@ Each content type has slight voice variations:
 | Hotel Review | Experiential detail. Specific rooms, touches, feelings. "The kind of hotel that..." |
 | Recipe | Brief personal context, then clean instruction. No life story preamble. |
 | Newsletter | More intimate. "I've been meaning to tell you about..." First-person, conversational. |
-| Pinterest | Shorter, search-optimized, but still Aileen's vocabulary. No generic hooks. |
+| Pinterest | Shorter, search-optimized, but still Evan's vocabulary. No generic hooks. |
 | Social (IG/TikTok) | Most casual. Can be fragmentary. Still never uses blocklisted language. |
 
 ### How this strengthens the flywheel
@@ -93,7 +93,7 @@ The prose profile is the source of truth that everything else derives from. Bett
 It IS the voice. Everything downstream references this document.
 
 ### How this improves client ownership
-Aileen can hand this to any writer, any AI tool, any agency, and they produce on-brand content. Her voice is an asset she owns, not tribal knowledge locked in someone's head.
+Evan can hand this to any writer, any AI tool, any agency, and they produce on-brand content. Her voice is an asset she owns, not tribal knowledge locked in someone's head.
 
 ---
 
@@ -213,7 +213,7 @@ Only exists as a 15-word blocklist array in `writer.js`. No structured config fi
       "formality": 3.0,
       "max_exclamation_marks": 0,
       "emoji_allowed": false,
-      "tone_shift": "shorter, search-optimized, still Aileen's vocabulary"
+      "tone_shift": "shorter, search-optimized, still Evan's vocabulary"
     },
     "instagram": {
       "formality": 2.5,
@@ -226,13 +226,13 @@ Only exists as a 15-word blocklist array in `writer.js`. No structured config fi
 ```
 
 ### How this strengthens the flywheel
-Machine-readable rules enable automated validation. Every draft is scored before Aileen sees it. Bad drafts get caught by code, not by her time.
+Machine-readable rules enable automated validation. Every draft is scored before Evan sees it. Bad drafts get caught by code, not by her time.
 
 ### How this preserves voice
 The blocklist and patterns catch the most common AI voice failures. The scoring weights encode what matters most. The channel variants ensure voice adapts appropriately per platform without drifting.
 
 ### How this improves client ownership
-The config is a portable asset. If Aileen switches AI providers, CMS platforms, or hires writers, the rules travel with her.
+The config is a portable asset. If Evan switches AI providers, CMS platforms, or hires writers, the rules travel with her.
 
 ### How this helps compounding
 Automated enforcement means quality doesn't degrade as volume increases. Publishing 12 posts/month at consistent voice quality is what compounds — 12 posts with inconsistent voice is noise.
@@ -283,7 +283,7 @@ prompts/
 ```
 [BASE VOICE INJECTION]
 
-You are writing a RESTAURANT GUIDE for AILEEN Magazine.
+You are writing a RESTAURANT GUIDE for EVAN Magazine.
 
 CONTENT-TYPE RULES:
 - Open with city context, then personal stake ("the ones I go back to")
@@ -314,10 +314,10 @@ AFFILIATE PLACEMENTS:
 Content-type-specific prompts produce dramatically better first drafts. Better first drafts → less editing time → faster publishing → more content.
 
 ### How this preserves voice
-Each content type has its own voice calibration. A restaurant guide sounds different from a style post, but both sound like Aileen. Generic one-size-fits-all prompts produce generic output.
+Each content type has its own voice calibration. A restaurant guide sounds different from a style post, but both sound like Evan. Generic one-size-fits-all prompts produce generic output.
 
 ### How this improves client ownership
-Prompt templates are visible, editable assets. Aileen can tweak "how restaurant guides should sound" without touching code.
+Prompt templates are visible, editable assets. Evan can tweak "how restaurant guides should sound" without touching code.
 
 ### How this helps compounding
 As the prompt library grows, every content type gets faster to produce. New content types (e.g., "destination hub intro") can be added as new templates without redesigning the system.
@@ -355,12 +355,12 @@ Checks that can run without an LLM call:
 A focused evaluation prompt that scores voice alignment:
 
 ```
-You are a voice consistency evaluator for AILEEN Magazine.
+You are a voice consistency evaluator for EVAN Magazine.
 
 Given the VOICE PROFILE below and the DRAFT CONTENT, score the draft
 on these dimensions (each 0-20, total 0-100):
 
-1. TONE (0-20): Does it sound like Aileen? Confident but not loud,
+1. TONE (0-20): Does it sound like Evan? Confident but not loud,
    warm but not gushing, authoritative but not preachy?
 
 2. SPECIFICITY (0-20): Does it name specific dishes, rooms, pieces,
@@ -411,23 +411,23 @@ Layer 2: LLM Voice Score (~5 sec)
 ```
 
 ### How this strengthens the flywheel
-Validation catches bad content before it reaches Aileen. She spends time editing good drafts, not rejecting bad ones. Her time is the bottleneck — protecting it is the highest-leverage optimization.
+Validation catches bad content before it reaches Evan. She spends time editing good drafts, not rejecting bad ones. Her time is the bottleneck — protecting it is the highest-leverage optimization.
 
 ### How this preserves voice
-Two-layer validation catches both mechanical violations (blocklist) and subtle drift (tone, rhythm). The LLM judge is specifically trained to detect the difference between "sounds like Aileen" and "sounds like generic lifestyle content."
+Two-layer validation catches both mechanical violations (blocklist) and subtle drift (tone, rhythm). The LLM judge is specifically trained to detect the difference between "sounds like Evan" and "sounds like generic lifestyle content."
 
 ### How this improves client ownership
-Aileen can see the voice score for every draft. If she disagrees with a score, the feedback loop improves the system. The scoring thresholds are configurable — she decides what "good enough" means.
+Evan can see the voice score for every draft. If she disagrees with a score, the feedback loop improves the system. The scoring thresholds are configurable — she decides what "good enough" means.
 
 ### How this helps compounding
-As more content passes through the validator, the system learns what scores correlate with Aileen's actual edits. The voice corpus grows, LLM judge examples improve, and validation gets more accurate over time.
+As more content passes through the validator, the system learns what scores correlate with Evan's actual edits. The voice corpus grows, LLM judge examples improve, and validation gets more accurate over time.
 
 ---
 
 ## Component 5: Voice Corpus
 
 ### What it is
-A curated collection of canonical Aileen content, indexed by content type, that serves as few-shot examples for AI Assist and as the ground truth for the LLM voice judge.
+A curated collection of canonical Evan content, indexed by content type, that serves as few-shot examples for AI Assist and as the ground truth for the LLM voice judge.
 
 ### Current state
 No corpus exists. The voice profile has 6 example phrases but no full-length examples.
@@ -458,7 +458,7 @@ voice-corpus/
 1. **AI Assist drafting**: When generating a restaurant guide, the system pulls 1-2 canonical restaurant guide examples into the prompt as few-shot demonstrations
 2. **Voice Validator LLM judge**: The judge sees the canonical example alongside the draft to calibrate its scoring
 3. **Human reference**: Writers can read canonical examples to understand the standard
-4. **Corpus growth**: When Aileen publishes a post and marks it as "voice-approved," it can be added to the corpus
+4. **Corpus growth**: When Evan publishes a post and marks it as "voice-approved," it can be added to the corpus
 
 ### Selection Logic
 - Match by content type first
@@ -470,10 +470,10 @@ voice-corpus/
 More published content → larger corpus → better few-shot examples → better AI drafts → faster publishing → more content. This is the self-reinforcing loop that makes the voice engine improve over time.
 
 ### How this preserves voice
-The corpus IS Aileen's voice in concrete form. It's not rules about voice — it's actual examples of voice done right. LLMs learn better from examples than from instructions.
+The corpus IS Evan's voice in concrete form. It's not rules about voice — it's actual examples of voice done right. LLMs learn better from examples than from instructions.
 
 ### How this improves client ownership
-The corpus is Aileen's intellectual property — her best writing, organized and indexed. It's the most valuable asset in the system.
+The corpus is Evan's intellectual property — her best writing, organized and indexed. It's the most valuable asset in the system.
 
 ---
 
@@ -482,7 +482,7 @@ The corpus is Aileen's intellectual property — her best writing, organized and
 | Priority | Component | Effort | Dependencies |
 |---|---|---|---|
 | 1 | Voice Rules JSON | 2 hrs | None — can extract from existing voice-profile.md |
-| 2 | Expanded Voice Profile | 3 hrs | Analyze existing published content on aileenlavin.com |
+| 2 | Expanded Voice Profile | 3 hrs | Analyze existing published content on evanlavin.com |
 | 3 | Voice Corpus (initial) | 2 hrs | Use 4 existing posts as seed corpus |
 | 4 | Prompt Templates (core 5) | 4 hrs | Voice Rules + Voice Profile |
 | 5 | Rule-Based Validator | 3 hrs | Voice Rules JSON |
@@ -493,17 +493,17 @@ The corpus is Aileen's intellectual property — her best writing, organized and
 ### Integration Points
 
 - **Writer agent** (`growth-engine/src/agents/writer.js`): Replace single system prompt with prompt template loader + voice rules injection
-- **CLI** (`growth-engine/src/cli.js`): Add `aileen voice-check <file>` command for standalone voice validation
+- **CLI** (`growth-engine/src/cli.js`): Add `evan voice-check <file>` command for standalone voice validation
 - **Deploy bridge** (`growth-engine/src/deploy.js`): Run voice validator before deploying to Astro site
 - **Admin UI** (future): Voice score displayed on every draft, corpus management interface
-- **Content schema** (`aileen-site/src/content.config.ts`): Add `voiceScore: z.number().optional()` field
+- **Content schema** (`evan-site/src/content.config.ts`): Add `voiceScore: z.number().optional()` field
 
 ---
 
 ## What Success Looks Like
 
-1. Every AI-generated draft scores 70+ on voice alignment before Aileen sees it
-2. Aileen's editing time per post drops from 45+ minutes to 15-20 minutes
+1. Every AI-generated draft scores 70+ on voice alignment before Evan sees it
+2. Evan's editing time per post drops from 45+ minutes to 15-20 minutes
 3. A new writer could read the Voice Profile + see 3 corpus examples and produce on-brand content
 4. The system catches 95%+ of blocklist violations and 80%+ of tone drift automatically
-5. As the corpus grows, AI drafts become indistinguishable from Aileen's own writing at first read
+5. As the corpus grows, AI drafts become indistinguishable from Evan's own writing at first read

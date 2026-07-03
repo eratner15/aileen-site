@@ -5,7 +5,7 @@ Transform `cafecito-ai.com/magazine` from a visually clean clone into a scalable
 
 This is not a redesign brief. It is a build specification.
 
-The build must preserve the premium editorial feel of the AILEEN brand while expanding the site into a true content platform with:
+The build must preserve the premium editorial feel of the EVAN brand while expanding the site into a true content platform with:
 - crawlable topic architecture
 - reusable content templates
 - strong internal linking
@@ -18,7 +18,7 @@ The build must preserve the premium editorial feel of the AILEEN brand while exp
 
 The live reference points are:
 - Existing build: `https://cafecito-ai.com/magazine`
-- Original/reference brand site: `https://aileenlavin.com/`
+- Original/reference brand site: `https://evanlavin.com/`
 
 The current Cloudflare version is materially thinner than the reference site in visible topic depth, archive structure, category surface area, and monetization paths. The new build must correct that.
 
@@ -26,7 +26,7 @@ The current Cloudflare version is materially thinner than the reference site in 
 
 # 0. Core Delivery Principle
 
-This build is not just for internal use. It must be delivered as a clean, portable, client-ownable codebase that can be handed to Aileen with minimal friction.
+This build is not just for internal use. It must be delivered as a clean, portable, client-ownable codebase that can be handed to Evan with minimal friction.
 
 That changes the implementation standard.
 
@@ -993,7 +993,7 @@ Output required:
 
 Use the following operating instructions:
 
-You are not redesigning a blog. You are rebuilding a premium editorial publishing system optimized for search growth, subscription capture, and affiliate monetization. Preserve the AILEEN visual tone, but upgrade the site architecture, CMS schema, content templates, SEO infrastructure, and analytics so the site becomes a true traffic-compounding magazine.
+You are not redesigning a blog. You are rebuilding a premium editorial publishing system optimized for search growth, subscription capture, and affiliate monetization. Preserve the EVAN visual tone, but upgrade the site architecture, CMS schema, content templates, SEO infrastructure, and analytics so the site becomes a true traffic-compounding magazine.
 
 Priorities in order:
 1. crawlable architecture
@@ -1027,7 +1027,7 @@ Only after the core system is complete:
 - popular posts module powered by analytics
 - editorially curated search landing pages
 - image-heavy Pinterest landing pages
-- Aileen’s favorites / shop page
+- Evan’s favorites / shop page
 
 ---
 

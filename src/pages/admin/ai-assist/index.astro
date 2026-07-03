@@ -1,0 +1,241 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('posts');
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Build post options for selectors
+const postOptions = [...allPosts]
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+  .map(p => ({ id: p.id, title: p.data.title, pillar: p.data.pillar }));
+---
+
+<Base title="AI Assist | Admin" noindex={true}>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>AI Assist</h1>
+      <div class="api-status" id="api-status">
+        <span class="status-dot offline"></span>
+        <span class="status-text">Checking API...</span>
+      </div>
+    </div>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`}>Command Center</a>
+      <a href={`${base}/admin/content/`}>Content</a>
+      <a href={`${base}/admin/archive/`}>Evergreen</a>
+      <a href={`${base}/admin/seo/`}>SEO</a>
+      <a href={`${base}/admin/distribution/`}>Distribution</a>
+      <a href={`${base}/admin/revenue/`}>Revenue</a>
+      <a href={`${base}/admin/performance/`}>Performance</a>
+      <a href={`${base}/admin/ai-assist/`} class="active">AI Assist</a>
+      <a href={`${base}/admin/settings/`}>Settings</a>
+    </nav>
+
+    <div class="ai-layout">
+      <!-- Task Forms -->
+      <div class="tasks-panel">
+
+        <!-- Generate Article Brief -->
+        <div class="task-card">
+          <h3>Generate Article Brief</h3>
+          <p>Create a content plan for a new topic.</p>
+          <form class="ai-form" data-endpoint="/api/plan">
+            <input type="text" name="topic" placeholder="Enter topic (e.g., best coffee shops in Brooklyn)" required class="form-input" />
+            <button type="submit" class="btn btn-primary">Generate Brief</button>
+          </form>
+        </div>
+
+        <!-- Generate SEO Titles -->
+        <div class="task-card">
+          <h3>Generate SEO Titles</h3>
+          <p>Get optimized title suggestions for a post.</p>
+          <form class="ai-form" data-endpoint="/api/seo-fix">
+            <select name="slug" required class="form-select">
+              <option value="">Select a post...</option>
+              {postOptions.map(p => <option value={p.id}>[{p.pillar}] {p.title}</option>)}
+            </select>
+            <button type="submit" class="btn btn-primary">Generate Titles</button>
+          </form>
+        </div>
+
+        <!-- Generate Meta Description -->
+        <div class="task-card">
+          <h3>Generate Meta Description</h3>
+          <p>Create an SEO-optimized meta description.</p>
+          <form class="ai-form" data-endpoint="/api/generate-meta">
+            <select name="slug" required class="form-select">
+              <option value="">Select a post...</option>
+              {postOptions.map(p => <option value={p.id}>[{p.pillar}] {p.title}</option>)}
+            </select>
+            <button type="submit" class="btn btn-primary">Generate Meta</button>
+          </form>
+        </div>
+
+        <!-- Generate FAQ -->
+        <div class="task-card">
+          <h3>Generate FAQ</h3>
+          <p>Create structured FAQ for a post (helps with Google rich snippets).</p>
+          <form class="ai-form" data-endpoint="/api/generate-faq">
+            <select name="slug" required class="form-select">
+              <option value="">Select a post...</option>
+              {postOptions.map(p => <option value={p.id}>[{p.pillar}] {p.title}</option>)}
+            </select>
+            <button type="submit" class="btn btn-primary">Generate FAQ</button>
+          </form>
+        </div>
+
+        <!-- Turn Essay into Guide -->
+        <div class="task-card">
+          <h3>Turn Essay into Guide</h3>
+          <p>Transform an essay or archive post into a structured guide.</p>
+          <form class="ai-form" data-endpoint="/api/derivative">
+            <select name="slug" required class="form-select">
+              <option value="">Select a post...</option>
+              {postOptions.map(p => <option value={p.id}>[{p.pillar}] {p.title}</option>)}
+            </select>
+            <button type="submit" class="btn btn-primary">Generate Derivative</button>
+          </form>
+        </div>
+
+        <!-- Generate Affiliate Suggestions -->
+        <div class="task-card">
+          <h3>Generate Affiliate Suggestions</h3>
+          <p>Get product/affiliate recommendations for a post.</p>
+          <form class="ai-form" data-endpoint="/api/affiliate-suggest">
+            <select name="slug" required class="form-select">
+              <option value="">Select a post...</option>
+              {postOptions.map(p => <option value={p.id}>[{p.pillar}] {p.title}</option>)}
+            </select>
+            <button type="submit" class="btn btn-primary">Suggest Affiliates</button>
+          </form>
+        </div>
+
+        <!-- Voice Check -->
+        <div class="task-card">
+          <h3>Voice Check</h3>
+          <p>Run a voice consistency check on a post file.</p>
+          <form class="ai-form" data-endpoint="/api/voice-check">
+            <input type="text" name="filePath" placeholder="File path (e.g., src/content/posts/travel/post.md)" required class="form-input" />
+            <button type="submit" class="btn btn-primary">Check Voice</button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Results Panel -->
+      <div class="results-panel">
+        <h3>Results</h3>
+        <div id="results-content" class="results-content">
+          <p class="empty-state">Run a task to see results here.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .admin-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+  .admin-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; margin: 0; }
+  .api-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .status-dot.online { background: #22c55e; }
+  .status-dot.offline { background: #ef4444; }
+  .status-dot.checking { background: #f59e0b; }
+  .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.75rem; }
+  .admin-nav a { padding: 0.4rem 0.75rem; text-decoration: none; color: #666; font-size: 0.85rem; border-radius: 4px; transition: all 0.15s; }
+  .admin-nav a:hover { background: #f5f5f5; color: #000; }
+  .admin-nav a.active { background: #000; color: #fff; }
+  .ai-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  @media (max-width: 900px) { .ai-layout { grid-template-columns: 1fr; } }
+  .tasks-panel { display: flex; flex-direction: column; gap: 1rem; }
+  .task-card { background: #f5f5f5; border: 1px solid #e8e8e8; padding: 1.25rem; }
+  .task-card h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+  .task-card p { margin: 0 0 0.75rem; font-size: 0.8rem; color: #666; }
+  .ai-form { display: flex; gap: 0.5rem; align-items: flex-start; flex-wrap: wrap; }
+  .form-input { flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid #e8e8e8; font-size: 0.85rem; font-family: inherit; }
+  .form-select { flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid #e8e8e8; font-size: 0.85rem; font-family: inherit; background: #fff; }
+  .btn { padding: 0.5rem 1rem; border: 1px solid #000; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+  .btn-primary { background: #000; color: #fff; }
+  .btn-primary:hover { background: #333; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .results-panel { position: sticky; top: 2rem; }
+  .results-panel h3 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; margin: 0 0 1rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.5rem; }
+  .results-content { background: #f5f5f5; border: 1px solid #e8e8e8; padding: 1.25rem; min-height: 300px; max-height: 80vh; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap; font-family: monospace; }
+  .empty-state { color: #999; font-style: italic; font-family: 'Inter', -apple-system, sans-serif; }
+</style>
+
+<script>
+  const API_BASE = 'http://localhost:3001';
+
+  async function apiCall(endpoint: string, method = 'POST', body?: object) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return await res.json();
+    } catch (e: any) {
+      return { error: true, message: e.message || 'API unavailable. Is the growth engine running on localhost:3001?' };
+    }
+  }
+
+  // Check API health
+  (async () => {
+    const dot = document.querySelector('.status-dot')!;
+    const text = document.querySelector('.status-text')!;
+    dot.classList.remove('offline');
+    dot.classList.add('checking');
+    try {
+      const res = await fetch(`${API_BASE}/api/health`, { method: 'GET' });
+      if (res.ok) {
+        dot.classList.remove('checking');
+        dot.classList.add('online');
+        text.textContent = 'API Online';
+      } else { throw new Error(); }
+    } catch {
+      dot.classList.remove('checking');
+      dot.classList.add('offline');
+      text.textContent = 'API Offline';
+    }
+  })();
+
+  // Results panel
+  const resultsContent = document.getElementById('results-content')!;
+
+  function showResults(data: any) {
+    if (data.error) {
+      resultsContent.textContent = `Error: ${data.message}`;
+    } else {
+      resultsContent.textContent = JSON.stringify(data, null, 2);
+    }
+  }
+
+  // Wire up all forms
+  document.querySelectorAll('.ai-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const endpoint = (form as HTMLFormElement).dataset.endpoint!;
+      const formData = new FormData(form as HTMLFormElement);
+      const body: Record<string, string> = {};
+      formData.forEach((val, key) => { body[key] = val as string; });
+
+      const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const origText = btn.textContent;
+      btn.textContent = 'Working...';
+      btn.disabled = true;
+
+      resultsContent.textContent = 'Processing request...';
+
+      const result = await apiCall(endpoint, 'POST', body);
+      showResults(result);
+
+      btn.textContent = origText;
+      btn.disabled = false;
+    });
+  });
+</script>

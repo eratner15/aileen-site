@@ -1,8 +1,8 @@
-# Artifact 1: Aileen Flywheel Architecture
+# Artifact 1: Evan Flywheel Architecture
 
 ## The Flywheel in One Sentence
 
-Aileen's voice produces cluster-mapped content that compounds organic traffic, captures subscribers, generates affiliate revenue, and feeds data back into what to write next — each loop making the next one faster.
+Evan's voice produces cluster-mapped content that compounds organic traffic, captures subscribers, generates affiliate revenue, and feeds data back into what to write next — each loop making the next one faster.
 
 ---
 
@@ -13,7 +13,7 @@ Aileen's voice produces cluster-mapped content that compounds organic traffic, c
                          │   VOICE ENGINE        │
                          │   (the constraint     │
                          │    that makes it all   │
-                         │    sound like Aileen)  │
+                         │    sound like Evan)  │
                          └──────────┬───────────┘
                                     │
                          ┌──────────▼───────────┐
@@ -51,7 +51,7 @@ Aileen's voice produces cluster-mapped content that compounds organic traffic, c
 ## Loop 1: Voice → Content Creation
 
 ### What happens
-Aileen (or AI Assist conditioned on her voice) produces a draft. The Voice Engine ensures every sentence sounds like her — not like generic SEO copy, not like an influencer, not like a content farm.
+Evan (or AI Assist conditioned on her voice) produces a draft. The Voice Engine ensures every sentence sounds like her — not like generic SEO copy, not like an influencer, not like a content farm.
 
 ### Components involved
 | Component | Location | Status |
@@ -67,10 +67,10 @@ Aileen (or AI Assist conditioned on her voice) produces a draft. The Voice Engin
 Without voice consistency, content becomes generic. Generic content doesn't build a brand. Without a brand, there's no newsletter loyalty, no direct traffic, no reason to return. Voice is the moat.
 
 ### How this preserves voice
-The Voice Engine is the gatekeeper for every piece of content. AI Assist drafts are voice-conditioned at the prompt level and voice-validated before deploy. Nothing ships that doesn't sound like Aileen.
+The Voice Engine is the gatekeeper for every piece of content. AI Assist drafts are voice-conditioned at the prompt level and voice-validated before deploy. Nothing ships that doesn't sound like Evan.
 
 ### How this improves client ownership
-Aileen's voice is codified as an asset she owns — not locked in someone's head or a WordPress plugin. She can hand the voice profile to any writer, any AI tool, any agency, and they can produce on-brand content.
+Evan's voice is codified as an asset she owns — not locked in someone's head or a WordPress plugin. She can hand the voice profile to any writer, any AI tool, any agency, and they can produce on-brand content.
 
 ### How this helps compounding
 Every new piece of voice-consistent content reinforces the brand. Readers learn to trust the taste. Trust converts to subscribers. Subscribers convert to clicks. The voice is what makes content compound rather than just accumulate.
@@ -91,7 +91,7 @@ When a post is created, it's assigned to a primary category, one or more destina
 ### Components involved
 | Component | Location | Status |
 |-----------|----------|--------|
-| Content Schema | `aileen-site/src/content.config.ts` | EXISTS — has `pillar` field only |
+| Content Schema | `evan-site/src/content.config.ts` | EXISTS — has `pillar` field only |
 | Category Taxonomy | Implicit in pillar enum | EXISTS — 4 values: travel/style/recipes/lifestyle |
 | Destination Taxonomy | None | MISSING — no destination model |
 | Cluster Model | None | MISSING — no cluster/hub concept |
@@ -113,7 +113,7 @@ Clusters create topical authority. Google rewards depth. A site with 1 Miami res
 Cluster assignment is structural, not editorial. It doesn't touch voice directly — but it ensures voice-consistent content is organized to compound rather than scatter.
 
 ### How this improves client ownership
-Aileen can see her content organized by destination and category, understand her cluster depth at a glance, and make informed decisions about what to write next. WordPress buries this behind plugin chaos.
+Evan can see her content organized by destination and category, understand her cluster depth at a glance, and make informed decisions about what to write next. WordPress buries this behind plugin chaos.
 
 ### How this helps compounding
 Internal links pass authority. Clusters create topical relevance signals. Destination hubs become landing pages that rank for "[city] travel guide" while funneling traffic to deeper content. Every new post in a cluster strengthens the cluster, which strengthens every post in the cluster.
@@ -132,7 +132,7 @@ Internal links pass authority. Clusters create topical relevance signals. Destin
 ## Loop 3: Cluster Assignment → Distribution
 
 ### What happens
-Published content flows through distribution channels: organic search (automatic via indexing), email newsletter (The AILEEN Edit), Pinterest (8 pins per post), and social (Instagram/TikTok caption derivatives). Each channel has its own format but all drive traffic back to the site.
+Published content flows through distribution channels: organic search (automatic via indexing), email newsletter (The EVAN Edit), Pinterest (8 pins per post), and social (Instagram/TikTok caption derivatives). Each channel has its own format but all drive traffic back to the site.
 
 ### Components involved
 | Component | Location | Status |
@@ -141,18 +141,18 @@ Published content flows through distribution channels: organic search (automatic
 | Newsletter | `growth-engine/src/agents/newsletter.js` | EXISTS — generates drafts, no send integration |
 | Pinterest | `growth-engine/src/agents/pinner.js` | EXISTS — generates pin copy, no posting API |
 | Social (IG/TikTok) | None | MISSING — no caption generator |
-| RSS Feed | `aileen-site/src/pages/rss.xml.ts` | EXISTS |
-| OG/Twitter meta | `aileen-site/src/layouts/Base.astro` | EXISTS |
+| RSS Feed | `evan-site/src/pages/rss.xml.ts` | EXISTS |
+| OG/Twitter meta | `evan-site/src/layouts/Base.astro` | EXISTS |
 | Pinterest meta | Base.astro `p:domain_verify` | EXISTS — empty, needs verification code |
 
 ### How this strengthens the flywheel
 Content that isn't distributed doesn't compound. Organic search is the primary engine (80% of target traffic), but email creates direct return visits (immune to algorithm changes), Pinterest creates evergreen discovery (pins have 4-month half-life vs 48-hour for social), and social builds brand recognition that increases click-through rates on search results.
 
 ### How this preserves voice
-Each channel gets a voice variant. Newsletter is slightly more intimate ("I've been meaning to tell you about..."). Pinterest is shorter and search-optimized but still Aileen's vocabulary. Social can be more casual. The Voice Engine provides channel-specific prompt conditioning.
+Each channel gets a voice variant. Newsletter is slightly more intimate ("I've been meaning to tell you about..."). Pinterest is shorter and search-optimized but still Evan's vocabulary. Social can be more casual. The Voice Engine provides channel-specific prompt conditioning.
 
 ### How this improves client ownership
-Aileen sees all distribution status in one place. Instead of logging into WordPress + Mailchimp + Pinterest + Instagram separately, she sees "this post needs: newsletter copy, 8 pins, IG caption" and generates all derivatives from the admin.
+Evan sees all distribution status in one place. Instead of logging into WordPress + Mailchimp + Pinterest + Instagram separately, she sees "this post needs: newsletter copy, 8 pins, IG caption" and generates all derivatives from the admin.
 
 ### How this helps compounding
 Pinterest pins from 6 months ago still drive traffic today. Newsletter subscribers return directly. Social followers convert to newsletter subscribers who convert to regular readers. Each channel feeds the others.
@@ -192,7 +192,7 @@ Revenue funds content production. Affiliate data shows what readers actually buy
 Monetization must be editorial, not salesy. Product recommendations live inside the narrative ("The Khaite Eda sweater has become something of a modern classic" — that IS the affiliate surface). No "shop my link" energy. No interrupting the reading experience with commerce widgets mid-paragraph.
 
 ### How this improves client ownership
-Aileen manages her own affiliate links, sees which posts generate clicks, and controls product recommendations. No dependency on a managed service or agency for revenue.
+Evan manages her own affiliate links, sees which posts generate clicks, and controls product recommendations. No dependency on a managed service or agency for revenue.
 
 ### How this helps compounding
 As traffic grows, affiliate revenue grows proportionally. At 50K sessions, Mediavine display ads add a base revenue layer. Newsletter list enables sponsorship deals. Multiple revenue streams compound independently.
@@ -230,10 +230,10 @@ Data from analytics, search console, and affiliate performance identifies: which
 The refresh loop is what turns linear content production into exponential growth. Without it, old posts decay. With it, every post is a living asset that gets stronger over time.
 
 ### How this preserves voice
-Refreshed content goes through the same voice validation as new content. AI Assist generates refresh suggestions; Aileen reviews and approves. Voice consistency is maintained even as content evolves.
+Refreshed content goes through the same voice validation as new content. AI Assist generates refresh suggestions; Evan reviews and approves. Voice consistency is maintained even as content evolves.
 
 ### How this improves client ownership
-Aileen doesn't need to guess what to work on. The system tells her: "Your Palm Beach restaurant guide dropped from position 4 to position 9. Here's what to update. Your Miami cluster is missing a hotel review — here's a brief." She becomes a strategic editor, not a hamster on a content treadmill.
+Evan doesn't need to guess what to work on. The system tells her: "Your Palm Beach restaurant guide dropped from position 4 to position 9. Here's what to update. Your Miami cluster is missing a hotel review — here's a brief." She becomes a strategic editor, not a hamster on a content treadmill.
 
 ### How this helps compounding
 Refreshed content that recovers rankings is the highest-ROI activity in content marketing. A 30-minute update to an existing post can recover more traffic than a new 2,000-word post. The refresh loop ensures nothing rots.
@@ -252,7 +252,7 @@ Refreshed content that recovers rankings is the highest-ROI activity in content 
 ## Loop 6: Refresh → Voice (Full Circle)
 
 ### What happens
-The refresh loop feeds back into the Voice Engine. As more content is published, the voice corpus grows. AI Assist gets better at matching Aileen's voice because there are more examples to learn from. Refreshed content ensures the voice corpus stays current — not frozen in how she wrote 2 years ago.
+The refresh loop feeds back into the Voice Engine. As more content is published, the voice corpus grows. AI Assist gets better at matching Evan's voice because there are more examples to learn from. Refreshed content ensures the voice corpus stays current — not frozen in how she wrote 2 years ago.
 
 ### How this closes the flywheel
 - More content → better voice model → faster content creation → more content
@@ -275,7 +275,7 @@ The refresh loop feeds back into the Voice Engine. As more content is published,
 | Monetization | `[AFFILIATE]` placeholder tags | Product cards + booking CTAs + click tracking + disclosure |
 | Newsletter | Form with no backend | Connected to email provider, variant CTAs, signup tracking |
 | Analytics | None | GA4 + GSC + custom events + performance dashboards |
-| Refresh Loop | Manual `aileen audit` via CLI | Automated scoring + refresh queue + striking distance alerts |
+| Refresh Loop | Manual `evan audit` via CLI | Automated scoring + refresh queue + striking distance alerts |
 | Admin Experience | Terminal CLI | Web-based dashboards (see Artifact 3) |
 | Client Ownership | Requires developer for most operations | Self-service publishing, monitoring, and optimization |
 
@@ -289,7 +289,7 @@ The flywheel should be built from the inside out: voice first, then creation, th
 |---|---|---|
 | 1 | Voice Engine (Artifact 2) | Everything downstream depends on voice consistency |
 | 2 | Content Schema + Destinations | Architecture must exist before content can be properly clustered |
-| 3 | Admin Editor + AI Assist | Aileen needs to be able to publish without developer help |
+| 3 | Admin Editor + AI Assist | Evan needs to be able to publish without developer help |
 | 4 | Internal Linking + Cluster Logic | This is what makes content compound instead of just accumulate |
 | 5 | Newsletter Integration | Email is the owned distribution channel; reduces Google dependency |
 | 6 | Monetization Components | Revenue funds everything else |

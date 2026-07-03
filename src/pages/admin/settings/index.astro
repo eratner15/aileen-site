@@ -1,0 +1,195 @@
+---
+import Base from '../../../layouts/Base.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const gaId = import.meta.env.PUBLIC_GA_ID || '';
+---
+
+<Base title="Settings | Admin" noindex={true}>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>Settings</h1>
+    </div>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`}>Command Center</a>
+      <a href={`${base}/admin/content/`}>Content</a>
+      <a href={`${base}/admin/archive/`}>Evergreen</a>
+      <a href={`${base}/admin/seo/`}>SEO</a>
+      <a href={`${base}/admin/distribution/`}>Distribution</a>
+      <a href={`${base}/admin/revenue/`}>Revenue</a>
+      <a href={`${base}/admin/performance/`}>Performance</a>
+      <a href={`${base}/admin/ai-assist/`}>AI Assist</a>
+      <a href={`${base}/admin/settings/`} class="active">Settings</a>
+    </nav>
+
+    <!-- Integration Status -->
+    <section class="admin-section">
+      <h2>Integration Status</h2>
+      <div class="integrations">
+        <div class="integration-row">
+          <span class={`status-indicator ${gaId ? 'online' : 'offline'}`}></span>
+          <div class="integration-info">
+            <h3>Google Analytics 4</h3>
+            <p>{gaId ? `Connected (${gaId})` : 'Not configured'}</p>
+          </div>
+        </div>
+
+        <div class="integration-row">
+          <span class="status-indicator offline" id="pinterest-status"></span>
+          <div class="integration-info">
+            <h3>Pinterest Verification</h3>
+            <p>Check your site header for p:domain_verify meta tag</p>
+          </div>
+        </div>
+
+        <div class="integration-row">
+          <span class="status-indicator offline" id="api-dot"></span>
+          <div class="integration-info">
+            <h3>Growth Engine API</h3>
+            <p id="api-text">Checking localhost:3001...</p>
+          </div>
+        </div>
+
+        <div class="integration-row">
+          <span class="status-indicator offline"></span>
+          <div class="integration-info">
+            <h3>Newsletter Provider</h3>
+            <p>Not configured (forms present, no backend connected)</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Environment Variables Reference -->
+    <section class="admin-section">
+      <h2>Environment Variables Reference</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Purpose</th>
+              <th>Where Used</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>PUBLIC_GA_ID</code></td>
+              <td>Google Analytics 4 measurement ID (e.g., G-XXXXXXXXXX)</td>
+              <td>Base layout, event tracking</td>
+            </tr>
+            <tr>
+              <td><code>ANTHROPIC_API_KEY</code></td>
+              <td>API key for Claude AI (used by the growth engine, not Astro)</td>
+              <td>Growth engine .env</td>
+            </tr>
+            <tr>
+              <td><code>BASE_URL</code></td>
+              <td>Site base path (set in astro.config.mjs, typically /magazine)</td>
+              <td>All page links, nav, sitemap</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Setup Guides -->
+    <section class="admin-section">
+      <h2>Setup Guides</h2>
+
+      <div class="guide-card">
+        <h3>Google Analytics 4</h3>
+        <ol>
+          <li>Create a GA4 property at <a href="https://analytics.google.com" target="_blank">analytics.google.com</a></li>
+          <li>Copy the Measurement ID (starts with G-)</li>
+          <li>Add <code>PUBLIC_GA_ID=G-XXXXXXXXXX</code> to your Astro environment or wrangler.toml</li>
+          <li>Rebuild and deploy</li>
+        </ol>
+      </div>
+
+      <div class="guide-card">
+        <h3>Pinterest Verification</h3>
+        <ol>
+          <li>Go to <a href="https://pinterest.com/settings/claim" target="_blank">Pinterest Claim Settings</a></li>
+          <li>Choose "Add an HTML tag" method</li>
+          <li>Copy the content value from the meta tag</li>
+          <li>Update the <code>p:domain_verify</code> content in <code>src/layouts/Base.astro</code></li>
+          <li>Deploy and click Verify in Pinterest</li>
+        </ol>
+      </div>
+
+      <div class="guide-card">
+        <h3>Growth Engine API</h3>
+        <ol>
+          <li>Navigate to <code>~/aileen-growth-engine</code></li>
+          <li>Add <code>ANTHROPIC_API_KEY</code> to <code>.env</code></li>
+          <li>Run <code>npm install</code></li>
+          <li>Start the server: <code>node src/index.js serve</code></li>
+          <li>API will be available at <code>http://localhost:3001</code></li>
+        </ol>
+      </div>
+
+      <div class="guide-card">
+        <h3>Newsletter Provider</h3>
+        <ol>
+          <li>Choose a provider: ConvertKit, Mailchimp, Buttondown, or Substack</li>
+          <li>Create an account and get your API key</li>
+          <li>Add a route in the growth engine to handle form submissions</li>
+          <li>Update the newsletter form handler in Base.astro to POST to your endpoint</li>
+        </ol>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .admin-wrap { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+  .admin-header { margin-bottom: 1rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+  .admin-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; margin: 0; }
+  .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.75rem; }
+  .admin-nav a { padding: 0.4rem 0.75rem; text-decoration: none; color: #666; font-size: 0.85rem; border-radius: 4px; transition: all 0.15s; }
+  .admin-nav a:hover { background: #f5f5f5; color: #000; }
+  .admin-nav a.active { background: #000; color: #fff; }
+  .admin-section { margin-bottom: 2.5rem; }
+  .admin-section h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; margin: 0 0 1rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.5rem; }
+  .integrations { display: flex; flex-direction: column; gap: 1rem; }
+  .integration-row { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f5f5f5; border: 1px solid #e8e8e8; }
+  .status-indicator { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .status-indicator.online { background: #22c55e; }
+  .status-indicator.offline { background: #ef4444; }
+  .status-indicator.checking { background: #f59e0b; }
+  .integration-info h3 { margin: 0; font-size: 0.95rem; }
+  .integration-info p { margin: 0.2rem 0 0; font-size: 0.8rem; color: #666; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #e8e8e8; }
+  th { font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; color: #666; background: #f5f5f5; }
+  code { background: #f5f5f5; padding: 0.1rem 0.3rem; font-size: 0.8rem; border: 1px solid #e8e8e8; }
+  .guide-card { background: #f5f5f5; border: 1px solid #e8e8e8; padding: 1.25rem; margin-bottom: 1rem; }
+  .guide-card h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+  .guide-card ol { margin: 0; padding-left: 1.5rem; font-size: 0.85rem; line-height: 1.8; }
+  .guide-card a { color: #000; }
+</style>
+
+<script>
+  const API_BASE = 'http://localhost:3001';
+
+  (async () => {
+    const dot = document.getElementById('api-dot')!;
+    const text = document.getElementById('api-text')!;
+    dot.classList.add('checking');
+    try {
+      const res = await fetch(`${API_BASE}/api/health`, { method: 'GET' });
+      if (res.ok) {
+        dot.classList.remove('checking', 'offline');
+        dot.classList.add('online');
+        text.textContent = 'Connected (localhost:3001)';
+      } else { throw new Error(); }
+    } catch {
+      dot.classList.remove('checking');
+      dot.classList.add('offline');
+      text.textContent = 'Offline -- start with: node src/index.js serve';
+    }
+  })();
+</script>

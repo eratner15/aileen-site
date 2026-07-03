@@ -1,46 +1,22 @@
 ---
 import Base from '../layouts/Base.astro';
-
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
-<Base title="Subscribe" description="Get The AILEEN Edit — a weekly letter on what's worth your time in travel, style, and everything in between.">
+<Base title="Subscribe" description="Subscribe to The EVAN Edit — business, culture, markets, and everything worth knowing. Weekly.">
 
   <section class="article-header">
-    <h1>The AILEEN Edit</h1>
-    <p class="article-meta">A weekly letter on what's worth your time</p>
+    <h1>The EVAN Edit</h1>
+    <p class="article-meta">Business, culture, markets, and everything worth knowing.</p>
   </section>
 
   <div class="article-body">
+    <p>A weekly newsletter with sharp takes on business, culture, markets, and the things worth paying attention to. No fluff, no filler.</p>
 
-    <p>Every week, I send one email with the things that are actually worth knowing — the restaurant that just earned a permanent spot in my rotation, the hotel that exceeded expectations, the piece I'm adding to my closet, the recipe I made three times this month.</p>
-
-    <p>It's personal, curated, and short. No filler. No sponsored content pretending to be editorial. Just what I'd tell a friend if she asked, "What's good right now?"</p>
-
-    <h2>What you'll get</h2>
-    <ul>
-      <li><strong>The feature</strong> — one deep guide or editorial worth reading this week</li>
-      <li><strong>Worth your time</strong> — 2-3 picks across travel, style, and food</li>
-      <li><strong>The Edit</strong> — curated product finds, restaurant discoveries, travel intel</li>
-      <li><strong>A personal note</strong> — what I'm thinking about, working on, or going back to</li>
-    </ul>
-
-    <div class="subscribe-form-section">
-      <form class="newsletter-form subscribe-page-form" data-newsletter="true">
-        <input type="email" placeholder="Your email address" aria-label="Email address" required />
-        <button type="submit">Subscribe</button>
-      </form>
-      <p class="newsletter-privacy">We respect your privacy. Unsubscribe anytime. No spam, ever.</p>
+    <div class="subscribe-form-section" style="margin: 2rem 0;">
+      <iframe src="https://ratlinks.substack.com/embed" width="100%" height="150" style="border:none; background:white;" frameborder="0" scrolling="no"></iframe>
     </div>
 
-    <h2>Start here</h2>
-    <p>New to AILEEN? These are the guides worth reading first:</p>
-    <ul>
-      <li><a href={`${base}/travel/best-restaurants-miami/`}>Best Restaurants in Miami — A Local's Guide</a></li>
-      <li><a href={`${base}/style/quiet-luxury-brands/`}>Quiet Luxury Brands Worth Knowing</a></li>
-      <li><a href={`${base}/travel/boston-travel-guide/`}>Boston Travel Guide</a></li>
-    </ul>
-
+    <p style="margin-top: 2rem; color: #666;">Or subscribe directly at <a href="https://ratlinks.substack.com" target="_blank" rel="noopener">ratlinks.substack.com</a>.</p>
   </div>
 
 </Base>

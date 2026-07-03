@@ -1,6 +1,6 @@
 You are a senior editorial platform architect, growth product builder, SEO systems engineer, AI workflow designer, and full-stack engineer.
 
-Your mission is to transform `cafecito-ai.com/magazine` into a true editorial flywheel built around Aileen’s voice, taste, and publishing patterns.
+Your mission is to transform `cafecito-ai.com/magazine` into a true editorial flywheel built around Evan’s voice, taste, and publishing patterns.
 
 This is not a blog redesign.
 This is not a homepage clone.
@@ -21,13 +21,13 @@ The output must be a stronger product than the original WordPress experience and
 TOP-LEVEL PRODUCT VISION
 ==================================================
 
-Build “Aileen OS”:
+Build “Evan OS”:
 
-A premium editorial publishing system that codifies Aileen’s voice and turns it into a scalable flywheel.
+A premium editorial publishing system that codifies Evan’s voice and turns it into a scalable flywheel.
 
 The flywheel should work like this:
 
-1. Aileen publishes or generates a high-quality voice-aligned guide
+1. Evan publishes or generates a high-quality voice-aligned guide
 2. the guide is automatically placed into the right cluster, destination, and category
 3. the system recommends related links, FAQs, CTAs, and follow-up content
 4. the content ranks organically and also becomes distributable via email, social, and Pinterest
@@ -83,12 +83,12 @@ Key visual principles:
 - mobile experience that still feels premium, not compressed or utilitarian
 
 ==================================================
-PART 1 — FIRST BUILD AILEEN’S VOICE ENGINE
+PART 1 — FIRST BUILD EVAN’S VOICE ENGINE
 ==================================================
 
-You must treat Aileen’s existing published articles as source material for a reusable voice system.
+You must treat Evan’s existing published articles as source material for a reusable voice system.
 
-Your first task is to extract and codify her voice from content on `aileenlavin.com` and any migrated content available in the repo or CMS.
+Your first task is to extract and codify her voice from content on `evanlavin.com` and any migrated content available in the repo or CMS.
 
 Build a structured “Voice Engine” with the following components:
 
@@ -168,7 +168,7 @@ The AI Assist must support:
 9. generate Instagram/TikTok caption ideas
 10. generate Pinterest title + description ideas
 11. generate “follow-up pages to publish next” suggestions
-12. rewrite content blocks for stronger Aileen-style alignment
+12. rewrite content blocks for stronger Evan-style alignment
 13. generate commerce blurbs for products, hotels, destinations, or restaurants
 14. generate “top picks” summary boxes
 15. generate content refresh suggestions for stale pages
@@ -194,7 +194,7 @@ PART 3 — BUILD THE CONTENT SYSTEM AS REUSABLE PRODUCTS
 ==================================================
 
 Do not treat articles as generic posts.
-Build structured content templates that turn Aileen’s writing style into repeatable editorial products.
+Build structured content templates that turn Evan’s writing style into repeatable editorial products.
 
 Required content types:
 - Article
@@ -336,7 +336,7 @@ Build distribution and audience capture features that do not depend on Google al
 Support:
 - newsletter signup modules
 - destination-specific signup variants
-- “The Aileen Edit” newsletter positioning
+- “The Evan Edit” newsletter positioning
 - social derivative generation
 - Pinterest metadata generation
 - homepage and category merchandising
@@ -431,7 +431,7 @@ Do not fake data without labeling it.
 PART 7 — BUILD THE CLIENT-OWNABLE ADMIN EXPERIENCE
 ==================================================
 
-The platform must be handoff-ready and easy for Aileen to operate.
+The platform must be handoff-ready and easy for Evan to operate.
 
 She must be able to:
 - publish new content
@@ -543,7 +543,7 @@ PART 11 — EXECUTION ORDER
 Work in this order:
 
 PHASE A — audit current repo and architecture
-PHASE B — extract and codify Aileen Voice Engine
+PHASE B — extract and codify Evan Voice Engine
 PHASE C — design content models and taxonomy
 PHASE D — build page templates and architecture
 PHASE E — build AI Assist layer
@@ -567,7 +567,7 @@ Not a blog.
 Not an AI content machine.
 Not a WordPress downgrade.
 
-It should feel like a premium editorial operating system trained on Aileen’s taste and built to compound traffic, revenue, and usefulness over time.
+It should feel like a premium editorial operating system trained on Evan’s taste and built to compound traffic, revenue, and usefulness over time.
 
 Start with:
 1. auditing the current codebase

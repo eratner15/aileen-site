@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PostCard from '../../components/PostCard.astro';
+
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const experiments = allPosts
+  .filter(p => p.data.contentType === 'experiment')
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+function postUrl(post: typeof allPosts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
+---
+
+<Base title="Experiments" description="Real experiments in media, business, and technology. By Evan Ratner.">
+  <section class="article-header">
+    <h1>Experiments</h1>
+    <p class="article-meta">Real experiments, documented honestly. What worked, what didn't, and what I learned.</p>
+  </section>
+
+  <div class="container" style="padding-bottom: 3rem;">
+    {experiments.length > 0 ? (
+      <div class="post-grid">
+        {experiments.map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '600').replace('675', '400')}
+          />
+        ))}
+      </div>
+    ) : (
+      <p style="text-align: center; color: #999;">No experiments published yet. Experiments will document real tests in media, business, and technology.</p>
+    )}
+  </div>
+</Base>

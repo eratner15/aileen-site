@@ -1,12 +1,12 @@
-# AILEEN Magazine
+# EVAN Magazine
 
 A premium editorial publishing platform built on Astro, deployed to Cloudflare Workers at `cafecito-ai.com/magazine`.
 
 ## Architecture
 
 ```
-aileen-site/           Astro 5 static site (frontend)
-aileen-growth-engine/  Node.js CLI (content automation, AI Assist, voice engine)
+evan-site/           Astro 5 static site (frontend)
+evan-growth-engine/  Node.js CLI (content automation, AI Assist, voice engine)
 ```
 
 ### Stack
@@ -116,10 +116,10 @@ Copy `.env.example` to `.env` and fill in:
 ## Growth Engine CLI
 
 ```bash
-aileen plan          # Weekly content plan
-aileen write [id]    # AI-assisted draft
-aileen deploy <slug> # Copy to Astro site
-aileen publish       # Build + deploy
-aileen pins [id]     # Pinterest pin copy
-aileen audit [id]    # SEO audit
+evan plan          # Weekly content plan
+evan write [id]    # AI-assisted draft
+evan deploy <slug> # Copy to Astro site
+evan publish       # Build + deploy
+evan pins [id]     # Pinterest pin copy
+evan audit [id]    # SEO audit
 ```

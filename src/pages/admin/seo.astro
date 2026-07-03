@@ -1,302 +1,310 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import { getCollection } from 'astro:content';
 
 const allPosts = await getCollection('posts');
-const published = allPosts.filter(p => !p.data.draft);
-
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// SEO health checks
-const longTitle = published.filter(p => p.data.title.length > 60);
-const missingMeta = published.filter(p => !p.data.metaDescription || p.data.metaDescription.length === 0 || p.data.metaDescription.length > 160);
-const missingOgImage = published.filter(p => !p.data.image || p.data.image.includes('placeholder'));
-const missingAlt = published.filter(p => !p.data.imageAlt || p.data.imageAlt.length === 0);
-const missingKeyword = published.filter(p => !p.data.targetKeyword || p.data.targetKeyword.length === 0);
-const keywordNotInTitle = published.filter(p => {
-  if (!p.data.targetKeyword) return false;
-  return !p.data.title.toLowerCase().includes(p.data.targetKeyword.toLowerCase());
-});
-
-// Thin content estimate (rough: body length < 4000 chars ~ 800 words)
-const thinContent: typeof published = [];
-for (const p of published) {
-  const { body } = p;
-  if (body && body.length < 4000) {
-    thinContent.push(p);
-  }
+// Word count estimator
+function estimateWords(body: string | undefined): number {
+  if (!body) return 0;
+  return body.split(/\s+/).filter(w => w.length > 0).length;
 }
 
-// Posts by pillar
-const byPillar: Record<string, number> = {};
-for (const p of published) {
-  byPillar[p.data.pillar] = (byPillar[p.data.pillar] || 0) + 1;
+// SEO Health Scorecard summary
+const withMeta = allPosts.filter(p => p.data.metaDescription && p.data.metaDescription.length > 0);
+const withKeyword = allPosts.filter(p => p.data.targetKeyword && p.data.targetKeyword.length > 0);
+const withFaq = allPosts.filter(p => p.data.faq && p.data.faq.length > 0);
+const wordCounts = allPosts.map(p => estimateWords(p.body));
+const avgWordCount = wordCounts.length > 0 ? Math.round(wordCounts.reduce((a, b) => a + b, 0) / wordCounts.length) : 0;
+const over1500 = wordCounts.filter(w => w > 1500).length;
+
+// 7-check audit per post
+interface AuditResult {
+  id: string;
+  title: string;
+  pillar: string;
+  checks: { name: string; pass: boolean }[];
+  score: number;
+  passed: number;
+  failed: number;
 }
 
-// Missing destinations
-const missingDestinations = published.filter(p => !p.data.destinations || p.data.destinations.length === 0);
+const audits: AuditResult[] = allPosts.map(p => {
+  const words = estimateWords(p.body);
+  const checks = [
+    { name: 'Title 50-60 chars', pass: p.data.title.length >= 50 && p.data.title.length <= 60 },
+    { name: 'Meta description', pass: !!p.data.metaDescription && p.data.metaDescription.length > 0 },
+    { name: 'Target keyword', pass: !!p.data.targetKeyword && p.data.targetKeyword.length > 0 },
+    { name: 'Has FAQ', pass: p.data.faq && p.data.faq.length > 0 },
+    { name: 'Word count > 1000', pass: words > 1000 },
+    { name: 'Image alt text', pass: !!p.data.imageAlt && p.data.imageAlt.length > 0 },
+    { name: 'Internal links', pass: p.data.relatedPosts && p.data.relatedPosts.length > 0 },
+  ];
+  const passed = checks.filter(c => c.pass).length;
+  return {
+    id: p.id,
+    title: p.data.title,
+    pillar: p.data.pillar,
+    checks,
+    score: Math.round((passed / checks.length) * 100),
+    passed,
+    failed: checks.length - passed,
+  };
+}).sort((a, b) => a.score - b.score); // worst first
 
-// SEO score distribution
-const withSeoScore = published.filter(p => p.data.seoScore !== undefined && p.data.seoScore !== null);
-const goodSeo = withSeoScore.filter(p => p.data.seoScore! >= 75);
-const warnSeo = withSeoScore.filter(p => p.data.seoScore! >= 50 && p.data.seoScore! < 75);
-const badSeo = withSeoScore.filter(p => p.data.seoScore! < 50);
+// Missing internal links
+const missingLinks = allPosts
+  .filter(p => !p.data.relatedPosts || p.data.relatedPosts.length === 0)
+  .map(p => ({ id: p.id, title: p.data.title }));
 
-// Overall SEO health score
-const totalChecks = published.length * 7;
-const totalIssues = longTitle.length + missingMeta.length + missingOgImage.length + missingAlt.length + missingKeyword.length + keywordNotInTitle.length + thinContent.length;
-const healthPercent = totalChecks > 0 ? Math.round(((totalChecks - totalIssues) / totalChecks) * 100) : 0;
+// Keyword gaps
+const keywordGaps = allPosts
+  .filter(p => !p.data.targetKeyword || p.data.targetKeyword.length === 0)
+  .map(p => ({ id: p.id, title: p.data.title }));
+
+// Overall health
+const totalChecks = allPosts.length * 7;
+const totalPassed = audits.reduce((s, a) => s + a.passed, 0);
+const overallHealth = totalChecks > 0 ? Math.round((totalPassed / totalChecks) * 100) : 0;
 ---
 
-<Base title="SEO Dashboard | Admin" noindex={true}>
-  <div class="admin-layout">
-    <h1>SEO Dashboard</h1>
-    <p class="admin-subtitle">Search optimization health and audit</p>
-
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
-
-    <div class="admin-actions-bar">
-      <button class="admin-btn" data-action="audit">Run SEO Audit (All Posts)</button>
+<Base title="SEO Engine | Admin" noindex={true}>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>SEO Engine</h1>
     </div>
-    <pre id="action-output"></pre>
 
     <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/archive/`} class="admin-nav-link">Archive</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link active">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
+      <a href={`${base}/admin/`}>Command Center</a>
+      <a href={`${base}/admin/content/`}>Content</a>
+      <a href={`${base}/admin/archive/`}>Evergreen</a>
+      <a href={`${base}/admin/seo/`} class="active">SEO</a>
+      <a href={`${base}/admin/distribution/`}>Distribution</a>
+      <a href={`${base}/admin/revenue/`}>Revenue</a>
+      <a href={`${base}/admin/performance/`}>Performance</a>
+      <a href={`${base}/admin/ai-assist/`}>AI Assist</a>
+      <a href={`${base}/admin/settings/`}>Settings</a>
     </nav>
 
     <!-- SEO Health Scorecard -->
-    <div class="admin-stats-grid">
-      <div class="admin-stat">
-        <span class={`admin-stat-number ${healthPercent >= 75 ? 'voice-score--good' : healthPercent >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{healthPercent}%</span>
-        <span class="admin-stat-label">Overall SEO Health</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{published.length}</span>
-        <span class="admin-stat-label">Published Posts</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{totalIssues}</span>
-        <span class="admin-stat-label">Total Issues</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{withSeoScore.length}</span>
-        <span class="admin-stat-label">Have SEO Score</span>
-      </div>
-    </div>
-
-    <!-- SEO Issues Breakdown -->
-    <div class="admin-card">
+    <section class="admin-section">
       <h2>SEO Health Scorecard</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Check</th>
-            <th>Issues</th>
-            <th>Passing</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Title length (&le; 60 chars)</td>
-            <td>{longTitle.length}</td>
-            <td>{published.length - longTitle.length}</td>
-            <td><span class={`status-badge ${longTitle.length === 0 ? 'voice-score--good' : 'voice-score--warn'}`}>{longTitle.length === 0 ? 'Pass' : 'Issues'}</span></td>
-          </tr>
-          <tr>
-            <td>Meta description (present, &le; 160 chars)</td>
-            <td>{missingMeta.length}</td>
-            <td>{published.length - missingMeta.length}</td>
-            <td><span class={`status-badge ${missingMeta.length === 0 ? 'voice-score--good' : 'voice-score--warn'}`}>{missingMeta.length === 0 ? 'Pass' : 'Issues'}</span></td>
-          </tr>
-          <tr>
-            <td>OG image (no placeholder)</td>
-            <td>{missingOgImage.length}</td>
-            <td>{published.length - missingOgImage.length}</td>
-            <td><span class={`status-badge ${missingOgImage.length === 0 ? 'voice-score--good' : 'voice-score--bad'}`}>{missingOgImage.length === 0 ? 'Pass' : 'Issues'}</span></td>
-          </tr>
-          <tr>
-            <td>Image alt text</td>
-            <td>{missingAlt.length}</td>
-            <td>{published.length - missingAlt.length}</td>
-            <td><span class={`status-badge ${missingAlt.length === 0 ? 'voice-score--good' : 'voice-score--warn'}`}>{missingAlt.length === 0 ? 'Pass' : 'Issues'}</span></td>
-          </tr>
-          <tr>
-            <td>Target keyword set</td>
-            <td>{missingKeyword.length}</td>
-            <td>{published.length - missingKeyword.length}</td>
-            <td><span class={`status-badge ${missingKeyword.length === 0 ? 'voice-score--good' : 'voice-score--bad'}`}>{missingKeyword.length === 0 ? 'Pass' : 'Issues'}</span></td>
-          </tr>
-          <tr>
-            <td>Keyword in title</td>
-            <td>{keywordNotInTitle.length}</td>
-            <td>{published.length - keywordNotInTitle.length}</td>
-            <td><span class={`status-badge ${keywordNotInTitle.length === 0 ? 'voice-score--good' : 'voice-score--warn'}`}>{keywordNotInTitle.length === 0 ? 'Pass' : 'Issues'}</span></td>
-          </tr>
-          <tr>
-            <td>Content depth (&ge; ~800 words)</td>
-            <td>{thinContent.length}</td>
-            <td>{published.length - thinContent.length}</td>
-            <td><span class={`status-badge ${thinContent.length === 0 ? 'voice-score--good' : 'voice-score--warn'}`}>{thinContent.length === 0 ? 'Pass' : 'Issues'}</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- SEO Score Distribution -->
-    {withSeoScore.length > 0 && (
-      <div class="admin-card">
-        <h2>SEO Score Distribution</h2>
-        <div class="admin-bar-chart">
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">Good (75+)</span>
-            <div class="admin-bar-track">
-              <div class="admin-bar-fill voice-score--good" style={`width: ${Math.round(goodSeo.length / withSeoScore.length * 100)}%`}></div>
-            </div>
-            <span class="admin-bar-count">{goodSeo.length}</span>
-          </div>
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">Needs Work (50-74)</span>
-            <div class="admin-bar-track">
-              <div class="admin-bar-fill voice-score--warn" style={`width: ${Math.round(warnSeo.length / withSeoScore.length * 100)}%`}></div>
-            </div>
-            <span class="admin-bar-count">{warnSeo.length}</span>
-          </div>
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">Poor (&lt; 50)</span>
-            <div class="admin-bar-track">
-              <div class="admin-bar-fill voice-score--bad" style={`width: ${Math.round(badSeo.length / withSeoScore.length * 100)}%`}></div>
-            </div>
-            <span class="admin-bar-count">{badSeo.length}</span>
-          </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class={`stat-number ${overallHealth >= 70 ? 'good' : overallHealth >= 40 ? 'warn' : 'bad'}`}>{overallHealth}%</div>
+          <div class="stat-label">Overall Health</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{withMeta.length}/{allPosts.length}</div>
+          <div class="stat-label">Have Meta</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{withKeyword.length}/{allPosts.length}</div>
+          <div class="stat-label">Have Keyword</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{withFaq.length}/{allPosts.length}</div>
+          <div class="stat-label">Have FAQ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{avgWordCount}</div>
+          <div class="stat-label">Avg Words</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{over1500}</div>
+          <div class="stat-label">Posts > 1500w</div>
         </div>
       </div>
-    )}
+    </section>
 
-    <!-- Posts by Pillar -->
-    <div class="admin-card">
-      <h2>Posts by Pillar</h2>
-      <div class="admin-bar-chart">
-        {Object.entries(byPillar).sort((a,b) => b[1] - a[1]).map(([pillar, count]) => (
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">{pillar.charAt(0).toUpperCase() + pillar.slice(1)}</span>
-            <div class="admin-bar-track">
-              <div class="admin-bar-fill" style={`width: ${Math.round(count / published.length * 100)}%`}></div>
-            </div>
-            <span class="admin-bar-count">{count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <!-- Title Issues -->
-    {longTitle.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Titles Too Long ({longTitle.length})</h2>
-        <table class="admin-table">
+    <!-- Audit Table -->
+    <section class="admin-section">
+      <h2>Post SEO Audit (sorted by health, worst first)</h2>
+      <div class="table-wrap">
+        <table>
           <thead>
             <tr>
               <th>Title</th>
-              <th>Length</th>
+              <th>SEO Score</th>
+              <th>Passed</th>
+              <th>Title Len</th>
+              <th>Meta</th>
+              <th>Keyword</th>
+              <th>FAQ</th>
+              <th>Words</th>
+              <th>Alt</th>
+              <th>Links</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {longTitle.map(p => (
+            {audits.map(a => (
               <tr>
-                <td>{p.data.title}</td>
-                <td>{p.data.title.length} chars</td>
+                <td>{a.title}</td>
+                <td><span class={`score-badge ${a.score >= 70 ? 'good' : a.score >= 40 ? 'warn' : 'bad'}`}>{a.score}%</span></td>
+                <td>{a.passed}/{a.checks.length}</td>
+                {a.checks.map(c => (
+                  <td class={c.pass ? 'check-pass' : 'check-fail'}>{c.pass ? 'OK' : 'X'}</td>
+                ))}
+                <td class="actions-cell">
+                  <button class="btn btn-sm api-action" data-endpoint="/api/seo-fix" data-slug={a.id}>SEO Fix</button>
+                  <button class="btn btn-sm api-action" data-endpoint="/api/generate-meta" data-slug={a.id}>Meta</button>
+                  <button class="btn btn-sm api-action" data-endpoint="/api/generate-faq" data-slug={a.id}>FAQ</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
 
-    <!-- Missing Target Keyword -->
-    {missingKeyword.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Missing Target Keyword ({missingKeyword.length})</h2>
-        <ul>
-          {missingKeyword.map(p => <li>{p.data.title}</li>)}
-        </ul>
-      </div>
-    )}
-
-    <!-- Keyword Not In Title -->
-    {keywordNotInTitle.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Keyword Not in Title ({keywordNotInTitle.length})</h2>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Target Keyword</th>
-            </tr>
-          </thead>
-          <tbody>
-            {keywordNotInTitle.map(p => (
+    <!-- Missing Internal Links -->
+    <section class="admin-section">
+      <h2>Missing Internal Links ({missingLinks.length})</h2>
+      {missingLinks.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td>{p.data.title}</td>
-                <td>{p.data.targetKeyword}</td>
+                <th>Title</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
+            </thead>
+            <tbody>
+              {missingLinks.map(p => (
+                <tr>
+                  <td>{p.title}</td>
+                  <td>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/suggest-links" data-slug={p.id}>Suggest Links</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">All posts have internal links.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
 
-    <!-- Thin Content -->
-    {thinContent.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Thin Content ({thinContent.length})</h2>
-        <p>Posts with estimated word count below 800 words.</p>
-        <ul>
-          {thinContent.map(p => <li>{p.data.title}</li>)}
-        </ul>
-      </div>
-    )}
-
-    <!-- Missing Destinations -->
-    {missingDestinations.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Missing Destinations ({missingDestinations.length})</h2>
-        <ul>
-          {missingDestinations.map(p => <li>{p.data.title}</li>)}
-        </ul>
-      </div>
-    )}
-
-    <!-- Posts Missing Meta Description -->
-    {missingMeta.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Meta Description Issues ({missingMeta.length})</h2>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Issue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {missingMeta.map(p => (
+    <!-- Keyword Gaps -->
+    <section class="admin-section">
+      <h2>Keyword Gaps ({keywordGaps.length})</h2>
+      {keywordGaps.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td>{p.data.title}</td>
-                <td>{!p.data.metaDescription ? 'Missing' : `Too long (${p.data.metaDescription.length} chars)`}</td>
+                <th>Title</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {keywordGaps.map(p => (
+                <tr>
+                  <td>{p.title}</td>
+                  <td>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/generate-keyword" data-slug={p.id}>Generate Keyword</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">All posts have target keywords.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
+
+    <!-- Bulk Actions -->
+    <section class="admin-section">
+      <h2>Bulk Actions</h2>
+      <div class="quick-actions">
+        <button class="btn btn-primary api-action" data-endpoint="/api/audit">Run Full SEO Audit</button>
+        <button class="btn btn-primary api-action" data-endpoint="/api/seo-fix">Generate Titles (All)</button>
+        <button class="btn btn-primary api-action" data-endpoint="/api/generate-meta">Generate Meta (All)</button>
+        <button class="btn btn-secondary api-action" data-endpoint="/api/generate-faq">Add FAQ (All)</button>
       </div>
-    )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
   </div>
-  <AdminActions />
 </Base>
+
+<style>
+  .admin-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+  .admin-header { margin-bottom: 1rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+  .admin-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; margin: 0; }
+  .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.75rem; }
+  .admin-nav a { padding: 0.4rem 0.75rem; text-decoration: none; color: #666; font-size: 0.85rem; border-radius: 4px; transition: all 0.15s; }
+  .admin-nav a:hover { background: #f5f5f5; color: #000; }
+  .admin-nav a.active { background: #000; color: #fff; }
+  .admin-section { margin-bottom: 2.5rem; }
+  .admin-section h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; margin: 0 0 1rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.5rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; }
+  .stat-card { background: #f5f5f5; padding: 1rem; text-align: center; border: 1px solid #e8e8e8; }
+  .stat-number { font-size: 1.5rem; font-weight: 700; color: #000; }
+  .stat-number.good { color: #22c55e; }
+  .stat-number.warn { color: #f59e0b; }
+  .stat-number.bad { color: #ef4444; }
+  .stat-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid #e8e8e8; }
+  th { font-weight: 600; text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.05em; color: #666; background: #f5f5f5; white-space: nowrap; }
+  .check-pass { color: #22c55e; font-weight: 700; text-align: center; }
+  .check-fail { color: #ef4444; font-weight: 700; text-align: center; }
+  .score-badge { font-size: 0.75rem; padding: 0.15rem 0.4rem; font-weight: 700; }
+  .score-badge.good { background: #f0fdf4; color: #22c55e; }
+  .score-badge.warn { background: #fffbeb; color: #f59e0b; }
+  .score-badge.bad { background: #fef2f2; color: #ef4444; }
+  .actions-cell { white-space: nowrap; }
+  .btn { padding: 0.4rem 0.75rem; border: 1px solid #000; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: all 0.15s; text-decoration: none; display: inline-block; background: #fff; color: #000; }
+  .btn-primary { background: #000; color: #fff; }
+  .btn-primary:hover { background: #333; }
+  .btn-secondary { background: #fff; color: #000; }
+  .btn-sm { padding: 0.2rem 0.4rem; font-size: 0.65rem; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .quick-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .result-panel { margin-top: 1rem; padding: 1rem; background: #f5f5f5; border: 1px solid #e8e8e8; font-size: 0.85rem; white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-family: monospace; }
+  .empty-state { color: #999; font-style: italic; font-size: 0.9rem; }
+</style>
+
+<script>
+  const API_BASE = 'http://localhost:3001';
+
+  async function apiCall(endpoint: string, method = 'POST', body?: object) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return await res.json();
+    } catch (e: any) {
+      return { error: true, message: e.message || 'API unavailable. Is the growth engine running on localhost:3001?' };
+    }
+  }
+
+  document.querySelectorAll('.api-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = (btn as HTMLElement).dataset.endpoint!;
+      const slug = (btn as HTMLElement).dataset.slug;
+      const origText = btn.textContent;
+      btn.textContent = 'Working...';
+      (btn as HTMLButtonElement).disabled = true;
+      const result = await apiCall(endpoint, 'POST', slug ? { slug } : undefined);
+      const panel = btn.closest('.admin-section')?.querySelector('.result-panel');
+      if (panel) {
+        (panel as HTMLElement).style.display = 'block';
+        (panel as HTMLElement).textContent = JSON.stringify(result, null, 2);
+      }
+      btn.textContent = origText;
+      (btn as HTMLButtonElement).disabled = false;
+    });
+  });
+</script>

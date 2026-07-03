@@ -6,8 +6,8 @@ export async function GET(context: any) {
   posts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
 
   return rss({
-    title: 'AILEEN Magazine',
-    description: 'Elegant travel, timeless style, and food that feels like home.',
+    title: 'RatLinks by Evan Ratner',
+    description: 'Business, culture, markets, and everything worth knowing.',
     site: context.site,
     items: posts.map(post => {
       const [pillar, ...rest] = post.id.split('/');

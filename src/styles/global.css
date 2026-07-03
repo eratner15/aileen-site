@@ -1,5 +1,5 @@
 /* ================================================================
-   AILEEN Magazine — Vogue-Level Editorial Design System
+   EVAN Magazine — Vogue-Level Editorial Design System
    Premium. Restrained. Unapologetically editorial.
    ================================================================ */
 
@@ -329,7 +329,7 @@ p {
 }
 
 .featured-image {
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 16 / 9;
   background: var(--color-bg-alt);
   overflow: hidden;
   position: relative;
@@ -466,7 +466,7 @@ p {
 }
 
 .post-card-image {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 16 / 9;
   background: var(--color-bg-alt);
   overflow: hidden;
   position: relative;
@@ -648,7 +648,7 @@ p {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  aspect-ratio: 21 / 9;
+  aspect-ratio: 16 / 9;
   background: var(--color-bg-alt);
   overflow: hidden;
 }
@@ -1872,7 +1872,7 @@ p {
   }
 
   .featured-image {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
   }
 
   .featured-content {

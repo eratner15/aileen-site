@@ -1,194 +1,286 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import { getCollection } from 'astro:content';
 
 const allPosts = await getCollection('posts');
-const published = allPosts.filter(p => !p.data.draft);
-
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Sort by date descending
-published.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
-
 // Distribution stats
-const withPins = published.filter(p => p.data.pinsGenerated && p.data.pinsGenerated > 0);
-const noPins = published.filter(p => !p.data.pinsGenerated || p.data.pinsGenerated === 0);
-const inNewsletter = published.filter(p => p.data.newsletterIncluded);
-const notInNewsletter = published.filter(p => !p.data.newsletterIncluded);
+const withPins = allPosts.filter(p => p.data.pinsGenerated > 0);
+const inNewsletter = allPosts.filter(p => p.data.newsletterIncluded);
+const withTags = allPosts.filter(p => p.data.tags.length > 3); // proxy for social copy readiness
+const totalPins = allPosts.reduce((s, p) => s + p.data.pinsGenerated, 0);
 
-// Distribution completeness: percentage of posts with both pins + newsletter
-const fullyDistributed = published.filter(p => (p.data.pinsGenerated && p.data.pinsGenerated > 0) && p.data.newsletterIncluded);
-const completeness = published.length > 0 ? Math.round((fullyDistributed.length / published.length) * 100) : 0;
+const pctPins = allPosts.length > 0 ? Math.round((withPins.length / allPosts.length) * 100) : 0;
+const pctNewsletter = allPosts.length > 0 ? Math.round((inNewsletter.length / allPosts.length) * 100) : 0;
+const pctSocial = allPosts.length > 0 ? Math.round((withTags.length / allPosts.length) * 100) : 0;
 
-// Total pins
-const totalPins = published.reduce((sum, p) => sum + (p.data.pinsGenerated || 0), 0);
+// Pinterest: posts without pins sorted by evergreenScore
+const noPins = allPosts
+  .filter(p => p.data.pinsGenerated === 0)
+  .sort((a, b) => b.data.evergreenScore - a.data.evergreenScore);
+
+// Newsletter: high evergreen not included
+const notInNewsletter = allPosts
+  .filter(p => !p.data.newsletterIncluded && p.data.evergreenScore > 30)
+  .sort((a, b) => b.data.evergreenScore - a.data.evergreenScore);
+
+// Full distribution table
+const distTable = [...allPosts].sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
 ---
 
-<Base title="Distribution Dashboard | Admin" noindex={true}>
-  <div class="admin-layout">
-    <h1>Distribution Dashboard</h1>
-    <p class="admin-subtitle">Content promotion and channel tracking</p>
-
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
-
-    <div class="admin-actions-bar">
-      <button class="admin-btn" data-action="pins">Generate Pins (All Unpinned)</button>
-      <button class="admin-btn" data-action="newsletter">Draft Newsletter</button>
+<Base title="Distribution Engine | Admin" noindex={true}>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>Distribution Engine</h1>
     </div>
-    <pre id="action-output"></pre>
 
     <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/archive/`} class="admin-nav-link">Archive</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link active">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
+      <a href={`${base}/admin/`}>Command Center</a>
+      <a href={`${base}/admin/content/`}>Content</a>
+      <a href={`${base}/admin/archive/`}>Evergreen</a>
+      <a href={`${base}/admin/seo/`}>SEO</a>
+      <a href={`${base}/admin/distribution/`} class="active">Distribution</a>
+      <a href={`${base}/admin/revenue/`}>Revenue</a>
+      <a href={`${base}/admin/performance/`}>Performance</a>
+      <a href={`${base}/admin/ai-assist/`}>AI Assist</a>
+      <a href={`${base}/admin/settings/`}>Settings</a>
     </nav>
 
-    <!-- Stats row -->
-    <div class="admin-stats-grid">
-      <div class="admin-stat">
-        <span class="admin-stat-number">{totalPins}</span>
-        <span class="admin-stat-label">Total Pins Generated</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{inNewsletter.length}</span>
-        <span class="admin-stat-label">In Newsletter</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{fullyDistributed.length}</span>
-        <span class="admin-stat-label">Fully Distributed</span>
-      </div>
-      <div class="admin-stat">
-        <span class={`admin-stat-number ${completeness >= 75 ? 'voice-score--good' : completeness >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{completeness}%</span>
-        <span class="admin-stat-label">Completeness</span>
-      </div>
-    </div>
-
-    <!-- Channel Summary -->
-    <div class="admin-card">
-      <h2>Channel Summary</h2>
-      <div class="admin-bar-chart">
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Pinterest Pins</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(withPins.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{withPins.length} / {published.length}</span>
+    <!-- Distribution Completeness -->
+    <section class="admin-section">
+      <h2>Distribution Completeness</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{totalPins}</div>
+          <div class="stat-label">Total Pins</div>
         </div>
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Newsletter</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(inNewsletter.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{inNewsletter.length} / {published.length}</span>
+        <div class="stat-card">
+          <div class="stat-number">{pctPins}%</div>
+          <div class="stat-label">With Pins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{pctNewsletter}%</div>
+          <div class="stat-label">In Newsletter</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{pctSocial}%</div>
+          <div class="stat-label">Social Ready</div>
         </div>
       </div>
-    </div>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label">Pinterest</span>
+          <div class="bar-track"><div class="bar-fill" style={`width: ${pctPins}%`}></div></div>
+          <span class="bar-count">{withPins.length}/{allPosts.length}</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Newsletter</span>
+          <div class="bar-track"><div class="bar-fill" style={`width: ${pctNewsletter}%`}></div></div>
+          <span class="bar-count">{inNewsletter.length}/{allPosts.length}</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Social</span>
+          <div class="bar-track"><div class="bar-fill" style={`width: ${pctSocial}%`}></div></div>
+          <span class="bar-count">{withTags.length}/{allPosts.length}</span>
+        </div>
+      </div>
+    </section>
 
-    <!-- Posts Missing Pins -->
-    {noPins.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Posts Without Pins ({noPins.length})</h2>
-        <table class="admin-table">
+    <!-- Pinterest Section -->
+    <section class="admin-section">
+      <h2>Pinterest: Posts Without Pins ({noPins.length})</h2>
+      {noPins.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Evergreen Score</th>
+                <th>Pillar</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {noPins.slice(0, 25).map(p => (
+                <tr>
+                  <td>{p.data.title}</td>
+                  <td class="score">{p.data.evergreenScore}</td>
+                  <td>{p.data.pillar}</td>
+                  <td>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/pins" data-slug={p.id}>Generate Pins</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">All posts have pins generated.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="admin-section">
+      <h2>Newsletter: Not Included ({notInNewsletter.length})</h2>
+      {notInNewsletter.length > 0 ? (
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Evergreen Score</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {notInNewsletter.slice(0, 20).map(p => (
+                <tr>
+                  <td>{p.data.title}</td>
+                  <td class="score">{p.data.evergreenScore}</td>
+                  <td>
+                    <button class="btn btn-sm api-action" data-endpoint="/api/queue-newsletter" data-slug={p.id}>Queue for Newsletter</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty-state">All high-value posts included in newsletter.</p>
+      )}
+      <div class="result-panel" style="display:none;"></div>
+    </section>
+
+    <!-- Social Section -->
+    <section class="admin-section">
+      <h2>Social Distribution Overview</h2>
+      <div class="table-wrap">
+        <table>
           <thead>
             <tr>
               <th>Title</th>
-              <th>Pillar</th>
-              <th>Published</th>
+              <th>Date</th>
+              <th>Pins</th>
+              <th>Newsletter</th>
+              <th>Tags</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {noPins.slice(0, 20).map(p => (
-              <tr>
-                <td>{p.data.title}</td>
-                <td><span class="status-badge">{p.data.pillar}</span></td>
-                <td>{p.data.date}</td>
-              </tr>
-            ))}
+            {distTable.slice(0, 30).map(p => {
+              const hasPins = p.data.pinsGenerated > 0;
+              const hasNL = p.data.newsletterIncluded;
+              const hasTags = p.data.tags.length > 3;
+              const channels = [hasPins, hasNL, hasTags];
+              const complete = channels.every(Boolean);
+              const partial = channels.some(Boolean);
+              return (
+                <tr>
+                  <td>{p.data.title}</td>
+                  <td>{p.data.date}</td>
+                  <td class={hasPins ? 'check-pass' : 'check-fail'}>{hasPins ? `${p.data.pinsGenerated}` : 'None'}</td>
+                  <td class={hasNL ? 'check-pass' : 'check-fail'}>{hasNL ? 'Yes' : 'No'}</td>
+                  <td>{p.data.tags.length}</td>
+                  <td><span class={`dist-status ${complete ? 'complete' : partial ? 'partial' : 'none'}`}>{complete ? 'Complete' : partial ? 'Partial' : 'Not Started'}</span></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-        {noPins.length > 20 && <p>...and {noPins.length - 20} more</p>}
+        {distTable.length > 30 && <p class="table-more">Showing 30 of {distTable.length}</p>}
       </div>
-    )}
+    </section>
 
-    <!-- Posts Not in Newsletter -->
-    {notInNewsletter.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Not Yet in Newsletter ({notInNewsletter.length})</h2>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Pillar</th>
-              <th>Published</th>
-            </tr>
-          </thead>
-          <tbody>
-            {notInNewsletter.slice(0, 20).map(p => (
-              <tr>
-                <td>{p.data.title}</td>
-                <td><span class="status-badge">{p.data.pillar}</span></td>
-                <td>{p.data.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {notInNewsletter.length > 20 && <p>...and {notInNewsletter.length - 20} more</p>}
+    <!-- Bulk Actions -->
+    <section class="admin-section">
+      <h2>Bulk Actions</h2>
+      <div class="quick-actions">
+        <button class="btn btn-primary api-action" data-endpoint="/api/pins">Generate Pins (All High-Value)</button>
+        <button class="btn btn-primary api-action" data-endpoint="/api/newsletter">Draft Newsletter</button>
+        <button class="btn btn-secondary api-action" data-endpoint="/api/social-copy">Generate Social (All)</button>
       </div>
-    )}
-
-    <!-- Distribution Grid -->
-    <div class="admin-card">
-      <h2>Distribution Status per Post</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Date</th>
-            <th>Pins</th>
-            <th>Newsletter</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {published.slice(0, 30).map(p => {
-            const hasPins = p.data.pinsGenerated && p.data.pinsGenerated > 0;
-            const hasNewsletter = p.data.newsletterIncluded;
-            const channels = [hasPins, hasNewsletter];
-            const complete = channels.every(Boolean);
-            const partial = channels.some(Boolean);
-            return (
-              <tr>
-                <td>{p.data.title}</td>
-                <td>{p.data.date}</td>
-                <td>
-                  <span class={`status-badge ${hasPins ? 'voice-score--good' : 'voice-score--bad'}`}>
-                    {hasPins ? `${p.data.pinsGenerated} pins` : 'None'}
-                  </span>
-                </td>
-                <td>
-                  <span class={`status-badge ${hasNewsletter ? 'voice-score--good' : 'voice-score--bad'}`}>
-                    {hasNewsletter ? 'Yes' : 'No'}
-                  </span>
-                </td>
-                <td>
-                  <span class={`status-badge ${complete ? 'voice-score--good' : partial ? 'voice-score--warn' : 'voice-score--bad'}`}>
-                    {complete ? 'Complete' : partial ? 'Partial' : 'Not Started'}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {published.length > 30 && <p>Showing 30 of {published.length} posts</p>}
-    </div>
+      <div class="result-panel" style="display:none;"></div>
+    </section>
   </div>
-  <AdminActions />
 </Base>
+
+<style>
+  .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+  .admin-header { margin-bottom: 1rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+  .admin-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; margin: 0; }
+  .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.75rem; }
+  .admin-nav a { padding: 0.4rem 0.75rem; text-decoration: none; color: #666; font-size: 0.85rem; border-radius: 4px; transition: all 0.15s; }
+  .admin-nav a:hover { background: #f5f5f5; color: #000; }
+  .admin-nav a.active { background: #000; color: #fff; }
+  .admin-section { margin-bottom: 2.5rem; }
+  .admin-section h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; margin: 0 0 1rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.5rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: #f5f5f5; padding: 1rem; text-align: center; border: 1px solid #e8e8e8; }
+  .stat-number { font-size: 1.75rem; font-weight: 700; color: #000; }
+  .stat-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .bar-chart { margin-top: 1rem; }
+  .bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+  .bar-label { width: 100px; font-size: 0.8rem; font-weight: 600; }
+  .bar-track { flex: 1; height: 1.25rem; background: #e8e8e8; }
+  .bar-fill { height: 100%; background: #000; transition: width 0.3s; }
+  .bar-count { font-size: 0.75rem; color: #666; min-width: 60px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #e8e8e8; }
+  th { font-weight: 600; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; color: #666; background: #f5f5f5; }
+  .score { font-weight: 700; font-family: monospace; }
+  .check-pass { color: #22c55e; font-weight: 600; }
+  .check-fail { color: #ef4444; font-weight: 600; }
+  .dist-status { font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 600; text-transform: uppercase; }
+  .dist-status.complete { background: #f0fdf4; color: #22c55e; }
+  .dist-status.partial { background: #fffbeb; color: #f59e0b; }
+  .dist-status.none { background: #fef2f2; color: #ef4444; }
+  .btn { padding: 0.4rem 0.75rem; border: 1px solid #000; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: all 0.15s; text-decoration: none; display: inline-block; background: #fff; color: #000; }
+  .btn-primary { background: #000; color: #fff; }
+  .btn-primary:hover { background: #333; }
+  .btn-secondary { background: #fff; color: #000; }
+  .btn-sm { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .quick-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .result-panel { margin-top: 1rem; padding: 1rem; background: #f5f5f5; border: 1px solid #e8e8e8; font-size: 0.85rem; white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-family: monospace; }
+  .empty-state { color: #999; font-style: italic; font-size: 0.9rem; }
+  .table-more { font-size: 0.85rem; color: #666; margin-top: 0.5rem; }
+</style>
+
+<script>
+  const API_BASE = 'http://localhost:3001';
+
+  async function apiCall(endpoint: string, method = 'POST', body?: object) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return await res.json();
+    } catch (e: any) {
+      return { error: true, message: e.message || 'API unavailable. Is the growth engine running on localhost:3001?' };
+    }
+  }
+
+  document.querySelectorAll('.api-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = (btn as HTMLElement).dataset.endpoint!;
+      const slug = (btn as HTMLElement).dataset.slug;
+      const origText = btn.textContent;
+      btn.textContent = 'Working...';
+      (btn as HTMLButtonElement).disabled = true;
+      const result = await apiCall(endpoint, 'POST', slug ? { slug } : undefined);
+      const panel = btn.closest('.admin-section')?.querySelector('.result-panel');
+      if (panel) {
+        (panel as HTMLElement).style.display = 'block';
+        (panel as HTMLElement).textContent = JSON.stringify(result, null, 2);
+      }
+      btn.textContent = origText;
+      (btn as HTMLButtonElement).disabled = false;
+    });
+  });
+</script>

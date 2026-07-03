@@ -3,7 +3,6 @@ import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PostCard from '../../components/PostCard.astro';
 import PostGrid from '../../components/PostGrid.astro';
-import FAQ from '../../components/FAQ.astro';
 
 const posts = await getCollection('posts', ({ data }) =>
   data.pillar === 'travel' && !data.draft
@@ -17,59 +16,18 @@ function postUrl(post: typeof posts[0]) {
   return `${base}/${pillar}/${rest.join('/')}/`;
 }
 
-// Cornerstone posts shown first
-const cornerstones = posts.filter(p => p.data.cornerstone);
-const featured = posts.find(p => p.data.featured) || posts[0];
-const rest = posts
-  .filter(p => p.id !== featured?.id)
-  .sort((a, b) => {
-    // Cornerstones first, then by date
-    if (a.data.cornerstone && !b.data.cornerstone) return -1;
-    if (!a.data.cornerstone && b.data.cornerstone) return 1;
-    return new Date(b.data.date).getTime() - new Date(a.data.date).getTime();
-  });
-
-// Collect FAQ items from cornerstone posts for pillar FAQ section
-const pillarFaq = posts
-  .filter(p => p.data.cornerstone && p.data.faq?.length > 0)
-  .flatMap(p => p.data.faq)
-  .slice(0, 5);
-
-// Destination filter: collect destinations used by travel posts
-const destSet = new Set<string>();
-for (const p of posts) {
-  for (const d of p.data.destinations || []) destSet.add(d);
-}
-const destinations = [...destSet].sort();
-const destLabels: Record<string, string> = {
-  miami: 'Miami', 'palm-beach': 'Palm Beach', boston: 'Boston', nyc: 'NYC',
-  maine: 'Maine', aspen: 'Aspen', nantucket: 'Nantucket', hamptons: 'Hamptons',
-  italy: 'Italy', colorado: 'Colorado',
-};
+const featured = posts[0];
+const rest = posts.filter(p => p.id !== featured?.id);
 ---
 
-<Base title="Travel" description="Luxury travel guides, restaurant recommendations, and hotel reviews. The places worth going — from someone who's actually been.">
+<Base title="Travel" description="The places worth going and the stories behind them.">
 
   <section class="pillar-hero">
     <div class="container">
       <p class="section-label">Travel</p>
-      <h1>The places worth going.</h1>
-      <p class="pillar-description">
-        Honest guides to the hotels worth booking, the restaurants worth the reservation,
-        and the destinations that earn a place on your list. From Miami to Maine, Palm Beach to Aspen.
-      </p>
+      <h1>The places worth going and the stories behind them.</h1>
     </div>
   </section>
-
-  {destinations.length > 0 && (
-    <section class="container" style="padding-top: 2rem; padding-bottom: 0;">
-      <div class="destination-filter">
-        {destinations.map(d => (
-          <a href={`${base}/destinations/${d}/`} class="destination-filter-link">{destLabels[d] || d}</a>
-        ))}
-      </div>
-    </section>
-  )}
 
   {featured && (
     <section class="featured-section container" style="padding-top: 2rem;">
@@ -78,47 +36,17 @@ const destLabels: Record<string, string> = {
           <img src={featured.data.image} alt={featured.data.title} loading="eager" width="1200" height="675" />
         </div>
         <div class="featured-content">
-          <p class="featured-label">{featured.data.contentType === 'restaurant-guide' ? 'Restaurant Guide' : featured.data.contentType === 'hotel-review' ? 'Hotel Review' : 'Featured'}</p>
+          <p class="featured-label">Latest</p>
           <h2><span>{featured.data.title}</span></h2>
           <p class="featured-excerpt">{featured.data.excerpt}</p>
-          <span class="read-more">Read the Guide</span>
+          <span class="read-more">Read More</span>
         </div>
       </a>
-    </section>
-  )}
-
-  <!-- Cornerstone Guides -->
-  {cornerstones.length > 0 && (
-    <section class="container" style="padding-top: 2rem;">
-      <div class="section-header" style="text-align: left; margin-bottom: 1.5rem;">
-        <p class="section-label">Essential Guides</p>
-      </div>
-      <div class="post-grid">
-        {cornerstones.map(post => (
-          <PostCard
-            title={post.data.title}
-            href={postUrl(post)}
-            pillar={post.data.pillar}
-            excerpt={post.data.excerpt}
-            date={post.data.date}
-            image={post.data.image.replace('1200', '600').replace('675', '400')}
-          />
-        ))}
-      </div>
     </section>
   )}
 
   <section class="container" style="padding-top: 2rem;">
     <PostGrid posts={rest} />
   </section>
-
-  {pillarFaq.length > 0 && (
-    <section class="container" style="padding: 2rem 0 3rem;">
-      <div class="section-header" style="text-align: left; margin-bottom: 1.5rem;">
-        <p class="section-label">Frequently Asked</p>
-      </div>
-      <FAQ items={pillarFaq} />
-    </section>
-  )}
 
 </Base>

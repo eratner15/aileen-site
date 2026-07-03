@@ -20,7 +20,7 @@ interface Props {
 
 const {
   title,
-  description = 'Elegant travel, timeless style, and food that feels like home.',
+  description = 'Business, culture, markets, and everything worth knowing.',
   ogImage = '/og-image.jpg',
   canonicalURL = Astro.url.href,
   noindex = false,
@@ -29,7 +29,7 @@ const {
   canonicalOverride,
 } = Astro.props;
 
-const siteTitle = title === 'AILEEN Magazine' ? title : `${title} | AILEEN Magazine`;
+const siteTitle = title === 'EVAN Magazine' ? title : `${title} | EVAN Magazine`;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const gaId = import.meta.env.PUBLIC_GA_ID || '';
 const resolvedCanonical = canonicalOverride || canonicalURL;
@@ -53,7 +53,7 @@ const resolvedOgDescription = ogDescription || description;
   <meta property="og:description" content={resolvedOgDescription} />
   <meta property="og:image" content={ogImage} />
   <meta property="og:url" content={resolvedCanonical} />
-  <meta property="og:site_name" content="AILEEN Magazine" />
+  <meta property="og:site_name" content="EVAN Magazine" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -68,7 +68,7 @@ const resolvedOgDescription = ogDescription || description;
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <!-- RSS Autodiscovery -->
-  <link rel="alternate" type="application/rss+xml" title="AILEEN Magazine" href={`${base}/rss.xml`} />
+  <link rel="alternate" type="application/rss+xml" title="EVAN Magazine" href={`${base}/rss.xml`} />
 
   <!-- Preconnect to Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -91,12 +91,12 @@ const resolvedOgDescription = ogDescription || description;
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "AILEEN Magazine",
+    "name": "EVAN Magazine",
     "url": "https://cafecito-ai.com/magazine",
-    "description": "Elegant travel, timeless style, and food that feels like home.",
+    "description": "Business, culture, markets, and everything worth knowing.",
     "publisher": {
       "@type": "Organization",
-      "name": "AILEEN Magazine",
+      "name": "EVAN Magazine",
       "url": "https://cafecito-ai.com/magazine",
       "logo": {
         "@type": "ImageObject",
@@ -105,23 +105,23 @@ const resolvedOgDescription = ogDescription || description;
     },
     "author": {
       "@type": "Person",
-      "name": "Aileen Lavin"
+      "name": "Evan Ratner"
     }
   })} />
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "AILEEN Magazine",
+    "name": "EVAN Magazine",
     "url": "https://cafecito-ai.com/magazine",
     "logo": "https://cafecito-ai.com/magazine/favicon.svg",
     "sameAs": [
-      "https://instagram.com/aileenlavin",
-      "https://pinterest.com/aileenlavin",
-      "https://tiktok.com/@aileenlavin"
+      "https://instagram.com/evanratner",
+      "https://pinterest.com/evanratner",
+      "https://tiktok.com/@evanratner"
     ],
     "founder": {
       "@type": "Person",
-      "name": "Aileen Lavin"
+      "name": "Evan Ratner"
     }
   })} />
 </head>
@@ -129,7 +129,7 @@ const resolvedOgDescription = ogDescription || description;
   <header class="site-header">
     <div class="header-inner">
       <a href={`${base}/`} class="site-logo">
-        AILEEN
+        EVAN
         <span>Magazine</span>
       </a>
       <button class="nav-toggle" aria-label="Toggle navigation">
@@ -137,13 +137,13 @@ const resolvedOgDescription = ogDescription || description;
       </button>
       <nav>
         <ul class="main-nav">
-          <li><a href={`${base}/restaurants/`}>Restaurants</a></li>
-          <li><a href={`${base}/travel/`}>Travel</a></li>
-          <li><a href={`${base}/hotels/`}>Hotels</a></li>
-          <li><a href={`${base}/style/`}>Style</a></li>
-          <li><a href={`${base}/recipes/`}>Recipes</a></li>
-          <li><a href={`${base}/destinations/`}>Destinations</a></li>
+          <li><a href={`${base}/essays/`}>Essays</a></li>
+          <li><a href={`${base}/guides/`}>Guides</a></li>
+          <li><a href={`${base}/experiments/`}>Experiments</a></li>
+          <li><a href={`${base}/tools/`}>Tools</a></li>
+          <li><a href={`${base}/ratlinks/`}>RatLinks</a></li>
           <li><a href={`${base}/about/`}>About</a></li>
+          <li><a href={`${base}/subscribe/`} class="nav-subscribe">Subscribe</a></li>
         </ul>
       </nav>
     </div>
@@ -156,9 +156,9 @@ const resolvedOgDescription = ogDescription || description;
   <!-- Newsletter CTA -->
   <section class="newsletter-cta">
     <div class="newsletter-cta-inner">
-      <p class="section-label" style="color: var(--color-text-muted);">The AILEEN Edit</p>
+      <p class="section-label" style="color: var(--color-text-muted);">The EVAN Edit</p>
       <h2>A weekly letter on what's worth your time.</h2>
-      <p>In travel, style, and everything in between. No fluff, no filler.</p>
+      <p>Business, culture, and everything worth knowing. No fluff, no filler.</p>
       <form class="newsletter-form" data-newsletter="true">
         <input type="email" placeholder="Your email address" aria-label="Email address" required />
         <button type="submit">Subscribe</button>
@@ -170,19 +170,18 @@ const resolvedOgDescription = ogDescription || description;
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <div class="site-logo">AILEEN<span>Magazine</span></div>
-        <p>Elegant travel, timeless style, and food that feels like home.</p>
+        <div class="site-logo">EVAN<span>Magazine</span></div>
+        <p>Business, culture, markets, and everything worth knowing.</p>
         <p class="footer-tagline">No fluff, no filler.</p>
       </div>
       <div class="footer-col">
         <h4>Explore</h4>
         <ul>
-          <li><a href={`${base}/restaurants/`}>Restaurants</a></li>
-          <li><a href={`${base}/travel/`}>Travel</a></li>
-          <li><a href={`${base}/hotels/`}>Hotels</a></li>
-          <li><a href={`${base}/style/`}>Style</a></li>
-          <li><a href={`${base}/recipes/`}>Recipes</a></li>
-          <li><a href={`${base}/destinations/`}>Destinations</a></li>
+          <li><a href={`${base}/essays/`}>Essays</a></li>
+          <li><a href={`${base}/guides/`}>Guides</a></li>
+          <li><a href={`${base}/experiments/`}>Experiments</a></li>
+          <li><a href={`${base}/tools/`}>Tools</a></li>
+          <li><a href={`${base}/ratlinks/`}>RatLinks</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -195,9 +194,9 @@ const resolvedOgDescription = ogDescription || description;
             })
           ) : (
             <>
-              <li><a href={`${base}/travel/`}>Travel Guides</a></li>
-              <li><a href={`${base}/style/`}>Style Guides</a></li>
-              <li><a href={`${base}/recipes/`}>Recipes</a></li>
+              <li><a href={`${base}/business/`}>Business</a></li>
+              <li><a href={`${base}/culture/`}>Culture</a></li>
+              <li><a href={`${base}/finance/`}>Finance</a></li>
             </>
           )}
         </ul>
@@ -206,14 +205,14 @@ const resolvedOgDescription = ogDescription || description;
         <h4>Connect</h4>
         <ul>
           <li><a href={`${base}/about/`}>About</a></li>
-          <li><a href="https://instagram.com/aileenlavin" target="_blank" rel="noopener">Instagram</a></li>
-          <li><a href="https://pinterest.com/aileenlavin" target="_blank" rel="noopener">Pinterest</a></li>
-          <li><a href="https://tiktok.com/@aileenlavin" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="https://instagram.com/evanratner" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://pinterest.com/evanratner" target="_blank" rel="noopener">Pinterest</a></li>
+          <li><a href="https://tiktok.com/@evanratner" target="_blank" rel="noopener">TikTok</a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      &copy; {new Date().getFullYear()} AILEEN Magazine. All rights reserved.
+      &copy; {new Date().getFullYear()} EVAN Magazine. All rights reserved.
     </div>
   </footer>
 

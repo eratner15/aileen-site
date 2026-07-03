@@ -1,0 +1,320 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('posts');
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Sort by date desc
+const sorted = [...allPosts].sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+// Summary stats
+const totalPosts = allPosts.length;
+const byContentType: Record<string, number> = {};
+const byPillar: Record<string, number> = {};
+for (const p of allPosts) {
+  const ct = p.data.contentType || 'article';
+  byContentType[ct] = (byContentType[ct] || 0) + 1;
+  byPillar[p.data.pillar] = (byPillar[p.data.pillar] || 0) + 1;
+}
+
+// Unique values for filters
+const pillars = [...new Set(allPosts.map(p => p.data.pillar))].sort();
+const contentTypes = [...new Set(allPosts.map(p => p.data.contentType || 'article'))].sort();
+const statuses = [...new Set(allPosts.map(p => p.data.status))].sort();
+
+// Estimate word count from body
+function estimateWords(body: string | undefined): number {
+  if (!body) return 0;
+  return body.split(/\s+/).filter(w => w.length > 0).length;
+}
+
+// Prepare post data for template
+const postsData = sorted.map(p => {
+  const [pillar, ...rest] = p.id.split('/');
+  const slug = rest.join('/');
+  const words = estimateWords(p.body);
+  return {
+    id: p.id,
+    title: p.data.title,
+    pillar: p.data.pillar,
+    contentType: p.data.contentType || 'article',
+    date: p.data.date,
+    words,
+    evergreenScore: p.data.evergreenScore,
+    monetizationScore: p.data.monetizationScore,
+    status: p.data.status,
+    liveUrl: `${base}/${pillar}/${slug}/`,
+  };
+});
+---
+
+<Base title="Content Engine | Admin" noindex={true}>
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>Content Engine</h1>
+    </div>
+
+    <nav class="admin-nav">
+      <a href={`${base}/admin/`}>Command Center</a>
+      <a href={`${base}/admin/content/`} class="active">Content</a>
+      <a href={`${base}/admin/archive/`}>Evergreen</a>
+      <a href={`${base}/admin/seo/`}>SEO</a>
+      <a href={`${base}/admin/distribution/`}>Distribution</a>
+      <a href={`${base}/admin/revenue/`}>Revenue</a>
+      <a href={`${base}/admin/performance/`}>Performance</a>
+      <a href={`${base}/admin/ai-assist/`}>AI Assist</a>
+      <a href={`${base}/admin/settings/`}>Settings</a>
+    </nav>
+
+    <!-- Summary Stats -->
+    <section class="admin-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{totalPosts}</div>
+          <div class="stat-label">Total Posts</div>
+        </div>
+        {Object.entries(byContentType).sort((a,b) => b[1] - a[1]).slice(0, 4).map(([type, count]) => (
+          <div class="stat-card">
+            <div class="stat-number">{count}</div>
+            <div class="stat-label">{type.replace(/-/g, ' ')}</div>
+          </div>
+        ))}
+      </div>
+      <div class="pillar-summary">
+        {Object.entries(byPillar).sort((a,b) => b[1] - a[1]).map(([pillar, count]) => (
+          <span class="pillar-chip">{pillar}: {count}</span>
+        ))}
+      </div>
+    </section>
+
+    <!-- Search & Filters -->
+    <section class="admin-section">
+      <div class="filter-row">
+        <input type="text" id="search-input" placeholder="Search posts..." class="filter-input" />
+        <select id="filter-pillar" class="filter-select">
+          <option value="">All Pillars</option>
+          {pillars.map(p => <option value={p}>{p}</option>)}
+        </select>
+        <select id="filter-type" class="filter-select">
+          <option value="">All Types</option>
+          {contentTypes.map(t => <option value={t}>{t.replace(/-/g, ' ')}</option>)}
+        </select>
+        <select id="filter-status" class="filter-select">
+          <option value="">All Statuses</option>
+          {statuses.map(s => <option value={s}>{s}</option>)}
+        </select>
+      </div>
+    </section>
+
+    <!-- Content Table -->
+    <section class="admin-section">
+      <div class="table-wrap">
+        <table id="content-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="title">Title</th>
+              <th class="sortable" data-sort="pillar">Pillar</th>
+              <th class="sortable" data-sort="type">Type</th>
+              <th class="sortable" data-sort="date">Date</th>
+              <th class="sortable" data-sort="words">Words</th>
+              <th class="sortable" data-sort="evergreen">Evergreen</th>
+              <th class="sortable" data-sort="monetization">Monetization</th>
+              <th class="sortable" data-sort="status">Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {postsData.map(p => (
+              <tr class="content-row"
+                data-title={p.title.toLowerCase()}
+                data-pillar={p.pillar}
+                data-type={p.contentType}
+                data-status={p.status}
+                data-date={p.date}
+                data-words={p.words}
+                data-evergreen={p.evergreenScore}
+                data-monetization={p.monetizationScore}
+              >
+                <td><a href={p.liveUrl} target="_blank">{p.title}</a></td>
+                <td><span class="badge">{p.pillar}</span></td>
+                <td>{p.contentType.replace(/-/g, ' ')}</td>
+                <td>{p.date}</td>
+                <td>{p.words.toLocaleString()}</td>
+                <td>{p.evergreenScore}</td>
+                <td>{p.monetizationScore}</td>
+                <td><span class={`badge badge-${p.status}`}>{p.status}</span></td>
+                <td class="actions-cell">
+                  <a href={p.liveUrl} target="_blank" class="btn btn-sm">View</a>
+                  <button class="btn btn-sm api-action" data-endpoint="/api/derivative" data-slug={p.id}>Derivative</button>
+                  <button class="btn btn-sm api-action" data-endpoint="/api/seo-fix" data-slug={p.id}>SEO Fix</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div class="result-panel" style="display:none;"></div>
+    </section>
+
+    <!-- Create New Content -->
+    <section class="admin-section">
+      <h2>Create New Content</h2>
+      <div class="quick-actions">
+        <button class="btn btn-primary api-action" data-endpoint="/api/plan">From Blank (Generate Plan)</button>
+        <button class="btn btn-primary api-action" data-endpoint="/api/write">From Template (Write Post)</button>
+        <button class="btn btn-secondary api-action" data-endpoint="/api/derivative">From Archive Post</button>
+      </div>
+      <div class="result-panel" style="display:none;"></div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .admin-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+  .admin-header { margin-bottom: 1rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+  .admin-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; margin: 0; }
+  .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.75rem; }
+  .admin-nav a { padding: 0.4rem 0.75rem; text-decoration: none; color: #666; font-size: 0.85rem; border-radius: 4px; transition: all 0.15s; }
+  .admin-nav a:hover { background: #f5f5f5; color: #000; }
+  .admin-nav a.active { background: #000; color: #fff; }
+  .admin-section { margin-bottom: 2.5rem; }
+  .admin-section h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; margin: 0 0 1rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 0.5rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+  .stat-card { background: #f5f5f5; padding: 1rem; text-align: center; border: 1px solid #e8e8e8; }
+  .stat-number { font-size: 1.75rem; font-weight: 700; color: #000; }
+  .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.15rem; }
+  .pillar-summary { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pillar-chip { background: #e8e8e8; padding: 0.25rem 0.6rem; font-size: 0.75rem; text-transform: capitalize; }
+  .filter-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .filter-input { flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid #e8e8e8; font-size: 0.85rem; font-family: inherit; }
+  .filter-select { padding: 0.5rem 0.75rem; border: 1px solid #e8e8e8; font-size: 0.85rem; font-family: inherit; background: #fff; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #e8e8e8; }
+  th { font-weight: 600; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; color: #666; background: #f5f5f5; cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { color: #000; }
+  th.sort-asc::after { content: ' ^'; }
+  th.sort-desc::after { content: ' v'; }
+  td a { color: #000; }
+  .badge { font-size: 0.65rem; padding: 0.1rem 0.35rem; text-transform: uppercase; letter-spacing: 0.03em; background: #e8e8e8; }
+  .badge-imported { background: #e8e8e8; color: #666; }
+  .badge-classified { background: #000; color: #fff; }
+  .badge-refreshed { background: #333; color: #fff; }
+  .badge-redistributed { background: #666; color: #fff; }
+  .badge-monetized { background: #999; color: #fff; }
+  .actions-cell { white-space: nowrap; }
+  .btn { padding: 0.4rem 0.75rem; border: 1px solid #000; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: all 0.15s; text-decoration: none; display: inline-block; background: #fff; color: #000; }
+  .btn-primary { background: #000; color: #fff; }
+  .btn-primary:hover { background: #333; }
+  .btn-sm { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .quick-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .result-panel { margin-top: 1rem; padding: 1rem; background: #f5f5f5; border: 1px solid #e8e8e8; font-size: 0.85rem; white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-family: monospace; }
+  .content-row.hidden { display: none; }
+</style>
+
+<script>
+  const API_BASE = 'http://localhost:3001';
+
+  async function apiCall(endpoint: string, method = 'POST', body?: object) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return await res.json();
+    } catch (e: any) {
+      return { error: true, message: e.message || 'API unavailable. Is the growth engine running on localhost:3001?' };
+    }
+  }
+
+  // Filter logic
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const filterPillar = document.getElementById('filter-pillar') as HTMLSelectElement;
+  const filterType = document.getElementById('filter-type') as HTMLSelectElement;
+  const filterStatus = document.getElementById('filter-status') as HTMLSelectElement;
+  const rows = document.querySelectorAll('.content-row');
+
+  function applyFilters() {
+    const q = searchInput.value.toLowerCase();
+    const pillar = filterPillar.value;
+    const type = filterType.value;
+    const status = filterStatus.value;
+    rows.forEach(row => {
+      const el = row as HTMLElement;
+      const matchSearch = !q || el.dataset.title!.includes(q);
+      const matchPillar = !pillar || el.dataset.pillar === pillar;
+      const matchType = !type || el.dataset.type === type;
+      const matchStatus = !status || el.dataset.status === status;
+      el.classList.toggle('hidden', !(matchSearch && matchPillar && matchType && matchStatus));
+    });
+  }
+
+  searchInput?.addEventListener('input', applyFilters);
+  filterPillar?.addEventListener('change', applyFilters);
+  filterType?.addEventListener('change', applyFilters);
+  filterStatus?.addEventListener('change', applyFilters);
+
+  // Sort logic
+  let currentSort = '';
+  let sortDir = 'asc';
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = (th as HTMLElement).dataset.sort!;
+      if (currentSort === key) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort = key;
+        sortDir = 'asc';
+      }
+      document.querySelectorAll('th.sortable').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+      const tbody = document.querySelector('#content-table tbody')!;
+      const rowsArr = Array.from(rows);
+      rowsArr.sort((a, b) => {
+        const ae = a as HTMLElement;
+        const be = b as HTMLElement;
+        let av: string | number = '';
+        let bv: string | number = '';
+        if (key === 'title') { av = ae.dataset.title || ''; bv = be.dataset.title || ''; }
+        else if (key === 'pillar') { av = ae.dataset.pillar || ''; bv = be.dataset.pillar || ''; }
+        else if (key === 'type') { av = ae.dataset.type || ''; bv = be.dataset.type || ''; }
+        else if (key === 'status') { av = ae.dataset.status || ''; bv = be.dataset.status || ''; }
+        else if (key === 'date') { av = ae.dataset.date || ''; bv = be.dataset.date || ''; }
+        else if (key === 'words') { av = parseInt(ae.dataset.words || '0'); bv = parseInt(be.dataset.words || '0'); }
+        else if (key === 'evergreen') { av = parseInt(ae.dataset.evergreen || '0'); bv = parseInt(be.dataset.evergreen || '0'); }
+        else if (key === 'monetization') { av = parseInt(ae.dataset.monetization || '0'); bv = parseInt(be.dataset.monetization || '0'); }
+
+        if (typeof av === 'number' && typeof bv === 'number') {
+          return sortDir === 'asc' ? av - bv : bv - av;
+        }
+        const cmp = String(av).localeCompare(String(bv));
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+      rowsArr.forEach(r => tbody.appendChild(r));
+    });
+  });
+
+  // API action buttons
+  document.querySelectorAll('.api-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = (btn as HTMLElement).dataset.endpoint!;
+      const slug = (btn as HTMLElement).dataset.slug;
+      const origText = btn.textContent;
+      btn.textContent = 'Working...';
+      (btn as HTMLButtonElement).disabled = true;
+      const result = await apiCall(endpoint, 'POST', slug ? { slug } : undefined);
+      const panel = btn.closest('.admin-section')?.querySelector('.result-panel');
+      if (panel) {
+        (panel as HTMLElement).style.display = 'block';
+        (panel as HTMLElement).textContent = JSON.stringify(result, null, 2);
+      }
+      btn.textContent = origText;
+      (btn as HTMLButtonElement).disabled = false;
+    });
+  });
+</script>

@@ -5,11 +5,18 @@ const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
     title: z.string(),
-    metaDescription: z.string(),
-    targetKeyword: z.string(),
-    pillar: z.enum(['travel', 'style', 'recipes', 'lifestyle']),
+    metaDescription: z.string().default(''),
+    targetKeyword: z.string().default(''),
+    pillar: z.enum(['business', 'culture', 'finance', 'travel', 'lifestyle', 'tech', 'food', 'entertainment']),
     contentType: z.enum([
       'article',
+      'essay',
+      'guide',
+      'experiment',
+      'tool-page',
+      'resource-page',
+      'playbook',
+      'affiliate-stack',
       'restaurant-guide',
       'hotel-review',
       'travel-guide',
@@ -20,14 +27,15 @@ const posts = defineCollection({
     ]).default('article'),
     date: z.string(),
     updatedDate: z.string().optional(),
-    image: z.string(),
-    imageAlt: z.string(),
-    excerpt: z.string(),
-    author: z.string().default('Aileen Lavin'),
+    image: z.string().default(''),
+    imageAlt: z.string().default(''),
+    excerpt: z.string().default(''),
+    author: z.string().default('Evan Ratner'),
     draft: z.boolean().default(false),
     featured: z.boolean().default(false),
     featuredOrder: z.number().optional(),
     destinations: z.array(z.string()).default([]),
+    tags: z.array(z.string()).default([]),
     faq: z.array(z.object({
       question: z.string(),
       answer: z.string(),
@@ -49,7 +57,6 @@ const posts = defineCollection({
       platform: z.string().optional(),
       url: z.string().optional(),
     })).default([]),
-    // Restaurant guide fields
     restaurants: z.array(z.object({
       name: z.string(),
       description: z.string().optional(),
@@ -61,7 +68,6 @@ const posts = defineCollection({
       neighborhood: z.string().optional(),
     })).default([]),
     quickPicks: z.array(z.string()).default([]),
-    // Hotel review fields
     hotelDetails: z.object({
       propertyName: z.string().optional(),
       propertyType: z.string().optional(),
@@ -70,7 +76,6 @@ const posts = defineCollection({
       standoutFeatures: z.array(z.string()).default([]),
       alternatives: z.array(z.string()).default([]),
     }).optional(),
-    // Recipe-specific fields
     prepTime: z.string().optional(),
     cookTime: z.string().optional(),
     totalTime: z.string().optional(),
@@ -88,7 +93,7 @@ const posts = defineCollection({
     pinsGenerated: z.number().default(0),
     newsletterIncluded: z.boolean().default(false),
     toc: z.boolean().default(false),
-    // Spec additions
+    sourceUrl: z.string().optional(),
     cornerstone: z.boolean().default(false),
     subcategory: z.string().optional(),
     ogTitle: z.string().optional(),
@@ -98,45 +103,39 @@ const posts = defineCollection({
     canonicalOverride: z.string().optional(),
     season: z.string().optional(),
     newsletterCTAVariant: z.enum(['inline', 'bold', 'destination', 'shopping']).optional(),
-  }),
-});
-
-const archive = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/archive' }),
-  schema: z.object({
-    title: z.string(),
-    originalDate: z.string(),
-    excerpt: z.string().default(''),
-    source: z.enum(['ratlinks', 'substack', 'wordpress', 'other']).default('substack'),
-    sourceUrl: z.string().optional(),
-    canonicalRef: z.string().optional(),
-    postId: z.string().optional(),
-    subtitle: z.string().optional(),
-    // Classification
-    pillar: z.enum(['culture', 'business', 'travel', 'lifestyle', 'tech', 'finance', 'food', 'entertainment', 'general']).default('general'),
-    tags: z.array(z.string()).default([]),
-    evergreenClass: z.enum(['evergreen', 'refresh-needed', 'archive-only', 'derivative-candidate']).default('archive-only'),
-    // Priority & potential
+    // Archive metadata fields (for reactivation engine)
+    source: z.enum(['ratlinks', 'substack', 'wordpress', 'original', 'other']).default('original'),
+    originalDate: z.string().optional(),
+    evergreenScore: z.number().default(0),
+    distributionScore: z.number().default(0),
+    monetizationScore: z.number().default(0),
+    derivativeScore: z.number().default(0),
+    urgencyScore: z.number().default(0),
+    opportunitySummary: z.string().default(''),
     refreshPriority: z.enum(['high', 'medium', 'low', 'none']).default('none'),
+    evergreenClass: z.enum([
+      'evergreen-flagship',
+      'evergreen-needs-refresh',
+      'archive-only',
+      'derivative-candidate',
+      'seo-derivative-candidate',
+      'affiliate-candidate',
+      'newsletter-reshare',
+      'social-reshare',
+      'playbook-candidate',
+      'low-priority',
+    ]).default('archive-only'),
+    classificationBuckets: z.array(z.string()).default([]),
+    status: z.enum(['imported', 'classified', 'refreshed', 'redistributed', 'monetized']).default('imported'),
+    refreshedDate: z.string().optional(),
     monetizationPotential: z.enum(['high', 'medium', 'low', 'none']).default('none'),
     derivativePotential: z.enum(['high', 'medium', 'low', 'none']).default('none'),
-    // Reactivation tracking
-    suggestedInternalLinks: z.array(z.string()).default([]),
     suggestedDerivatives: z.array(z.string()).default([]),
     suggestedAffiliates: z.array(z.string()).default([]),
-    // Status
-    reactivated: z.boolean().default(false),
-    refreshedDate: z.string().optional(),
+    suggestedInternalLinks: z.array(z.string()).default([]),
     bundleId: z.string().optional(),
-    // Engagement data from Substack
-    emailSentAt: z.string().optional(),
-    type: z.string().default('newsletter'),
-    audience: z.string().default('everyone'),
-    // Content stats
-    wordCount: z.number().default(0),
-    hasImages: z.boolean().default(false),
-    imageCount: z.number().default(0),
+    reactivated: z.boolean().default(false),
   }),
 });
 
-export const collections = { posts, archive };
+export const collections = { posts };
