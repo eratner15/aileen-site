@@ -98,6 +98,20 @@ const posts = defineCollection({
     canonicalOverride: z.string().optional(),
     season: z.string().optional(),
     newsletterCTAVariant: z.enum(['inline', 'bold', 'destination', 'shopping']).optional(),
+    // Content lifecycle (new)
+    status: z.enum(['draft', 'in-review', 'scheduled', 'published', 'refresh-needed']).default('published'),
+    scheduledDate: z.string().optional(),
+    refreshDate: z.string().optional(),
+    // Distribution tracking (new)
+    distributedNewsletter: z.boolean().default(false),
+    distributedPinterest: z.boolean().default(false),
+    distributedInstagram: z.boolean().default(false),
+    distributedTiktok: z.boolean().default(false),
+    // Monetization (new)
+    monetizationType: z.enum(['affiliate', 'booking', 'reservation', 'the-edit', 'none']).default('none'),
+    disclosureAdded: z.boolean().default(false),
+    // Trust methodology note (new)
+    trustNote: z.string().optional(),
   }),
 });
 

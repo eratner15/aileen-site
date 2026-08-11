@@ -32,7 +32,7 @@ const {
   affiliateDisclosure, toc, destinations,
   prepTime, cookTime, totalTime, servings, ingredients, instructions, nutrition,
   ogTitle, ogDescription, canonicalOverride, imageCaption, imageCredit,
-  relatedPosts: manualRelatedPosts, cornerstone,
+  relatedPosts: manualRelatedPosts, cornerstone, trustNote,
 } = post.data;
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -143,6 +143,14 @@ const clusterSections = [
     </div>
 
     {affiliateDisclosure && <div class="article-body"><AffiliateDisclosure /></div>}
+
+    {trustNote && (
+      <div class="article-body" style="padding-bottom: 0;">
+        <aside class="trust-note">
+          <strong>A note on how I recommend:</strong> {trustNote}
+        </aside>
+      </div>
+    )}
 
     {toc && headings && (
       <div class="article-body" style="padding-bottom: 0;">

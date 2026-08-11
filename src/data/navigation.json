@@ -1,0 +1,33 @@
+{
+  "main": [
+    { "label": "Restaurants", "href": "/restaurants/" },
+    { "label": "Travel", "href": "/travel/" },
+    { "label": "Hotels", "href": "/hotels/" },
+    { "label": "Style", "href": "/style/" },
+    { "label": "Recipes", "href": "/recipes/" },
+    { "label": "The Edit", "href": "/the-edit/" },
+    { "label": "Destinations", "href": "/destinations/" }
+  ],
+  "secondary": [
+    { "label": "About", "href": "/about/" },
+    { "label": "Subscribe", "href": "/subscribe/" },
+    { "label": "Search", "href": "/search/" }
+  ],
+  "footer": {
+    "explore": [
+      { "label": "Restaurants", "href": "/restaurants/" },
+      { "label": "Travel", "href": "/travel/" },
+      { "label": "Hotels", "href": "/hotels/" },
+      { "label": "Style", "href": "/style/" },
+      { "label": "Recipes", "href": "/recipes/" },
+      { "label": "The Edit", "href": "/the-edit/" },
+      { "label": "Destinations", "href": "/destinations/" }
+    ],
+    "connect": [
+      { "label": "About", "href": "/about/" },
+      { "label": "Instagram", "href": "https://instagram.com/aileenlavin", "external": true },
+      { "label": "Pinterest", "href": "https://pinterest.com/aileenlavin", "external": true },
+      { "label": "TikTok", "href": "https://tiktok.com/@aileenlavin", "external": true }
+    ]
+  }
+}

@@ -1,193 +1,164 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import AdminNav from '../../components/AdminNav.astro';
+import AdminOutput from '../../components/AdminOutput.astro';
 
-const allPosts = await getCollection('posts');
-const published = allPosts.filter(p => !p.data.draft);
-
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Sort by date descending
-published.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+// Distribution matrix
+const matrix = allPosts.map(post => ({
+  post,
+  newsletter: post.data.distributedNewsletter || post.data.newsletterIncluded,
+  pinterest: post.data.distributedPinterest || post.data.pinsGenerated > 0,
+  instagram: post.data.distributedInstagram,
+  tiktok: post.data.distributedTiktok,
+})).sort((a, b) => {
+  const aScore = [a.newsletter, a.pinterest, a.instagram, a.tiktok].filter(Boolean).length;
+  const bScore = [b.newsletter, b.pinterest, b.instagram, b.tiktok].filter(Boolean).length;
+  return aScore - bScore;
+});
 
-// Distribution stats
-const withPins = published.filter(p => p.data.pinsGenerated && p.data.pinsGenerated > 0);
-const noPins = published.filter(p => !p.data.pinsGenerated || p.data.pinsGenerated === 0);
-const inNewsletter = published.filter(p => p.data.newsletterIncluded);
-const notInNewsletter = published.filter(p => !p.data.newsletterIncluded);
-
-// Distribution completeness: percentage of posts with both pins + newsletter
-const fullyDistributed = published.filter(p => (p.data.pinsGenerated && p.data.pinsGenerated > 0) && p.data.newsletterIncluded);
-const completeness = published.length > 0 ? Math.round((fullyDistributed.length / published.length) * 100) : 0;
-
-// Total pins
-const totalPins = published.reduce((sum, p) => sum + (p.data.pinsGenerated || 0), 0);
+const undistributed = matrix.filter(m => !m.newsletter && !m.pinterest);
+const partiallyDistributed = matrix.filter(m => (m.newsletter || m.pinterest) && (!m.newsletter || !m.pinterest));
+const fullyDistributed = matrix.filter(m => m.newsletter && m.pinterest);
 ---
 
-<Base title="Distribution Dashboard | Admin" noindex={true}>
+<Base title="Distribution | Admin" noindex={true} isAdmin={true}>
   <div class="admin-layout">
-    <h1>Distribution Dashboard</h1>
-    <p class="admin-subtitle">Content promotion and channel tracking</p>
+    <h1>Distribution Engine</h1>
+    <p class="admin-subtitle">Generate derivatives. Distribute everywhere. Track coverage.</p>
 
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+    <AdminNav active="distribution" />
 
-    <div class="admin-actions-bar">
-      <button class="admin-btn" data-action="pins">Generate Pins (All Unpinned)</button>
-      <button class="admin-btn" data-action="newsletter">Draft Newsletter</button>
-    </div>
-    <pre id="action-output"></pre>
-
-    <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link active">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
-    </nav>
-
-    <!-- Stats row -->
     <div class="admin-stats-grid">
       <div class="admin-stat">
-        <span class="admin-stat-number">{totalPins}</span>
-        <span class="admin-stat-label">Total Pins Generated</span>
+        <span class="admin-stat-number">{undistributed.length}</span>
+        <span class="admin-stat-label">Not Distributed</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{inNewsletter.length}</span>
-        <span class="admin-stat-label">In Newsletter</span>
+        <span class="admin-stat-number">{partiallyDistributed.length}</span>
+        <span class="admin-stat-label">Partial</span>
       </div>
       <div class="admin-stat">
         <span class="admin-stat-number">{fullyDistributed.length}</span>
         <span class="admin-stat-label">Fully Distributed</span>
       </div>
-      <div class="admin-stat">
-        <span class={`admin-stat-number ${completeness >= 75 ? 'voice-score--good' : completeness >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{completeness}%</span>
-        <span class="admin-stat-label">Completeness</span>
-      </div>
     </div>
 
-    <!-- Channel Summary -->
-    <div class="admin-card">
-      <h2>Channel Summary</h2>
-      <div class="admin-bar-chart">
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Pinterest Pins</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(withPins.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{withPins.length} / {published.length}</span>
-        </div>
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Newsletter</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(inNewsletter.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{inNewsletter.length} / {published.length}</span>
-        </div>
-      </div>
+    <!-- Batch actions -->
+    <div class="admin-actions-bar" style="margin-bottom: 1.5rem;">
+      <button class="admin-btn admin-btn--primary" data-api-action="pins">Generate All Missing Pins</button>
+      <button class="admin-btn" data-api-action="newsletter">Draft Newsletter</button>
     </div>
 
-    <!-- Posts Missing Pins -->
-    {noPins.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Posts Without Pins ({noPins.length})</h2>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Pillar</th>
-              <th>Published</th>
-            </tr>
-          </thead>
-          <tbody>
-            {noPins.slice(0, 20).map(p => (
-              <tr>
-                <td>{p.data.title}</td>
-                <td><span class="status-badge">{p.data.pillar}</span></td>
-                <td>{p.data.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {noPins.length > 20 && <p>...and {noPins.length - 20} more</p>}
-      </div>
-    )}
-
-    <!-- Posts Not in Newsletter -->
-    {notInNewsletter.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Not Yet in Newsletter ({notInNewsletter.length})</h2>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Pillar</th>
-              <th>Published</th>
-            </tr>
-          </thead>
-          <tbody>
-            {notInNewsletter.slice(0, 20).map(p => (
-              <tr>
-                <td>{p.data.title}</td>
-                <td><span class="status-badge">{p.data.pillar}</span></td>
-                <td>{p.data.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {notInNewsletter.length > 20 && <p>...and {notInNewsletter.length - 20} more</p>}
-      </div>
-    )}
-
-    <!-- Distribution Grid -->
+    <!-- Distribution matrix -->
     <div class="admin-card">
-      <h2>Distribution Status per Post</h2>
+      <h2>Distribution Matrix</h2>
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Title</th>
-            <th>Date</th>
-            <th>Pins</th>
+            <th>Post</th>
             <th>Newsletter</th>
-            <th>Status</th>
+            <th>Pinterest</th>
+            <th>Instagram</th>
+            <th>TikTok</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {published.slice(0, 30).map(p => {
-            const hasPins = p.data.pinsGenerated && p.data.pinsGenerated > 0;
-            const hasNewsletter = p.data.newsletterIncluded;
-            const channels = [hasPins, hasNewsletter];
-            const complete = channels.every(Boolean);
-            const partial = channels.some(Boolean);
+          {matrix.map(m => {
+            const check = (done: boolean) => done ? '<span style="color: var(--color-success);">Done</span>' : '<span style="color: var(--color-text-muted);">—</span>';
             return (
               <tr>
-                <td>{p.data.title}</td>
-                <td>{p.data.date}</td>
                 <td>
-                  <span class={`status-badge ${hasPins ? 'voice-score--good' : 'voice-score--bad'}`}>
-                    {hasPins ? `${p.data.pinsGenerated} pins` : 'None'}
-                  </span>
+                  {m.post.data.title}
+                  <br/><span style="font-size: 0.65rem; color: var(--color-text-muted);">{m.post.data.pillar}</span>
                 </td>
+                <td set:html={check(m.newsletter)} />
+                <td set:html={check(m.pinterest)} />
+                <td set:html={check(m.instagram)} />
+                <td set:html={check(m.tiktok)} />
                 <td>
-                  <span class={`status-badge ${hasNewsletter ? 'voice-score--good' : 'voice-score--bad'}`}>
-                    {hasNewsletter ? 'Yes' : 'No'}
-                  </span>
-                </td>
-                <td>
-                  <span class={`status-badge ${complete ? 'voice-score--good' : partial ? 'voice-score--warn' : 'voice-score--bad'}`}>
-                    {complete ? 'Complete' : partial ? 'Partial' : 'Not Started'}
-                  </span>
+                  <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                    {!m.newsletter && <button class="admin-btn admin-btn--small" data-dist-action="newsletter" data-title={m.post.data.title}>Newsletter</button>}
+                    {!m.pinterest && <button class="admin-btn admin-btn--small" data-dist-action="social" data-title={m.post.data.title} data-platform="pinterest">Pins</button>}
+                    {!m.instagram && <button class="admin-btn admin-btn--small" data-dist-action="instagram" data-title={m.post.data.title}>IG</button>}
+                    {!m.tiktok && <button class="admin-btn admin-btn--small" data-dist-action="social" data-title={m.post.data.title} data-platform="tiktok">TikTok</button>}
+                    {m.newsletter && m.pinterest && <span style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--color-success);">Distributed</span>}
+                  </div>
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      {published.length > 30 && <p>Showing 30 of {published.length} posts</p>}
     </div>
   </div>
-  <AdminActions />
+
+  <AdminOutput />
+
+  <script>
+    const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+    const output = (window as any).adminOutput;
+
+    // Per-post distribution actions
+    document.querySelectorAll('[data-dist-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement;
+        const action = el.dataset.distAction!;
+        const title = el.dataset.title || '';
+        const platform = el.dataset.platform || '';
+
+        const label = action === 'social' ? platform : action;
+        output.show(`${label.charAt(0).toUpperCase() + label.slice(1)}: ${title}`);
+        el.classList.add('admin-btn--loading');
+
+        let endpoint = action;
+        let body: any = { title };
+        if (action === 'social') body.platform = platform;
+
+        try {
+          const res = await fetch(`${API_URL}/api/${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          output.setRaw(await res.json());
+        } catch {
+          output.setError('Could not connect to API. Run: aileen serve');
+        }
+        el.classList.remove('admin-btn--loading');
+      });
+    });
+
+    // Batch actions
+    document.querySelectorAll('[data-api-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement;
+        const action = el.dataset.apiAction!;
+        output.show(`Batch: ${action}`);
+        el.classList.add('admin-btn--loading');
+        try {
+          const res = await fetch(`${API_URL}/api/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          });
+          output.setRaw(await res.json());
+        } catch {
+          output.setError('Could not connect to API. Run: aileen serve');
+        }
+        el.classList.remove('admin-btn--loading');
+      });
+    });
+  </script>
 </Base>
+
+<style>
+  .admin-btn--loading {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+</style>

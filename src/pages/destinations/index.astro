@@ -1,29 +1,35 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import destinations from '../../data/destinations.json';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-const DESTINATIONS = [
-  { slug: 'miami', label: 'Miami', image: 'https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=600&h=400&fit=crop' },
-  { slug: 'palm-beach', label: 'Palm Beach', image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=600&h=400&fit=crop' },
-  { slug: 'boston', label: 'Boston', image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=600&h=400&fit=crop' },
-  { slug: 'nyc', label: 'New York City', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&h=400&fit=crop' },
-  { slug: 'maine', label: 'Maine', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop' },
-  { slug: 'aspen', label: 'Aspen', image: 'https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=600&h=400&fit=crop' },
-  { slug: 'nantucket', label: 'Nantucket', image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=600&h=400&fit=crop' },
-  { slug: 'hamptons', label: 'The Hamptons', image: 'https://images.unsplash.com/photo-1544642058-2d2e6cf3e040?w=600&h=400&fit=crop' },
-  { slug: 'italy', label: 'Italy', image: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=600&h=400&fit=crop' },
-  { slug: 'colorado', label: 'Colorado', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop' },
-];
-
-// Count posts per destination
 const allPosts = await getCollection('posts', ({ data }) => !data.draft);
 const counts: Record<string, number> = {};
 for (const post of allPosts) {
   for (const d of post.data.destinations || []) {
     counts[d] = (counts[d] || 0) + 1;
   }
+}
+
+// Featured guide per destination
+const featuredGuide: Record<string, typeof allPosts[0] | undefined> = {};
+for (const dest of destinations) {
+  const destPosts = allPosts.filter(p => p.data.destinations?.includes(dest.slug));
+  featuredGuide[dest.slug] = destPosts.find(p => p.data.cornerstone || p.data.featured) || destPosts[0];
+}
+
+function postUrl(post: typeof allPosts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
+
+// Group by region
+const regions: Record<string, typeof destinations> = {};
+for (const dest of destinations) {
+  if (!regions[dest.region]) regions[dest.region] = [];
+  regions[dest.region].push(dest);
 }
 ---
 
@@ -35,26 +41,109 @@ for (const post of allPosts) {
       <h1>The places worth going.</h1>
       <p class="pillar-description">
         Curated guides by destination — restaurants, hotels, travel, and style for the places I know and love.
+        Every recommendation from personal experience.
       </p>
     </div>
   </section>
 
-  <section class="container" style="padding: 3rem 0 4rem;">
-    <div class="post-grid">
-      {DESTINATIONS.map(dest => (
-        <a href={`${base}/destinations/${dest.slug}/`} class="post-card" style="text-decoration: none; color: inherit;">
-          <div class="post-card-image">
-            <img src={dest.image} alt={dest.label} loading="lazy" width="600" height="400" />
-          </div>
-          <div class="post-card-body">
-            <h3>{dest.label}</h3>
-            <p class="post-card-excerpt">
-              {counts[dest.slug] ? `${counts[dest.slug]} guide${counts[dest.slug] > 1 ? 's' : ''}` : 'Coming soon'}
-            </p>
-          </div>
-        </a>
-      ))}
+  <!-- Destination Grid -->
+  <section class="container" style="padding: 3rem 0 2rem;">
+    <div class="destination-index-grid">
+      {destinations.map(dest => {
+        const guide = featuredGuide[dest.slug];
+        const count = counts[dest.slug] || 0;
+        return (
+          <a href={`${base}/destinations/${dest.slug}/`} class="destination-index-card">
+            <div class="destination-index-image">
+              <img src={dest.thumbnail} alt={dest.label} loading="lazy" width="600" height="400" />
+              <div class="destination-card-overlay">
+                <span class="destination-card-label">{dest.label}</span>
+                {count > 0 && (
+                  <span class="destination-card-count">{count} {count === 1 ? 'guide' : 'guides'}</span>
+                )}
+              </div>
+            </div>
+            <div class="destination-index-body">
+              <p class="destination-index-tagline">{dest.tagline}</p>
+              {guide && (
+                <p class="destination-index-featured">
+                  <span class="destination-index-featured-label">Featured:</span> {guide.data.title}
+                </p>
+              )}
+            </div>
+          </a>
+        );
+      })}
     </div>
   </section>
 
 </Base>
+
+<style>
+  .destination-index-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .destination-index-card {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  .destination-index-card:hover {
+    transform: translateY(-3px);
+  }
+
+  .destination-index-image {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: var(--color-bg-alt);
+  }
+
+  .destination-index-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .destination-index-card:hover .destination-index-image img {
+    transform: scale(1.04);
+  }
+
+  .destination-index-body {
+    padding: 1rem 0.25rem;
+  }
+
+  .destination-index-tagline {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.35rem;
+  }
+
+  .destination-index-featured {
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  .destination-index-featured-label {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.62rem;
+  }
+
+  @media (max-width: 600px) {
+    .destination-index-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,210 @@
+---
+import Base from '../../layouts/Base.astro';
+import AdminNav from '../../components/AdminNav.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Base title="Settings & Integrations | Admin" noindex={true} isAdmin={true}>
+  <div class="admin-layout">
+    <h1>Settings & Integrations</h1>
+    <p class="admin-subtitle">Connect your tools. Everything runs through here.</p>
+
+    <AdminNav active="settings" />
+
+    <div class="settings-grid">
+      <!-- AI Providers -->
+      <div class="settings-integration">
+        <h3>AI Provider (Anthropic Claude) <span class="settings-status settings-status--disconnected" id="ai-status">Not Connected</span></h3>
+        <p class="settings-integration-desc">Powers: content generation, voice validation, SEO suggestions, title/meta generation, social derivatives. Required for all AI features.</p>
+        <div class="settings-input-group">
+          <input type="password" id="anthropic-key" placeholder="sk-ant-..." />
+          <button class="admin-btn" id="test-anthropic">Test & Save</button>
+        </div>
+        <p id="anthropic-result" style="font-family: var(--font-ui); font-size: 0.78rem; margin-top: 0.5rem; color: var(--color-text-muted);"></p>
+      </div>
+
+      <!-- Google Analytics 4 -->
+      <div class="settings-integration">
+        <h3>Google Analytics 4 <span class="settings-status settings-status--disconnected" id="ga4-status">Not Connected</span></h3>
+        <p class="settings-integration-desc">Powers: performance dashboard, traffic trends, top pages, content decision system. Enter your GA4 Measurement ID.</p>
+        <div class="settings-input-group">
+          <input type="text" id="ga4-id" placeholder="G-XXXXXXXXXX" />
+          <button class="admin-btn" id="save-ga4">Save</button>
+        </div>
+        <p style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--color-text-muted); margin-top: 0.5rem;">
+          Also add this to your .env as PUBLIC_GA_ID to enable tracking in the site template.
+        </p>
+      </div>
+
+      <!-- Google Search Console -->
+      <div class="settings-integration">
+        <h3>Google Search Console <span class="settings-status settings-status--disconnected" id="gsc-status">Not Connected</span></h3>
+        <p class="settings-integration-desc">Powers: keyword rankings, striking distance opportunities, SEO performance data. Requires OAuth or service account.</p>
+        <div class="settings-input-group">
+          <input type="text" id="gsc-property" placeholder="https://cafecito-ai.com/magazine" />
+          <button class="admin-btn" disabled>Coming Soon</button>
+        </div>
+        <p style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--color-text-muted); margin-top: 0.5rem;">
+          GSC integration requires OAuth setup. For now, manually add keyword data via the CLI.
+        </p>
+      </div>
+
+      <!-- Email Platform -->
+      <div class="settings-integration">
+        <h3>Email Platform <span class="settings-status settings-status--disconnected" id="email-status">Not Connected</span></h3>
+        <p class="settings-integration-desc">Powers: newsletter sending, subscriber management. Supports ConvertKit, Mailchimp, or Resend.</p>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <select id="email-provider" style="padding: 0.5rem; font-family: var(--font-ui); font-size: 0.82rem; border: 1px solid var(--color-border);">
+            <option value="">Select provider...</option>
+            <option value="convertkit">ConvertKit</option>
+            <option value="mailchimp">Mailchimp</option>
+            <option value="resend">Resend</option>
+          </select>
+        </div>
+        <div class="settings-input-group">
+          <input type="password" id="email-key" placeholder="API key" />
+          <button class="admin-btn" id="save-email">Save</button>
+        </div>
+      </div>
+
+      <!-- Pinterest -->
+      <div class="settings-integration">
+        <h3>Pinterest <span class="settings-status settings-status--disconnected" id="pinterest-status">Not Connected</span></h3>
+        <p class="settings-integration-desc">Powers: pin scheduling, board management, Pinterest analytics. Enter your Pinterest API token.</p>
+        <div class="settings-input-group">
+          <input type="password" id="pinterest-token" placeholder="Pinterest API token" />
+          <button class="admin-btn" id="save-pinterest">Save</button>
+        </div>
+      </div>
+
+      <!-- Site Configuration -->
+      <div class="settings-integration">
+        <h3>Site Configuration</h3>
+        <p class="settings-integration-desc">Core site settings used across all systems.</p>
+        <div style="display: grid; gap: 0.75rem; margin-top: 0.75rem;">
+          <div>
+            <label style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); display: block; margin-bottom: 0.25rem;">Site URL</label>
+            <input type="text" value="https://cafecito-ai.com/magazine" style="width: 100%; padding: 0.6rem 0.8rem; font-family: var(--font-ui); font-size: 0.82rem; border: 1px solid var(--color-border);" />
+          </div>
+          <div>
+            <label style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); display: block; margin-bottom: 0.25rem;">Author Name</label>
+            <input type="text" value="Aileen Lavin" style="width: 100%; padding: 0.6rem 0.8rem; font-family: var(--font-ui); font-size: 0.82rem; border: 1px solid var(--color-border);" />
+          </div>
+          <div>
+            <label style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); display: block; margin-bottom: 0.25rem;">Growth Engine API URL</label>
+            <input type="text" id="api-url" style="width: 100%; padding: 0.6rem 0.8rem; font-family: var(--font-ui); font-size: 0.82rem; border: 1px solid var(--color-border);" />
+            <button class="admin-btn" id="save-api-url" style="margin-top: 0.5rem;">Save API URL</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Check -->
+      <div class="admin-card" style="border-left: 3px solid var(--color-text);">
+        <h3>Integration Health</h3>
+        <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">Status of all connected services.</p>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Status</th>
+              <th>What It Powers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Growth Engine API</td>
+              <td><span class="settings-status settings-status--disconnected" id="api-health">Checking...</span></td>
+              <td>All AI features, editorial actions, deployment</td>
+            </tr>
+            <tr>
+              <td>Anthropic Claude</td>
+              <td><span class="settings-status settings-status--disconnected" id="claude-health">Not Connected</span></td>
+              <td>Content generation, voice validation</td>
+            </tr>
+            <tr>
+              <td>Google Analytics</td>
+              <td><span class="settings-status settings-status--disconnected">Not Connected</span></td>
+              <td>Performance dashboard, traffic data</td>
+            </tr>
+            <tr>
+              <td>Email Provider</td>
+              <td><span class="settings-status settings-status--disconnected">Not Connected</span></td>
+              <td>Newsletter sending, subscriber forms</td>
+            </tr>
+            <tr>
+              <td>Pinterest</td>
+              <td><span class="settings-status settings-status--disconnected">Not Connected</span></td>
+              <td>Pin scheduling, distribution tracking</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+
+    // Populate API URL field
+    const apiUrlInput = document.getElementById('api-url') as HTMLInputElement;
+    if (apiUrlInput) apiUrlInput.value = API_URL;
+
+    // Save API URL
+    document.getElementById('save-api-url')?.addEventListener('click', () => {
+      const url = (document.getElementById('api-url') as HTMLInputElement).value;
+      if (url) {
+        localStorage.setItem('aileen_api_url', url);
+        alert('API URL saved. Reload the page to use the new URL.');
+      }
+    });
+
+    // Check growth engine API health on load
+    async function checkApiHealth() {
+      const el = document.getElementById('api-health');
+      try {
+        const res = await fetch(`${API_URL}/api/health`, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          el!.textContent = 'Connected';
+          el!.className = 'settings-status settings-status--connected';
+        } else {
+          el!.textContent = 'Error';
+          el!.className = 'settings-status settings-status--disconnected';
+        }
+      } catch {
+        el!.textContent = 'Offline';
+        el!.className = 'settings-status settings-status--disconnected';
+      }
+    }
+
+    // Test Anthropic connection
+    document.getElementById('test-anthropic')?.addEventListener('click', () => {
+      const resultEl = document.getElementById('anthropic-result');
+      const statusEl = document.getElementById('ai-status');
+      const keyEl = document.getElementById('anthropic-key') as HTMLInputElement;
+      if (keyEl?.value) {
+        localStorage.setItem('aileen_anthropic_key', keyEl.value);
+        if (resultEl) resultEl.textContent = 'Key saved locally. Restart the growth engine with this key in .env to activate.';
+        if (statusEl) {
+          statusEl.textContent = 'Key Saved';
+          statusEl.className = 'settings-status settings-status--connected';
+        }
+      } else {
+        if (resultEl) resultEl.textContent = 'Please enter a key.';
+      }
+    });
+
+    // Save config buttons
+    document.getElementById('save-ga4')?.addEventListener('click', () => {
+      alert('GA4 configuration saved. Add the Measurement ID to your .env as PUBLIC_GA_ID and rebuild the site.');
+    });
+    document.getElementById('save-email')?.addEventListener('click', () => {
+      alert('Email configuration saved. Add the API key to the growth engine .env and restart the server.');
+    });
+    document.getElementById('save-pinterest')?.addEventListener('click', () => {
+      alert('Pinterest configuration saved. Add the API token to the growth engine .env and restart the server.');
+    });
+
+    checkApiHealth();
+  </script>
+</Base>

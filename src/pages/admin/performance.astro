@@ -1,169 +1,104 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import AdminNav from '../../components/AdminNav.astro';
 
-const allPosts = await getCollection('posts');
-const published = allPosts.filter(p => !p.data.draft);
-const drafts = allPosts.filter(p => p.data.draft);
-
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Session goal tracker (placeholder — update manually)
-const currentSessions = 0; // Update this value manually or via analytics integration
-const sessionGoal = 50_000;
-const sessionPercent = Math.min(Math.round((currentSessions / sessionGoal) * 100), 100);
-
-// Post count progress
-const postCountGoal = 100; // Adjust target as needed
-const postPercent = Math.min(Math.round((published.length / postCountGoal) * 100), 100);
-
-// Content velocity: posts per month
-const postsByMonth: Record<string, number> = {};
-for (const p of published) {
-  const d = new Date(p.data.date);
-  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  postsByMonth[key] = (postsByMonth[key] || 0) + 1;
-}
-const sortedMonths = Object.entries(postsByMonth).sort((a, b) => a[0].localeCompare(b[0]));
-const recentMonths = sortedMonths.slice(-12);
-
-// Average posts per month (last 6 months)
-const last6 = sortedMonths.slice(-6);
-const avgPerMonth = last6.length > 0 ? Math.round(last6.reduce((sum, [, count]) => sum + count, 0) / last6.length * 10) / 10 : 0;
+// Content stats
+const totalPosts = allPosts.length;
+const totalWords = allPosts.reduce((sum, p) => sum + (p.body?.split(/\s+/).length || 0), 0);
+const avgWords = totalPosts > 0 ? Math.round(totalWords / totalPosts) : 0;
+const withFaq = allPosts.filter(p => p.data.faq && p.data.faq.length > 0).length;
+const withProducts = allPosts.filter(p => p.data.products.length > 0).length;
 
 // Pillar distribution
-const byPillar: Record<string, number> = {};
-for (const p of published) {
-  byPillar[p.data.pillar] = (byPillar[p.data.pillar] || 0) + 1;
+const pillars: Record<string, number> = {};
+for (const p of allPosts) {
+  pillars[p.data.pillar] = (pillars[p.data.pillar] || 0) + 1;
 }
 
-// Voice score stats
-const withVoiceScore = published.filter(p => p.data.voiceScore !== undefined && p.data.voiceScore !== null);
-const avgVoiceScore = withVoiceScore.length > 0 ? Math.round(withVoiceScore.reduce((sum, p) => sum + p.data.voiceScore!, 0) / withVoiceScore.length) : 0;
-
-// SEO score stats
-const withSeoScore = published.filter(p => p.data.seoScore !== undefined && p.data.seoScore !== null);
-const avgSeoScore = withSeoScore.length > 0 ? Math.round(withSeoScore.reduce((sum, p) => sum + p.data.seoScore!, 0) / withSeoScore.length) : 0;
-
-// Mediavine readiness checklist
-const mediavineChecks = [
-  { label: '50,000 sessions per month', pass: currentSessions >= 50_000, detail: `${currentSessions.toLocaleString()} / 50,000 sessions` },
-  { label: 'Original, long-form content', pass: published.length >= 30, detail: `${published.length} published posts` },
-  { label: 'No content policy violations', pass: true, detail: 'Manual check required' },
-  { label: 'Site loads fast (< 3s)', pass: true, detail: 'Manual check — run Lighthouse' },
-  { label: 'Good ad placement potential', pass: published.length >= 20, detail: 'Sufficient content depth' },
-  { label: 'SSL certificate active', pass: true, detail: 'Manual check required' },
-  { label: 'Content in English', pass: true, detail: 'Primary language is English' },
-  { label: 'Good standing with Google AdSense', pass: true, detail: 'Manual check required' },
-];
-const mediavinePassCount = mediavineChecks.filter(c => c.pass).length;
+// Destination coverage
+const destCounts: Record<string, number> = {};
+for (const p of allPosts) {
+  for (const d of p.data.destinations || []) {
+    destCounts[d] = (destCounts[d] || 0) + 1;
+  }
+}
 ---
 
-<Base title="Performance Dashboard | Admin" noindex={true}>
+<Base title="Performance | Admin" noindex={true} isAdmin={true}>
   <div class="admin-layout">
     <h1>Performance Dashboard</h1>
-    <p class="admin-subtitle">Growth metrics and Mediavine readiness</p>
+    <p class="admin-subtitle">Data-driven decisions. Refresh winners, expand what works.</p>
 
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+    <AdminNav active="performance" />
 
-    <div class="admin-actions-bar">
-      <button class="admin-btn" data-action="import-astro">Sync Posts to DB</button>
+    <!-- GA4 connection check -->
+    <div class="admin-card" id="ga4-status-card" style="border-left: 3px solid var(--color-warning); margin-bottom: 2rem;">
+      <h3>Live Traffic Data</h3>
+      <p style="font-family: var(--font-ui); font-size: 0.85rem; color: var(--color-text-secondary);">
+        Google Analytics is <strong>not yet connected</strong>. Connect GA4 in
+        <a href={`${base}/admin/settings/`} style="border-bottom: 1px solid var(--color-border);">Settings</a>
+        to see live traffic, top pages, and performance trends.
+      </p>
+      <p style="font-family: var(--font-ui); font-size: 0.78rem; color: var(--color-text-muted); margin-top: 0.5rem;">
+        The data below reflects content inventory only (build-time), not live traffic.
+      </p>
     </div>
-    <pre id="action-output"></pre>
 
-    <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link active">Performance</a>
-    </nav>
-
-    <!-- Stats row -->
+    <!-- Content inventory stats -->
     <div class="admin-stats-grid">
       <div class="admin-stat">
-        <span class="admin-stat-number">{published.length}</span>
+        <span class="admin-stat-number">{totalPosts}</span>
         <span class="admin-stat-label">Published Posts</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{drafts.length}</span>
-        <span class="admin-stat-label">In Pipeline</span>
+        <span class="admin-stat-number">{Math.round(totalWords / 1000)}K</span>
+        <span class="admin-stat-label">Total Words</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{avgPerMonth}</span>
-        <span class="admin-stat-label">Posts/Month (6mo avg)</span>
+        <span class="admin-stat-number">{avgWords}</span>
+        <span class="admin-stat-label">Avg Words/Post</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{avgVoiceScore || '—'}</span>
-        <span class="admin-stat-label">Avg Voice Score</span>
+        <span class="admin-stat-number">{withFaq}</span>
+        <span class="admin-stat-label">Posts with FAQ</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{withProducts}</span>
+        <span class="admin-stat-label">Monetized Posts</span>
       </div>
     </div>
 
-    <!-- 50K Session Goal Tracker -->
+    <!-- Mediavine goal tracker -->
     <div class="admin-card">
       <h2>50K Session Goal</h2>
-      <p>Current sessions: <strong>{currentSessions.toLocaleString()}</strong> / {sessionGoal.toLocaleString()}</p>
-      <div class="admin-bar-track" style="height: 2rem; border-radius: 0.5rem; margin: 1rem 0;">
-        <div class={`admin-bar-fill ${sessionPercent >= 100 ? 'voice-score--good' : sessionPercent >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`} style={`width: ${sessionPercent}%; height: 100%; border-radius: 0.5rem;`}></div>
+      <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+        Mediavine requires 50,000 monthly sessions. Enter your latest GA4 session count to track progress.
+      </p>
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <input type="number" id="session-count" placeholder="Current monthly sessions" style="padding: 0.6rem 0.8rem; font-family: var(--font-ui); font-size: 0.85rem; border: 1px solid var(--color-border); width: 200px;" />
+        <button class="admin-btn" id="update-goal-btn">Update</button>
       </div>
-      <p><strong>{sessionPercent}%</strong> of goal reached. Update the <code>currentSessions</code> value in this file with your actual analytics data.</p>
-    </div>
-
-    <!-- Post Count Progress -->
-    <div class="admin-card">
-      <h2>Post Count Progress</h2>
-      <p>Published: <strong>{published.length}</strong> / {postCountGoal} target posts</p>
-      <div class="admin-bar-track" style="height: 2rem; border-radius: 0.5rem; margin: 1rem 0;">
-        <div class={`admin-bar-fill ${postPercent >= 100 ? 'voice-score--good' : postPercent >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`} style={`width: ${postPercent}%; height: 100%; border-radius: 0.5rem;`}></div>
+      <div style="background: var(--color-bg-alt); height: 20px; overflow: hidden; position: relative;">
+        <div id="goal-bar" style="height: 100%; background: var(--color-text); width: 0%; transition: width 0.8s ease;"></div>
       </div>
-      <p><strong>{postPercent}%</strong> of post count goal</p>
+      <p id="goal-label" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--color-text-muted); margin-top: 0.5rem;">
+        Enter your session count to see progress.
+      </p>
     </div>
 
-    <!-- Content Velocity -->
+    <!-- Content by pillar -->
     <div class="admin-card">
-      <h2>Content Velocity</h2>
-      <p>Posts published per month (last 12 months)</p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Month</th>
-            <th>Posts</th>
-            <th>Visual</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recentMonths.map(([month, count]) => {
-            const maxCount = Math.max(...recentMonths.map(([, c]) => c));
-            const barWidth = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
-            return (
-              <tr>
-                <td>{month}</td>
-                <td>{count}</td>
-                <td>
-                  <div class="admin-bar-track" style="height: 1.25rem;">
-                    <div class="admin-bar-fill" style={`width: ${barWidth}%; height: 100%;`}></div>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pillar Distribution -->
-    <div class="admin-card">
-      <h2>Pillar Distribution</h2>
+      <h2>Content by Pillar</h2>
       <div class="admin-bar-chart">
-        {Object.entries(byPillar).sort((a, b) => b[1] - a[1]).map(([pillar, count]) => (
+        {Object.entries(pillars).sort((a,b) => b[1] - a[1]).map(([pillar, count]) => (
           <div class="admin-bar-row">
             <span class="admin-bar-label">{pillar.charAt(0).toUpperCase() + pillar.slice(1)}</span>
             <div class="admin-bar-track">
-              <div class="admin-bar-fill" style={`width: ${Math.round(count / published.length * 100)}%`}></div>
+              <div class="admin-bar-fill" style={`width: ${Math.round(count / totalPosts * 100)}%`}></div>
             </div>
             <span class="admin-bar-count">{count}</span>
           </div>
@@ -171,47 +106,127 @@ const mediavinePassCount = mediavineChecks.filter(c => c.pass).length;
       </div>
     </div>
 
-    <!-- Quality Scores -->
+    <!-- Content by destination -->
     <div class="admin-card">
-      <h2>Quality Scores</h2>
-      <div class="admin-stats-grid">
-        <div class="admin-stat">
-          <span class={`admin-stat-number ${avgVoiceScore >= 75 ? 'voice-score--good' : avgVoiceScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{avgVoiceScore || '—'}</span>
-          <span class="admin-stat-label">Avg Voice Score ({withVoiceScore.length} posts)</span>
-        </div>
-        <div class="admin-stat">
-          <span class={`admin-stat-number ${avgSeoScore >= 75 ? 'voice-score--good' : avgSeoScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>{avgSeoScore || '—'}</span>
-          <span class="admin-stat-label">Avg SEO Score ({withSeoScore.length} posts)</span>
-        </div>
+      <h2>Content by Destination</h2>
+      <div class="admin-bar-chart">
+        {Object.entries(destCounts).sort((a,b) => b[1] - a[1]).map(([dest, count]) => (
+          <div class="admin-bar-row">
+            <span class="admin-bar-label">{dest.charAt(0).toUpperCase() + dest.slice(1).replace(/-/g, ' ')}</span>
+            <div class="admin-bar-track">
+              <div class="admin-bar-fill" style={`width: ${Math.round(count / Math.max(...Object.values(destCounts)) * 100)}%`}></div>
+            </div>
+            <span class="admin-bar-count">{count}</span>
+          </div>
+        ))}
       </div>
     </div>
 
-    <!-- Mediavine Readiness Checklist -->
-    <div class="admin-card">
-      <h2>Mediavine Readiness ({mediavinePassCount}/{mediavineChecks.length})</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Requirement</th>
-            <th>Detail</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mediavineChecks.map(check => (
-            <tr>
-              <td>{check.label}</td>
-              <td>{check.detail}</td>
-              <td>
-                <span class={`status-badge ${check.pass ? 'voice-score--good' : 'voice-score--bad'}`}>
-                  {check.pass ? 'Ready' : 'Not Ready'}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <!-- Recommended actions -->
+    <div class="admin-card" style="border-left: 3px solid var(--color-text);">
+      <h2>Recommended Actions</h2>
+      <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+        Based on content inventory analysis. Connect GA4 for traffic-based recommendations.
+      </p>
+      <div class="priority-list">
+        {totalPosts < 50 && (
+          <div class="priority-item">
+            <div class="priority-item-signal">
+              <h4>Increase content volume</h4>
+              <p>{totalPosts} posts published — aim for 50+ for strong internal linking and destination hub depth.</p>
+            </div>
+            <div class="priority-item-actions">
+              <a href={`${base}/admin/editorial/`} class="admin-btn admin-btn--small" style="text-decoration:none;">Create Content</a>
+            </div>
+          </div>
+        )}
+        {Object.values(pillars).some(v => v < 3) && (
+          <div class="priority-item">
+            <div class="priority-item-signal">
+              <h4>Balance pillar coverage</h4>
+              <p>Some pillars have fewer than 3 posts. Balance drives better internal linking.</p>
+            </div>
+            <div class="priority-item-actions">
+              <a href={`${base}/admin/opportunities/`} class="admin-btn admin-btn--small" style="text-decoration:none;">See Gaps</a>
+            </div>
+          </div>
+        )}
+        {withFaq < totalPosts * 0.5 && (
+          <div class="priority-item">
+            <div class="priority-item-signal">
+              <h4>Add FAQ sections</h4>
+              <p>Only {withFaq}/{totalPosts} posts have FAQ. FAQs improve SEO with featured snippet potential.</p>
+            </div>
+            <div class="priority-item-actions">
+              <a href={`${base}/admin/seo/`} class="admin-btn admin-btn--small" style="text-decoration:none;">SEO Console</a>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
+
+    <!-- Growth engine snapshots (from API) -->
+    <div class="admin-card" id="snapshots-card">
+      <h2>Weekly Snapshots</h2>
+      <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+        Historical performance data from the growth engine. <span style="font-style: italic;">Requires growth engine API.</span>
+      </p>
+      <div id="snapshots-content" style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted);">Loading...</div>
+    </div>
+
+    <p style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--color-text-muted); margin-top: 2rem; border-top: 1px solid var(--color-border-light); padding-top: 1rem;">
+      Data source: Content inventory (build-time). Traffic data requires GA4 connection.
+      Snapshot data requires growth engine API (aileen serve).
+    </p>
   </div>
-  <AdminActions />
+
+  <script>
+    const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+
+    function updateGoal() {
+      const input = document.getElementById('session-count') as HTMLInputElement;
+      const bar = document.getElementById('goal-bar');
+      const label = document.getElementById('goal-label');
+      const sessions = parseInt(input?.value || '0');
+      if (sessions > 0 && bar && label) {
+        const pct = Math.min(100, Math.round((sessions / 50000) * 100));
+        bar.style.width = `${pct}%`;
+        label.textContent = `${sessions.toLocaleString()} / 50,000 sessions (${pct}%)`;
+        localStorage.setItem('aileen_sessions', String(sessions));
+      }
+    }
+
+    document.getElementById('update-goal-btn')?.addEventListener('click', updateGoal);
+
+    // Restore saved session count
+    const saved = localStorage.getItem('aileen_sessions');
+    if (saved) {
+      const input = document.getElementById('session-count') as HTMLInputElement;
+      if (input) input.value = saved;
+      updateGoal();
+    }
+
+    // Load snapshots from API
+    async function loadSnapshots() {
+      const el = document.getElementById('snapshots-content');
+      try {
+        const res = await fetch(`${API_URL}/api/status`, { signal: AbortSignal.timeout(3000) });
+        const data = await res.json();
+        if (el) {
+          el.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+              <div><strong>${data.pipeline?.planned || 0}</strong><br/>Planned</div>
+              <div><strong>${data.pipeline?.drafted || 0}</strong><br/>Drafted</div>
+              <div><strong>${data.pins?.total || 0}</strong><br/>Pins</div>
+              <div><strong>${data.sessions || 0}</strong><br/>Last Sessions</div>
+            </div>
+          `;
+        }
+      } catch {
+        if (el) el.textContent = 'Growth engine API not available. Run: aileen serve';
+      }
+    }
+
+    loadSnapshots();
+  </script>
 </Base>

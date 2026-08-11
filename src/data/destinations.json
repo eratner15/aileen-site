@@ -1,0 +1,92 @@
+[
+  {
+    "slug": "miami",
+    "label": "Miami",
+    "tagline": "The spots worth your time from someone who lives here.",
+    "description": "Restaurant guides, hotel reviews, and style for Miami — from Aventura to Brickell. The spots worth your time from someone who lives here.",
+    "image": "https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=600&h=400&fit=crop",
+    "region": "Florida"
+  },
+  {
+    "slug": "palm-beach",
+    "label": "Palm Beach",
+    "tagline": "A destination that rewards good taste.",
+    "description": "Where to stay, where to eat, and what to wear in Palm Beach. Curated guides for a destination that rewards good taste.",
+    "image": "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=600&h=400&fit=crop",
+    "region": "Florida"
+  },
+  {
+    "slug": "boston",
+    "label": "Boston",
+    "tagline": "A food scene worth exploring.",
+    "description": "A slower pace, brownstone streets, and a food scene worth exploring. Boston guides for the person who wants to actually experience the city.",
+    "image": "https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=600&h=400&fit=crop",
+    "region": "New England"
+  },
+  {
+    "slug": "nyc",
+    "label": "New York City",
+    "tagline": "Curated, not exhaustive.",
+    "description": "The restaurants, hotels, and style guides worth knowing in New York. Curated, not exhaustive.",
+    "image": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&h=400&fit=crop",
+    "region": "Northeast"
+  },
+  {
+    "slug": "maine",
+    "label": "Maine",
+    "tagline": "The kind of New England summer that stays with you.",
+    "description": "Bar Harbor, the coast, and the kind of New England summer that stays with you. Travel and dining guides for Maine.",
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
+    "region": "New England"
+  },
+  {
+    "slug": "aspen",
+    "label": "Aspen",
+    "tagline": "Mountain luxury, done right.",
+    "description": "Mountain luxury, winter style, and where to eat after a day on the slopes. Aspen guides for people who appreciate the details.",
+    "image": "https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=600&h=400&fit=crop",
+    "region": "Mountain West"
+  },
+  {
+    "slug": "nantucket",
+    "label": "Nantucket",
+    "tagline": "Island time, done well.",
+    "description": "Island time done well. Where to eat, what to wear, and how to spend a weekend on Nantucket without the tourist traps.",
+    "image": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=600&h=400&fit=crop",
+    "region": "New England"
+  },
+  {
+    "slug": "hamptons",
+    "label": "The Hamptons",
+    "tagline": "A curated approach to the East End.",
+    "description": "Summer weekends, restaurant reservations, and what to pack for the East End. A curated approach to the Hamptons.",
+    "image": "https://images.unsplash.com/photo-1544642058-2d2e6cf3e040?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1544642058-2d2e6cf3e040?w=600&h=400&fit=crop",
+    "region": "Northeast"
+  },
+  {
+    "slug": "italy",
+    "label": "Italy",
+    "tagline": "Guides beyond the guidebook.",
+    "description": "The hotels worth booking, the restaurants worth finding, and the kind of Italian trip that stays with you. Guides beyond the guidebook.",
+    "image": "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=600&h=400&fit=crop",
+    "region": "Europe"
+  },
+  {
+    "slug": "colorado",
+    "label": "Colorado",
+    "tagline": "Beyond Aspen.",
+    "description": "Beyond Aspen — mountain towns, ski resorts, and summer escapes across Colorado. Where to stay, eat, and explore.",
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=675&fit=crop",
+    "thumbnail": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
+    "region": "Mountain West"
+  }
+]

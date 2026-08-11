@@ -1,132 +1,106 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import AdminNav from '../../components/AdminNav.astro';
+import AdminOutput from '../../components/AdminOutput.astro';
+import destinations from '../../data/destinations.json';
 
-const allPosts = await getCollection('posts');
-const published = allPosts.filter(p => !p.data.draft);
-
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// All known content types
-const knownTypes = [
-  'destination-guide', 'neighborhood-guide', 'itinerary', 'restaurant-guide',
-  'hotel-review', 'travel-tips', 'packing-list', 'style-guide', 'the-edit',
-  'seasonal-guide', 'article'
-];
+// Destination gaps: destinations with fewer than 3 posts
+const destCoverage = destinations.map(d => {
+  const posts = allPosts.filter(p => p.data.destinations?.includes(d.slug));
+  return { ...d, count: posts.length, types: [...new Set(posts.map(p => p.data.contentType || 'article'))] };
+});
+const thinDests = destCoverage.filter(d => d.count < 3);
 
-// Destination coverage
-const destCounts: Record<string, number> = {};
-for (const p of published) {
-  if (p.data.destinations && p.data.destinations.length > 0) {
-    for (const d of p.data.destinations) {
-      destCounts[d] = (destCounts[d] || 0) + 1;
-    }
-  }
-}
-const sortedDests = Object.entries(destCounts).sort((a, b) => b[1] - a[1]);
-const underservedDests = sortedDests.filter(([, count]) => count < 3);
-
-// Content type coverage
-const typeCounts: Record<string, number> = {};
-for (const t of knownTypes) {
-  typeCounts[t] = 0;
-}
-for (const p of published) {
-  const t = p.data.contentType || 'article';
-  typeCounts[t] = (typeCounts[t] || 0) + 1;
-}
-const missingTypes = Object.entries(typeCounts).filter(([, count]) => count === 0);
-
-// Cluster gaps: for each destination, which content types are missing
-const destTypeMatrix: Record<string, Set<string>> = {};
-for (const p of published) {
-  if (p.data.destinations) {
-    for (const d of p.data.destinations) {
-      if (!destTypeMatrix[d]) destTypeMatrix[d] = new Set();
-      destTypeMatrix[d].add(p.data.contentType || 'article');
+// Content type gaps per destination
+type Gap = { dest: string; type: string; suggestion: string };
+const contentGaps: Gap[] = [];
+const expectedTypes = ['restaurant-guide', 'hotel-review', 'travel-guide', 'style-guide'];
+for (const d of destCoverage.filter(dc => dc.count > 0)) {
+  for (const t of expectedTypes) {
+    if (!d.types.includes(t)) {
+      const typeLabels: Record<string, string> = { 'restaurant-guide': 'Best Restaurants', 'hotel-review': 'Where to Stay', 'travel-guide': 'Travel Guide', 'style-guide': 'What to Wear' };
+      contentGaps.push({ dest: d.label, type: t, suggestion: `${typeLabels[t]} in ${d.label}` });
     }
   }
 }
 
-const coreTypes = ['destination-guide', 'restaurant-guide', 'hotel-review', 'itinerary'];
-const clusterGaps: { destination: string; missing: string[] }[] = [];
-for (const [dest, types] of Object.entries(destTypeMatrix)) {
-  const missing = coreTypes.filter(t => !types.has(t));
-  if (missing.length > 0) {
-    clusterGaps.push({ destination: dest, missing });
-  }
-}
-clusterGaps.sort((a, b) => b.missing.length - a.missing.length);
+// Cornerstone gaps
+const pillars = ['travel', 'style', 'recipes', 'lifestyle'];
+const pillarCornerstones = pillars.map(p => ({
+  pillar: p,
+  cornerstone: allPosts.filter(post => post.data.pillar === p && post.data.cornerstone).length,
+  total: allPosts.filter(post => post.data.pillar === p).length,
+}));
+const missingCornerstones = pillarCornerstones.filter(p => p.cornerstone === 0 && p.total > 0);
 
-// Recent posts for follow-up suggestions
-const recent = [...published]
-  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
-  .slice(0, 10);
+// Refresh opportunities
+const sixMonthsAgo = new Date();
+sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+const refreshOpps = allPosts
+  .filter(p => new Date(p.data.updatedDate || p.data.date) < sixMonthsAgo)
+  .sort((a, b) => new Date(a.data.updatedDate || a.data.date).getTime() - new Date(b.data.updatedDate || b.data.date).getTime());
 
-// Follow-up suggestions based on content type
-function suggestFollowUp(contentType: string): string[] {
-  const suggestions: Record<string, string[]> = {
-    'destination-guide': ['restaurant-guide', 'hotel-review', 'itinerary', 'packing-list'],
-    'restaurant-guide': ['destination-guide', 'the-edit', 'neighborhood-guide'],
-    'hotel-review': ['destination-guide', 'itinerary', 'style-guide'],
-    'itinerary': ['packing-list', 'restaurant-guide', 'hotel-review'],
-    'neighborhood-guide': ['restaurant-guide', 'itinerary'],
-    'style-guide': ['packing-list', 'the-edit'],
-    'the-edit': ['style-guide', 'destination-guide'],
-    'packing-list': ['style-guide', 'destination-guide'],
-    'travel-tips': ['packing-list', 'destination-guide'],
-    'seasonal-guide': ['packing-list', 'itinerary', 'destination-guide'],
-    'article': ['destination-guide', 'the-edit'],
-  };
-  return suggestions[contentType] || ['destination-guide'];
-}
+// Monetization gaps
+const monetizationGaps = allPosts.filter(p =>
+  ['restaurant-guide', 'hotel-review', 'the-edit', 'style-guide'].includes(p.data.contentType || '') &&
+  p.data.products.length === 0 && p.data.bookingLinks.length === 0 && p.data.reservationLinks.length === 0
+);
 ---
 
-<Base title="Content Opportunities | Admin" noindex={true}>
+<Base title="Opportunities | Admin" noindex={true} isAdmin={true}>
   <div class="admin-layout">
-    <h1>Content Opportunities</h1>
-    <p class="admin-subtitle">Gaps, clusters, and growth areas</p>
+    <h1>Growth Opportunities</h1>
+    <p class="admin-subtitle">Strategic gaps to fill and content to build next.</p>
 
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+    <AdminNav active="opportunities" />
 
-    <div class="admin-actions-bar">
-      <button class="admin-btn" data-action="plan">Generate Content Plan</button>
-    </div>
-    <pre id="action-output"></pre>
-
-    <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link active">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
-    </nav>
-
-    <!-- Stats row -->
     <div class="admin-stats-grid">
       <div class="admin-stat">
-        <span class="admin-stat-number">{sortedDests.length}</span>
-        <span class="admin-stat-label">Destinations Covered</span>
+        <span class="admin-stat-number">{contentGaps.length}</span>
+        <span class="admin-stat-label">Content Type Gaps</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{underservedDests.length}</span>
-        <span class="admin-stat-label">Underserved Destinations</span>
+        <span class="admin-stat-number">{thinDests.length}</span>
+        <span class="admin-stat-label">Thin Destinations</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{missingTypes.length}</span>
-        <span class="admin-stat-label">Unused Content Types</span>
+        <span class="admin-stat-number">{refreshOpps.length}</span>
+        <span class="admin-stat-label">Refresh Opps</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{clusterGaps.length}</span>
-        <span class="admin-stat-label">Cluster Gaps</span>
+        <span class="admin-stat-number">{monetizationGaps.length}</span>
+        <span class="admin-stat-label">Monetization Gaps</span>
       </div>
     </div>
 
-    <!-- Destination Coverage -->
+    <!-- Content type gaps -->
+    {contentGaps.length > 0 && (
+      <div class="admin-card" style="border-left: 3px solid var(--color-text);">
+        <h2>Content Gaps by Destination</h2>
+        <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+          Destinations where key content types are missing. Each gap is an article opportunity.
+        </p>
+        <div class="priority-list">
+          {contentGaps.slice(0, 12).map(gap => (
+            <div class="priority-item">
+              <div class="priority-item-signal">
+                <h4>{gap.suggestion}</h4>
+                <p>Missing {gap.type.replace(/-/g, ' ')} for {gap.dest}</p>
+              </div>
+              <div class="priority-item-actions">
+                <button class="admin-btn admin-btn--small" data-api-action="outline" data-title={gap.suggestion}>Generate Brief</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Destination coverage -->
     <div class="admin-card">
       <h2>Destination Coverage</h2>
       <table class="admin-table">
@@ -134,18 +108,24 @@ function suggestFollowUp(contentType: string): string[] {
           <tr>
             <th>Destination</th>
             <th>Posts</th>
+            <th>Content Types</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          {sortedDests.map(([dest, count]) => (
+          {destCoverage.map(d => (
             <tr>
-              <td>{dest}</td>
-              <td>{count}</td>
+              <td>{d.label}</td>
+              <td>{d.count}</td>
+              <td style="font-family: var(--font-ui); font-size: 0.72rem;">{d.types.join(', ') || '—'}</td>
               <td>
-                <span class={`status-badge ${count >= 5 ? 'voice-score--good' : count >= 3 ? 'voice-score--warn' : 'voice-score--bad'}`}>
-                  {count >= 5 ? 'Strong' : count >= 3 ? 'Growing' : 'Needs Content'}
-                </span>
+                {d.count === 0 ? (
+                  <span class="status-badge status-badge--error">Empty</span>
+                ) : d.count < 3 ? (
+                  <span class="status-badge status-badge--warning">Thin</span>
+                ) : (
+                  <span class="status-badge status-badge--success">Good</span>
+                )}
               </td>
             </tr>
           ))}
@@ -153,44 +133,25 @@ function suggestFollowUp(contentType: string): string[] {
       </table>
     </div>
 
-    <!-- Content Type Coverage -->
-    <div class="admin-card">
-      <h2>Content Type Coverage</h2>
-      <div class="admin-bar-chart">
-        {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">{type.replace(/-/g, ' ')}</span>
-            <div class="admin-bar-track">
-              <div class={`admin-bar-fill ${count === 0 ? 'voice-score--bad' : ''}`} style={`width: ${published.length > 0 ? Math.max(Math.round(count / published.length * 100), count > 0 ? 3 : 0) : 0}%`}></div>
-            </div>
-            <span class="admin-bar-count">{count}</span>
-          </div>
-        ))}
-      </div>
-      {missingTypes.length > 0 && (
-        <p class="admin-alert-text">Unused types: {missingTypes.map(([t]) => t.replace(/-/g, ' ')).join(', ')}</p>
-      )}
-    </div>
-
-    <!-- Cluster Gaps -->
-    {clusterGaps.length > 0 && (
-      <div class="admin-card">
-        <h2>Content Cluster Gaps</h2>
-        <p>For each destination, these core content types are missing:</p>
+    <!-- Refresh opportunities -->
+    {refreshOpps.length > 0 && (
+      <div class="admin-card admin-card--alert">
+        <h2>Refresh Opportunities ({refreshOpps.length})</h2>
+        <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+          Posts older than 6 months without an update. Refreshing can boost rankings.
+        </p>
         <table class="admin-table">
           <thead>
-            <tr>
-              <th>Destination</th>
-              <th>Missing Content Types</th>
-              <th>Gap Count</th>
-            </tr>
+            <tr><th>Title</th><th>Last Updated</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            {clusterGaps.map(({ destination, missing }) => (
+            {refreshOpps.slice(0, 8).map(p => (
               <tr>
-                <td>{destination}</td>
-                <td>{missing.map(t => t.replace(/-/g, ' ')).join(', ')}</td>
-                <td><span class={`status-badge ${missing.length >= 3 ? 'voice-score--bad' : 'voice-score--warn'}`}>{missing.length}</span></td>
+                <td>{p.data.title}</td>
+                <td>{p.data.updatedDate || p.data.date}</td>
+                <td>
+                  <button class="admin-btn admin-btn--small" data-api-action="refresh" data-title={p.data.title} data-keyword={p.data.targetKeyword}>Refresh Brief</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -198,35 +159,100 @@ function suggestFollowUp(contentType: string): string[] {
       </div>
     )}
 
-    <!-- Follow-up Suggestions -->
-    <div class="admin-card">
-      <h2>Follow-up Content Suggestions</h2>
-      <p>Based on recently published posts, consider writing these next:</p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Recent Post</th>
-            <th>Type</th>
-            <th>Destinations</th>
-            <th>Suggested Follow-ups</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recent.map(p => {
-            const ct = p.data.contentType || 'article';
-            const suggestions = suggestFollowUp(ct);
-            return (
-              <tr>
-                <td>{p.data.title}</td>
-                <td><span class="status-badge">{ct.replace(/-/g, ' ')}</span></td>
-                <td>{p.data.destinations?.join(', ') || '—'}</td>
-                <td>{suggestions.map(s => s.replace(/-/g, ' ')).join(', ')}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <!-- Missing cornerstone -->
+    {missingCornerstones.length > 0 && (
+      <div class="admin-card">
+        <h2>Missing Cornerstones</h2>
+        <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+          Pillars with content but no cornerstone article. Cornerstones are essential for hub-and-spoke SEO.
+        </p>
+        {missingCornerstones.map(p => (
+          <p style="font-family: var(--font-ui); font-size: 0.85rem;">
+            <strong>{p.pillar.charAt(0).toUpperCase() + p.pillar.slice(1)}</strong> — {p.total} posts, no cornerstone
+          </p>
+        ))}
+      </div>
+    )}
+
+    <!-- Keywords (from API) -->
+    <div class="admin-card" id="keywords-card">
+      <h2>Top Keyword Opportunities</h2>
+      <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+        Unassigned keywords ranked by opportunity score. <span style="font-style: italic;">Requires growth engine API.</span>
+      </p>
+      <div id="keywords-list" style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted);">Loading keywords...</div>
     </div>
   </div>
-  <AdminActions />
+
+  <AdminOutput />
+
+  <script>
+    const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+    const output = (window as any).adminOutput;
+
+    async function loadKeywords() {
+      const el = document.getElementById('keywords-list');
+      try {
+        const res = await fetch(`${API_URL}/api/keywords`, { signal: AbortSignal.timeout(3000) });
+        const data = await res.json();
+        if (data.keywords?.length > 0) {
+          el!.innerHTML = '<table class="admin-table"><thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th><th>Pillar</th><th>Score</th></tr></thead><tbody>' +
+            data.keywords.map((k: any) =>
+              `<tr><td>${k.keyword}</td><td>${k.search_volume || '—'}</td><td>${k.difficulty || '—'}</td><td>${k.pillar || '—'}</td><td>${k.opportunity_score?.toFixed(1) || '—'}</td></tr>`
+            ).join('') + '</tbody></table>';
+        } else {
+          el!.textContent = 'No unassigned keywords found. Add keywords via: aileen seed-keywords';
+        }
+      } catch {
+        el!.textContent = 'Could not connect to growth engine API. Run: aileen serve';
+      }
+    }
+
+    loadKeywords();
+
+    // API action buttons
+    document.querySelectorAll('[data-api-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement;
+        const action = el.dataset.apiAction!;
+        const title = el.dataset.title || '';
+        const keyword = el.dataset.keyword || '';
+
+        let endpoint = action;
+        let body: any = { title, keyword };
+
+        switch (action) {
+          case 'outline':
+            body = { topic: title };
+            break;
+          case 'refresh':
+            body = { title, keyword };
+            break;
+        }
+
+        const label = action.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        output.show(`${label}: ${title}`);
+        el.classList.add('admin-btn--loading');
+
+        try {
+          const res = await fetch(`${API_URL}/api/${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          output.setRaw(await res.json());
+        } catch {
+          output.setError('Could not connect to API. Run: aileen serve');
+        }
+        el.classList.remove('admin-btn--loading');
+      });
+    });
+  </script>
 </Base>
+
+<style>
+  .admin-btn--loading {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+</style>

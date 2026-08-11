@@ -1,216 +1,185 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import AdminNav from '../../components/AdminNav.astro';
+import AdminOutput from '../../components/AdminOutput.astro';
 
-const allPosts = await getCollection('posts');
-const published = allPosts.filter(p => !p.data.draft);
-
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Sort by date descending
-published.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+// Monetization analysis per post
+const monetizationData = allPosts.map(post => {
+  const hasProducts = post.data.products.length > 0;
+  const hasBooking = post.data.bookingLinks.length > 0;
+  const hasReservation = post.data.reservationLinks.length > 0;
+  const hasDisclosure = post.data.affiliateDisclosure || post.data.disclosureAdded;
+  const isMonetizable = ['restaurant-guide', 'hotel-review', 'the-edit', 'style-guide', 'travel-guide'].includes(post.data.contentType || '');
+  const isMonetized = hasProducts || hasBooking || hasReservation;
+  const needsDisclosure = isMonetized && !hasDisclosure;
 
-// Monetization fields
-const withAffiliateDisclosure = published.filter(p => p.data.affiliateDisclosure);
-const withProducts = published.filter(p => p.data.products && p.data.products.length > 0);
-const withBookingLinks = published.filter(p => p.data.bookingLinks && p.data.bookingLinks.length > 0);
-const withReservationLinks = published.filter(p => p.data.reservationLinks && p.data.reservationLinks.length > 0);
+  return {
+    post,
+    hasProducts,
+    hasBooking,
+    hasReservation,
+    hasDisclosure,
+    isMonetizable,
+    isMonetized,
+    needsDisclosure,
+  };
+});
 
-// Any monetization
-const monetized = published.filter(p =>
-  p.data.affiliateDisclosure ||
-  (p.data.products && p.data.products.length > 0) ||
-  (p.data.bookingLinks && p.data.bookingLinks.length > 0) ||
-  (p.data.reservationLinks && p.data.reservationLinks.length > 0)
-);
+const monetized = monetizationData.filter(m => m.isMonetized);
+const unmonetizedOpps = monetizationData.filter(m => m.isMonetizable && !m.isMonetized);
+const missingDisclosure = monetizationData.filter(m => m.needsDisclosure);
+const theEditPotential = monetizationData.filter(m => m.hasProducts && m.post.data.contentType !== 'the-edit');
 
-// Monetizable content types that should have monetization fields
-const monetizableTypes = ['restaurant-guide', 'hotel-review', 'style-guide', 'the-edit'];
-const monetizablePosts = published.filter(p => monetizableTypes.includes(p.data.contentType || ''));
-const missingMonetization = monetizablePosts.filter(p =>
-  !p.data.affiliateDisclosure &&
-  (!p.data.products || p.data.products.length === 0) &&
-  (!p.data.bookingLinks || p.data.bookingLinks.length === 0) &&
-  (!p.data.reservationLinks || p.data.reservationLinks.length === 0)
-);
-
-// Total product count
-const totalProducts = published.reduce((sum, p) => sum + (p.data.products?.length || 0), 0);
-const totalBookingLinks = published.reduce((sum, p) => sum + (p.data.bookingLinks?.length || 0), 0);
-const totalReservationLinks = published.reduce((sum, p) => sum + (p.data.reservationLinks?.length || 0), 0);
-
-// Monetization readiness
-const readinessChecks = [
-  { label: 'Affiliate disclosure on monetized posts', pass: monetized.every(p => p.data.affiliateDisclosure), detail: `${withAffiliateDisclosure.length} of ${monetized.length} monetized posts` },
-  { label: 'Products listed on style guides / the-edit', pass: published.filter(p => ['style-guide', 'the-edit'].includes(p.data.contentType || '')).every(p => p.data.products && p.data.products.length > 0), detail: 'All style/edit posts have products' },
-  { label: 'Booking links on hotel reviews', pass: published.filter(p => p.data.contentType === 'hotel-review').every(p => p.data.bookingLinks && p.data.bookingLinks.length > 0), detail: 'All hotel reviews have booking links' },
-  { label: 'Reservation links on restaurant guides', pass: published.filter(p => p.data.contentType === 'restaurant-guide').every(p => p.data.reservationLinks && p.data.reservationLinks.length > 0), detail: 'All restaurant guides have reservation links' },
-  { label: 'At least 10 monetized posts', pass: monetized.length >= 10, detail: `${monetized.length} monetized posts` },
-  { label: 'At least 25 total product links', pass: totalProducts >= 25, detail: `${totalProducts} product links` },
-];
+function postUrl(post: typeof allPosts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
 ---
 
-<Base title="Monetization Dashboard | Admin" noindex={true}>
+<Base title="Monetization | Admin" noindex={true} isAdmin={true}>
   <div class="admin-layout">
-    <h1>Monetization Dashboard</h1>
-    <p class="admin-subtitle">Revenue opportunities and affiliate tracking</p>
+    <h1>Monetization Console</h1>
+    <p class="admin-subtitle">Revenue modules. Affiliate coverage. Disclosure tracking.</p>
 
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+    <AdminNav active="monetization" />
 
-    <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link active">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
-    </nav>
-
-    <!-- Stats row -->
     <div class="admin-stats-grid">
       <div class="admin-stat">
         <span class="admin-stat-number">{monetized.length}</span>
-        <span class="admin-stat-label">Monetized Posts</span>
+        <span class="admin-stat-label">Monetized</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{totalProducts}</span>
-        <span class="admin-stat-label">Product Links</span>
+        <span class="admin-stat-number">{unmonetizedOpps.length}</span>
+        <span class="admin-stat-label">Opportunities</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{totalBookingLinks}</span>
-        <span class="admin-stat-label">Booking Links</span>
+        <span class="admin-stat-number">{missingDisclosure.length}</span>
+        <span class="admin-stat-label">Missing Disclosure</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{totalReservationLinks}</span>
-        <span class="admin-stat-label">Reservation Links</span>
+        <span class="admin-stat-number">{theEditPotential.length}</span>
+        <span class="admin-stat-label">The Edit Potential</span>
       </div>
     </div>
 
-    <!-- Monetization by Channel -->
-    <div class="admin-card">
-      <h2>Monetization by Channel</h2>
-      <div class="admin-bar-chart">
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Affiliate Disclosure</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(withAffiliateDisclosure.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{withAffiliateDisclosure.length}</span>
+    <!-- Unmonetized opportunities -->
+    {unmonetizedOpps.length > 0 && (
+      <div class="admin-card" style="border-left: 3px solid var(--color-warning);">
+        <h2>Unmonetized Opportunities</h2>
+        <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+          Monetizable content types with no product, booking, or reservation blocks.
+        </p>
+        <div class="priority-list">
+          {unmonetizedOpps.map(m => {
+            const typeLabel = (m.post.data.contentType || 'article').replace(/-/g, ' ');
+            const suggestedAction = m.post.data.contentType === 'hotel-review' ? 'Add Booking CTA' :
+              m.post.data.contentType === 'restaurant-guide' ? 'Add Reservation CTA' : 'Add Product Grid';
+            return (
+              <div class="priority-item">
+                <div class="priority-item-signal">
+                  <h4>{m.post.data.title}</h4>
+                  <p>{typeLabel} — {m.post.data.destinations?.join(', ') || 'no destination'}</p>
+                </div>
+                <div class="priority-item-actions">
+                  <button class="admin-btn admin-btn--small" data-api-action="audit-monetization" data-title={m.post.data.title} data-keyword={m.post.data.targetKeyword}>{suggestedAction}</button>
+                  <a href={`${base}/admin/post/${m.post.id}/`} class="admin-btn admin-btn--small" style="text-decoration:none;">Edit</a>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Products</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(withProducts.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{withProducts.length}</span>
-        </div>
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Booking Links</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(withBookingLinks.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{withBookingLinks.length}</span>
-        </div>
-        <div class="admin-bar-row">
-          <span class="admin-bar-label">Reservation Links</span>
-          <div class="admin-bar-track">
-            <div class="admin-bar-fill" style={`width: ${published.length > 0 ? Math.round(withReservationLinks.length / published.length * 100) : 0}%`}></div>
-          </div>
-          <span class="admin-bar-count">{withReservationLinks.length}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Monetization Readiness Checklist -->
-    <div class="admin-card">
-      <h2>Monetization Readiness Checklist</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Check</th>
-            <th>Detail</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {readinessChecks.map(check => (
-            <tr>
-              <td>{check.label}</td>
-              <td>{check.detail}</td>
-              <td>
-                <span class={`status-badge ${check.pass ? 'voice-score--good' : 'voice-score--bad'}`}>
-                  {check.pass ? 'Pass' : 'Needs Work'}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Missing Monetization on Monetizable Posts -->
-    {missingMonetization.length > 0 && (
-      <div class="admin-card admin-card--alert">
-        <h2>Monetizable Posts Missing Revenue Links ({missingMonetization.length})</h2>
-        <p>These posts are monetizable content types ({monetizableTypes.join(', ').replace(/-/g, ' ')}) but have no products, booking links, or reservation links.</p>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Pillar</th>
-              <th>Published</th>
-            </tr>
-          </thead>
-          <tbody>
-            {missingMonetization.map(p => (
-              <tr>
-                <td>{p.data.title}</td>
-                <td><span class="status-badge">{(p.data.contentType || 'article').replace(/-/g, ' ')}</span></td>
-                <td>{p.data.pillar}</td>
-                <td>{p.data.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     )}
 
-    <!-- Monetized Posts Detail -->
+    <!-- Missing disclosure -->
+    {missingDisclosure.length > 0 && (
+      <div class="admin-card admin-card--alert">
+        <h2>Missing Disclosure ({missingDisclosure.length})</h2>
+        <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+          Posts with monetization modules but no affiliate disclosure. FTC compliance risk.
+        </p>
+        <ul style="list-style: disc; padding-left: 1.25rem;">
+          {missingDisclosure.map(m => (
+            <li style="font-family: var(--font-ui); font-size: 0.82rem; margin-bottom: 0.35rem;">
+              {m.post.data.title}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    <!-- Monetization coverage -->
     <div class="admin-card">
-      <h2>Monetized Posts Detail</h2>
+      <h2>Full Coverage</h2>
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Title</th>
+            <th>Post</th>
             <th>Type</th>
-            <th>Disclosure</th>
             <th>Products</th>
             <th>Booking</th>
             <th>Reservation</th>
+            <th>Disclosure</th>
           </tr>
         </thead>
         <tbody>
-          {monetized.map(p => (
-            <tr>
-              <td>{p.data.title}</td>
-              <td><span class="status-badge">{(p.data.contentType || 'article').replace(/-/g, ' ')}</span></td>
-              <td>
-                <span class={`status-badge ${p.data.affiliateDisclosure ? 'voice-score--good' : 'voice-score--bad'}`}>
-                  {p.data.affiliateDisclosure ? 'Yes' : 'No'}
-                </span>
-              </td>
-              <td>{p.data.products?.length || 0}</td>
-              <td>{p.data.bookingLinks?.length || 0}</td>
-              <td>{p.data.reservationLinks?.length || 0}</td>
-            </tr>
-          ))}
+          {monetizationData.map(m => {
+            const check = (done: boolean) => done ? 'Yes' : '—';
+            return (
+              <tr>
+                <td><a href={postUrl(m.post)} style="text-decoration:none; border-bottom: 1px solid var(--color-border);">{m.post.data.title}</a></td>
+                <td>{(m.post.data.contentType || 'article').replace(/-/g, ' ')}</td>
+                <td style={m.hasProducts ? 'color: var(--color-success)' : 'color: var(--color-text-muted)'}>{m.hasProducts ? m.post.data.products.length : '—'}</td>
+                <td style={m.hasBooking ? 'color: var(--color-success)' : 'color: var(--color-text-muted)'}>{check(m.hasBooking)}</td>
+                <td style={m.hasReservation ? 'color: var(--color-success)' : 'color: var(--color-text-muted)'}>{check(m.hasReservation)}</td>
+                <td style={m.hasDisclosure ? 'color: var(--color-success)' : m.isMonetized ? 'color: var(--color-error)' : 'color: var(--color-text-muted)'}>{m.isMonetized ? (m.hasDisclosure ? 'Yes' : 'MISSING') : 'N/A'}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   </div>
-  <AdminActions />
+
+  <AdminOutput />
+
+  <script>
+    const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+    const output = (window as any).adminOutput;
+
+    document.querySelectorAll('[data-api-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement;
+        const action = el.dataset.apiAction!;
+        const title = el.dataset.title || '';
+        const keyword = el.dataset.keyword || '';
+
+        output.show(`Monetization Audit: ${title}`);
+        el.classList.add('admin-btn--loading');
+
+        try {
+          const res = await fetch(`${API_URL}/api/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: `Title: ${title}\nKeyword: ${keyword}`, keyword }),
+          });
+          output.setRaw(await res.json());
+        } catch {
+          output.setError('Could not connect to API. Run: aileen serve');
+        }
+        el.classList.remove('admin-btn--loading');
+      });
+    });
+  </script>
 </Base>
+
+<style>
+  .admin-btn--loading {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+</style>

@@ -1,0 +1,283 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import AdminNav from '../../components/AdminNav.astro';
+import AdminOutput from '../../components/AdminOutput.astro';
+
+const allPosts = await getCollection('posts');
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Group by status
+const published = allPosts.filter(p => !p.data.draft).sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+const drafts = allPosts.filter(p => p.data.draft);
+const refreshNeeded = published.filter(p => {
+  const d = new Date(p.data.updatedDate || p.data.date);
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  return d < sixMonthsAgo;
+});
+const cornerstones = published.filter(p => p.data.cornerstone);
+const featuredPosts = published.filter(p => p.data.featured);
+
+// Unique pillars and content types
+const pillars = [...new Set(allPosts.map(p => p.data.pillar))];
+
+// Templates
+const templates = [
+  { name: 'Best Restaurants in [City]', type: 'restaurant-guide', pillar: 'travel' },
+  { name: 'Travel Guide for [Destination]', type: 'travel-guide', pillar: 'travel' },
+  { name: 'Where to Stay in [City]', type: 'hotel-review', pillar: 'travel' },
+  { name: 'Hotel Review', type: 'hotel-review', pillar: 'travel' },
+  { name: 'What to Wear in [Destination]', type: 'style-guide', pillar: 'style' },
+  { name: 'Shopping Edit', type: 'the-edit', pillar: 'style' },
+  { name: 'Recipe', type: 'recipe', pillar: 'recipes' },
+  { name: 'Quiet Luxury / Lifestyle', type: 'article', pillar: 'lifestyle' },
+];
+
+function postUrl(post: typeof allPosts[0]) {
+  const [pillar, ...rest] = post.id.split('/');
+  return `${base}/${pillar}/${rest.join('/')}/`;
+}
+---
+
+<Base title="Editorial | Admin" noindex={true} isAdmin={true}>
+  <div class="admin-layout">
+    <h1>Editorial</h1>
+    <p class="admin-subtitle">Content pipeline — from idea to published.</p>
+
+    <AdminNav active="editorial" />
+
+    <!-- Pipeline stats -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat">
+        <span class="admin-stat-number">{drafts.length}</span>
+        <span class="admin-stat-label">Drafts</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{published.length}</span>
+        <span class="admin-stat-label">Published</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{refreshNeeded.length}</span>
+        <span class="admin-stat-label">Refresh Needed</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{cornerstones.length}</span>
+        <span class="admin-stat-label">Cornerstones</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{featuredPosts.length}</span>
+        <span class="admin-stat-label">Featured</span>
+      </div>
+    </div>
+
+    <!-- Create from template -->
+    <div class="admin-card">
+      <h2>Create from Template</h2>
+      <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+        Start a new post using a content template. The AI will generate a brief in Aileen's voice.
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        {templates.map(t => (
+          <button class="admin-btn" data-template={t.type} data-pillar={t.pillar}>
+            {t.name}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Drafts -->
+    {drafts.length > 0 && (
+      <div class="admin-card">
+        <h2>Drafts ({drafts.length})</h2>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Pillar</th>
+              <th>Type</th>
+              <th>Voice Score</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {drafts.map(p => (
+              <tr>
+                <td>{p.data.title}</td>
+                <td><span class="status-badge">{p.data.pillar}</span></td>
+                <td>{(p.data.contentType || 'article').replace(/-/g, ' ')}</td>
+                <td>
+                  {p.data.voiceScore ? (
+                    <span class={`voice-score ${p.data.voiceScore >= 75 ? 'voice-score--good' : p.data.voiceScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>
+                      {p.data.voiceScore}
+                    </span>
+                  ) : <span style="color: var(--color-text-muted);">—</span>}
+                </td>
+                <td>
+                  <div style="display: flex; gap: 0.25rem;">
+                    <button class="admin-btn admin-btn--small" data-api-action="voice-check" data-title={p.data.title}>Voice Check</button>
+                    <button class="admin-btn admin-btn--small" data-api-action="titles" data-title={p.data.title} data-keyword={p.data.targetKeyword}>Titles</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <!-- Published posts (filterable) -->
+    <div class="admin-card">
+      <h2>Published ({published.length})</h2>
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        <button class="admin-btn admin-btn--small filter-btn active" data-filter="all">All</button>
+        {pillars.map(p => (
+          <button class="admin-btn admin-btn--small filter-btn" data-filter={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</button>
+        ))}
+      </div>
+      <table class="admin-table" id="published-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Pillar</th>
+            <th>Type</th>
+            <th>Published</th>
+            <th>Destinations</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {published.map(p => {
+            return (
+              <tr data-pillar={p.data.pillar}>
+                <td>
+                  <a href={postUrl(p)}>{p.data.title}</a>
+                  {p.data.cornerstone && <span class="status-badge" style="margin-left: 0.35rem; font-size: 0.5rem;">Cornerstone</span>}
+                  {p.data.featured && <span class="status-badge status-badge--success" style="margin-left: 0.35rem; font-size: 0.5rem;">Featured</span>}
+                </td>
+                <td><span class="status-badge">{p.data.pillar}</span></td>
+                <td>{(p.data.contentType || 'article').replace(/-/g, ' ')}</td>
+                <td>{p.data.date}</td>
+                <td>{p.data.destinations?.join(', ') || '—'}</td>
+                <td>
+                  <div style="display: flex; gap: 0.25rem;">
+                    <button class="admin-btn admin-btn--small" data-api-action="audit-monetization" data-title={p.data.title} data-keyword={p.data.targetKeyword}>Audit</button>
+                    <a href={`${base}/admin/post/${p.id}/`} class="admin-btn admin-btn--small" style="text-decoration:none;">Edit</a>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Refresh needed -->
+    {refreshNeeded.length > 0 && (
+      <div class="admin-card admin-card--alert">
+        <h3>Refresh Needed ({refreshNeeded.length})</h3>
+        <p style="font-family: var(--font-ui); font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+          Posts older than 6 months without an update. Consider refreshing for SEO.
+        </p>
+        <ul style="list-style: disc; padding-left: 1.25rem;">
+          {refreshNeeded.slice(0, 8).map(p => (
+            <li style="font-family: var(--font-ui); font-size: 0.82rem; margin-bottom: 0.35rem;">
+              {p.data.title} — last updated {p.data.updatedDate || p.data.date}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+  </div>
+
+  <AdminOutput />
+
+  <script>
+    const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+    const output = (window as any).adminOutput;
+
+    // Pillar filter
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = (btn as HTMLElement).dataset.filter;
+        document.querySelectorAll('#published-table tbody tr').forEach(row => {
+          const pillar = (row as HTMLElement).dataset.pillar;
+          (row as HTMLElement).style.display = filter === 'all' || pillar === filter ? '' : 'none';
+        });
+      });
+    });
+
+    // Template creation
+    document.querySelectorAll('[data-template]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const template = (btn as HTMLElement).dataset.template;
+        const pillar = (btn as HTMLElement).dataset.pillar;
+        output.show(`Create from Template: ${template}`);
+        try {
+          const res = await fetch(`${API_URL}/api/plan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ template, pillar }),
+          });
+          output.setRaw(await res.json());
+        } catch {
+          output.setError('Growth engine API not available. Run: aileen serve');
+        }
+      });
+    });
+
+    // API action buttons
+    document.querySelectorAll('[data-api-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement;
+        const action = el.dataset.apiAction!;
+        const title = el.dataset.title || '';
+        const keyword = el.dataset.keyword || '';
+
+        let endpoint = action;
+        let body: any = {};
+
+        switch (action) {
+          case 'voice-check':
+            endpoint = 'voice-check';
+            body = { title };
+            break;
+          case 'titles':
+            body = { keyword: keyword || title };
+            break;
+          case 'audit-monetization':
+            body = { content: `Title: ${title}\nKeyword: ${keyword}`, keyword };
+            break;
+          default:
+            body = { title, keyword };
+        }
+
+        const label = action.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        output.show(`${label}${title ? ': ' + title : ''}`);
+        el.classList.add('admin-btn--loading');
+
+        try {
+          const res = await fetch(`${API_URL}/api/${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          output.setRaw(await res.json());
+        } catch {
+          output.setError('Could not connect to API. Run: aileen serve');
+        }
+        el.classList.remove('admin-btn--loading');
+      });
+    });
+  </script>
+</Base>
+
+<style>
+  .admin-btn--loading {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+</style>

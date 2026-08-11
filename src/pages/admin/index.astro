@@ -1,7 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import AdminActions from '../../components/AdminActions.astro';
+import AdminNav from '../../components/AdminNav.astro';
+import AdminOutput from '../../components/AdminOutput.astro';
 
 const allPosts = await getCollection('posts');
 const published = allPosts.filter(p => !p.data.draft);
@@ -17,13 +18,6 @@ for (const p of published) {
   byPillar[p.data.pillar] = (byPillar[p.data.pillar] || 0) + 1;
 }
 
-// Posts by content type
-const byType: Record<string, number> = {};
-for (const p of published) {
-  const t = p.data.contentType || 'article';
-  byType[t] = (byType[t] || 0) + 1;
-}
-
 // Stale posts (no updatedDate and older than 90 days)
 const ninetyDaysAgo = new Date();
 ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -32,66 +26,216 @@ const stale = published.filter(p => {
   return postDate < ninetyDaysAgo;
 });
 
-// Missing hero image (placeholder URLs)
-const missingImage = published.filter(p => p.data.image.includes('placeholder') || !p.data.image);
-
-// Missing FAQ
+// Missing meta / FAQ / disclosure
 const missingFaq = published.filter(p => !p.data.faq || p.data.faq.length === 0);
+const missingMeta = published.filter(p => !p.data.metaDescription || p.data.metaDescription.length < 50);
 
-// Recently published (last 10)
-const recent = [...published].sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()).slice(0, 10);
+// Affiliate link estimation (posts with no products AND no booking AND no reservation links)
+const noAffiliate = published.filter(p =>
+  p.data.products.length === 0 && p.data.bookingLinks.length === 0 && p.data.reservationLinks.length === 0
+);
 
-// Sort drafts by date
-drafts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+// Undistributed published posts
+const undistributed = published.filter(p =>
+  !p.data.distributedNewsletter && !p.data.distributedPinterest
+);
+
+// Build priority actions
+type Priority = { title: string; issue: string; postId: string; keyword: string; severity: 'high' | 'medium' | 'low'; actions: string[] };
+const priorities: Priority[] = [];
+
+// HIGH: Posts with zero affiliate links (from blueprint: "zero free mentions")
+for (const p of noAffiliate.slice(0, 3)) {
+  priorities.push({
+    title: p.data.title,
+    issue: `No affiliate links — every post must earn revenue`,
+    postId: p.id,
+    keyword: p.data.targetKeyword || '',
+    severity: 'high',
+    actions: ['audit-monetization', 'open-editor'],
+  });
+}
+
+for (const p of stale.slice(0, 2)) {
+  priorities.push({
+    title: p.data.title,
+    issue: `Last updated ${p.data.updatedDate || p.data.date} — needs refresh + new affiliate links`,
+    postId: p.id,
+    keyword: p.data.targetKeyword || '',
+    severity: 'high',
+    actions: ['refresh', 'audit-monetization', 'open-editor'],
+  });
+}
+
+for (const p of missingFaq.slice(0, 2)) {
+  priorities.push({
+    title: p.data.title,
+    issue: 'Missing FAQ section — lost SEO opportunity',
+    postId: p.id,
+    keyword: p.data.targetKeyword || '',
+    severity: 'medium',
+    actions: ['generate-faq', 'open-editor'],
+  });
+}
+
+for (const p of missingMeta.slice(0, 2)) {
+  priorities.push({
+    title: p.data.title,
+    issue: 'Missing or weak meta description',
+    postId: p.id,
+    keyword: p.data.targetKeyword || '',
+    severity: 'medium',
+    actions: ['generate-meta', 'open-editor'],
+  });
+}
+
+for (const p of undistributed.slice(0, 2)) {
+  priorities.push({
+    title: p.data.title,
+    issue: 'Published but no pins or newsletter mention yet',
+    postId: p.id,
+    keyword: p.data.targetKeyword || '',
+    severity: 'low',
+    actions: ['generate-pins', 'generate-ig', 'generate-newsletter'],
+  });
+}
+
+// Sort priorities by severity
+const severityOrder = { high: 0, medium: 1, low: 2 };
+priorities.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+// Recently published (last 5)
+const recent = [...published].sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()).slice(0, 5);
+
+// Daily schedule from blueprint
+const dailySchedule = [
+  { time: '7-8 AM', task: 'Finalize + publish morning post', status: 'pending' },
+  { time: '8-8:15', task: 'Share to Stories + upload 3 Pinterest pins', status: 'pending' },
+  { time: '8:30-10:30', task: 'Write tomorrow\'s morning post', status: 'pending' },
+  { time: '10:30-11:30', task: 'Affiliate audit: 3 existing posts', status: 'pending' },
+  { time: '12-1 PM', task: 'Finalize + publish afternoon post', status: 'pending' },
+  { time: '2-3 PM', task: 'Brand outreach: 5-10 ShopMy DMs', status: 'pending' },
+  { time: '3-4 PM', task: 'SEO update: improve 1 older post', status: 'pending' },
+];
 ---
 
-<Base title="Editorial Dashboard | Admin" noindex={true}>
+<Base title="Today's Priorities | Admin" noindex={true} isAdmin={true}>
   <div class="admin-layout">
-    <h1>Editorial Dashboard</h1>
-    <p class="admin-subtitle">Content pipeline at a glance</p>
+    <h1>Today's Priorities</h1>
+    <p class="admin-subtitle">Highest-leverage actions right now. Every hour must connect to sessions or dollars.</p>
 
-    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+    <AdminNav active="today" />
 
-    <div class="admin-actions-bar">
-      <button class="admin-btn" data-action="plan">Generate Content Plan</button>
-      <button class="admin-btn" data-action="write">Write Next Post</button>
-      <button class="admin-btn" data-action="import-astro">Import Astro Posts</button>
-      <button class="admin-btn" data-action="publish">Build &amp; Deploy</button>
-    </div>
-    <pre id="action-output"></pre>
-
-    <nav class="admin-nav">
-      <a href={`${base}/admin/`} class="admin-nav-link active">Editorial</a>
-      <a href={`${base}/admin/posts/`} class="admin-nav-link">All Posts</a>
-      <a href={`${base}/admin/calendar/`} class="admin-nav-link">Calendar</a>
-      <a href={`${base}/admin/seo/`} class="admin-nav-link">SEO</a>
-      <a href={`${base}/admin/opportunities/`} class="admin-nav-link">Opportunities</a>
-      <a href={`${base}/admin/distribution/`} class="admin-nav-link">Distribution</a>
-      <a href={`${base}/admin/monetization/`} class="admin-nav-link">Monetization</a>
-      <a href={`${base}/admin/performance/`} class="admin-nav-link">Performance</a>
-    </nav>
-
-    <!-- Stats row -->
+    <!-- Quick stats -->
     <div class="admin-stats-grid">
       <div class="admin-stat">
         <span class="admin-stat-number">{published.length}</span>
         <span class="admin-stat-label">Published</span>
       </div>
       <div class="admin-stat">
-        <span class="admin-stat-number">{drafts.length}</span>
-        <span class="admin-stat-label">Drafts</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{featured.length}</span>
-        <span class="admin-stat-label">Featured</span>
-      </div>
-      <div class="admin-stat">
-        <span class="admin-stat-number">{cornerstones.length}</span>
-        <span class="admin-stat-label">Cornerstone</span>
+        <span class="admin-stat-number" style={noAffiliate.length > 0 ? 'color: var(--color-error)' : ''}>{noAffiliate.length}</span>
+        <span class="admin-stat-label">No Affiliate Links</span>
       </div>
       <div class="admin-stat">
         <span class="admin-stat-number">{stale.length}</span>
         <span class="admin-stat-label">Need Refresh</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{missingFaq.length}</span>
+        <span class="admin-stat-label">Missing FAQ</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat-number">{undistributed.length}</span>
+        <span class="admin-stat-label">Undistributed</span>
+      </div>
+    </div>
+
+    <!-- Daily Schedule -->
+    <div class="admin-card">
+      <h2>Today's Schedule</h2>
+      <p style="font-family: var(--font-ui); font-size: 0.78rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+        Check off as you go. 2 posts/day, pins for each, 3 audits, brand outreach, 1 SEO update.
+      </p>
+      <div class="daily-schedule">
+        {dailySchedule.map((item, i) => (
+          <label class="schedule-item" data-idx={i}>
+            <input type="checkbox" class="schedule-check" />
+            <span class="schedule-time">{item.time}</span>
+            <span class="schedule-task">{item.task}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    <!-- Priority Actions -->
+    {priorities.length > 0 && (
+      <div class="admin-card" style="border-left: 3px solid var(--color-text);">
+        <h2>Action Items</h2>
+        <div class="priority-list">
+          {priorities.map(p => {
+            const severityColors = { high: 'var(--color-error)', medium: 'var(--color-warning)', low: 'var(--color-text-muted)' };
+            return (
+              <div class="priority-item">
+                <div style={`width: 4px; height: 100%; min-height: 40px; background: ${severityColors[p.severity]}; flex-shrink: 0;`}></div>
+                <div class="priority-item-signal">
+                  <h4>{p.title}</h4>
+                  <p>{p.issue}</p>
+                </div>
+                <div class="priority-item-actions">
+                  {p.actions.includes('audit-monetization') && <button class="admin-btn admin-btn--small" data-api-action="audit-monetization" data-title={p.title} data-keyword={p.keyword}>Audit Links</button>}
+                  {p.actions.includes('refresh') && <button class="admin-btn admin-btn--small" data-api-action="refresh" data-title={p.title} data-keyword={p.keyword}>Refresh</button>}
+                  {p.actions.includes('generate-faq') && <button class="admin-btn admin-btn--small" data-api-action="faq" data-title={p.title} data-keyword={p.keyword}>Gen FAQ</button>}
+                  {p.actions.includes('generate-meta') && <button class="admin-btn admin-btn--small" data-api-action="meta" data-title={p.title} data-keyword={p.keyword}>Gen Meta</button>}
+                  {p.actions.includes('generate-pins') && <button class="admin-btn admin-btn--small" data-api-action="social" data-title={p.title} data-platform="pinterest">Pins</button>}
+                  {p.actions.includes('generate-ig') && <button class="admin-btn admin-btn--small" data-api-action="instagram" data-title={p.title}>IG Post</button>}
+                  {p.actions.includes('generate-newsletter') && <button class="admin-btn admin-btn--small" data-api-action="newsletter">Newsletter</button>}
+                  {p.actions.includes('open-editor') && p.postId && (
+                    <a href={`${base}/admin/post/${p.postId}/`} class="admin-btn admin-btn--small" style="text-decoration:none;">Edit</a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )}
+
+    {priorities.length === 0 && (
+      <div class="admin-card admin-card--success">
+        <h3>All caught up.</h3>
+        <p style="font-family: var(--font-ui); font-size: 0.85rem; color: var(--color-text-secondary);">
+          No urgent actions today. Write your next post or send brand DMs.
+        </p>
+      </div>
+    )}
+
+    <!-- Quick actions row -->
+    <div class="admin-card">
+      <h2>Quick Actions</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        <button class="admin-btn admin-btn--primary" data-api-action="plan">Generate Content Plan</button>
+        <button class="admin-btn" data-api-action="write">Write Next Post</button>
+        <button class="admin-btn" data-api-action="pins">Generate Pins</button>
+        <button class="admin-btn" data-api-action="newsletter">Draft Newsletter</button>
+        <button class="admin-btn" data-api-action="import-astro">Sync Posts to DB</button>
+      </div>
+    </div>
+
+    <!-- Brand Outreach -->
+    <div class="admin-card">
+      <h2>Brand Outreach</h2>
+      <p style="font-family: var(--font-ui); font-size: 0.78rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+        Generate DMs for ShopMy brands or hotel pitch emails. 5-10 per day.
+      </p>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+        <input type="text" id="brand-name" placeholder="Brand name (e.g. Jenni Kayne)" style="flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border-light); font-family: var(--font-ui); font-size: 0.85rem;" />
+        <input type="text" id="brand-product" placeholder="Product (e.g. cashmere sweater)" style="flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border-light); font-family: var(--font-ui); font-size: 0.85rem;" />
+        <button class="admin-btn" id="gen-brand-dm">Generate Brand DM</button>
+      </div>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <input type="text" id="hotel-name" placeholder="Hotel name (e.g. White Elephant)" style="flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border-light); font-family: var(--font-ui); font-size: 0.85rem;" />
+        <input type="text" id="hotel-location" placeholder="Location (e.g. Nantucket)" style="flex: 1; min-width: 150px; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border-light); font-family: var(--font-ui); font-size: 0.85rem;" />
+        <button class="admin-btn" id="gen-hotel-pitch">Generate Hotel Pitch</button>
       </div>
     </div>
 
@@ -111,57 +255,6 @@ drafts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).ge
       </div>
     </div>
 
-    <!-- Content by type -->
-    <div class="admin-card">
-      <h2>Content by Type</h2>
-      <div class="admin-bar-chart">
-        {Object.entries(byType).sort((a,b) => b[1] - a[1]).map(([type, count]) => (
-          <div class="admin-bar-row">
-            <span class="admin-bar-label">{type.replace(/-/g, ' ')}</span>
-            <div class="admin-bar-track">
-              <div class="admin-bar-fill" style={`width: ${Math.round(count / published.length * 100)}%`}></div>
-            </div>
-            <span class="admin-bar-count">{count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <!-- Drafts -->
-    {drafts.length > 0 && (
-      <div class="admin-card">
-        <h2>Drafts</h2>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Pillar</th>
-              <th>Type</th>
-              <th>Date</th>
-              <th>Voice Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {drafts.map(p => (
-              <tr>
-                <td>{p.data.title}</td>
-                <td><span class="status-badge">{p.data.pillar}</span></td>
-                <td>{p.data.contentType || 'article'}</td>
-                <td>{p.data.date}</td>
-                <td>
-                  {p.data.voiceScore ? (
-                    <span class={`voice-score ${p.data.voiceScore >= 75 ? 'voice-score--good' : p.data.voiceScore >= 50 ? 'voice-score--warn' : 'voice-score--bad'}`}>
-                      {p.data.voiceScore}
-                    </span>
-                  ) : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-
     <!-- Recently published -->
     <div class="admin-card">
       <h2>Recently Published</h2>
@@ -170,9 +263,8 @@ drafts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).ge
           <tr>
             <th>Title</th>
             <th>Pillar</th>
-            <th>Type</th>
             <th>Published</th>
-            <th>Destinations</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -183,9 +275,14 @@ drafts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).ge
               <tr>
                 <td><a href={`${base}/${pillar}/${slug}/`}>{p.data.title}</a></td>
                 <td><span class="status-badge">{p.data.pillar}</span></td>
-                <td>{p.data.contentType || 'article'}</td>
                 <td>{p.data.date}</td>
-                <td>{p.data.destinations?.join(', ') || '—'}</td>
+                <td>
+                  <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                    <button class="admin-btn admin-btn--small" data-api-action="audit-monetization" data-title={p.data.title} data-keyword={p.data.targetKeyword}>Audit</button>
+                    <button class="admin-btn admin-btn--small" data-api-action="social" data-title={p.data.title} data-platform="pinterest">Pins</button>
+                    <a href={`${base}/admin/post/${p.id}/`} class="admin-btn admin-btn--small" style="text-decoration:none;">Edit</a>
+                  </div>
+                </td>
               </tr>
             );
           })}
@@ -193,35 +290,190 @@ drafts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).ge
       </table>
     </div>
 
-    <!-- Alerts -->
-    <div class="admin-alerts-grid">
-      {stale.length > 0 && (
-        <div class="admin-card admin-card--alert">
-          <h3>Stale Content ({stale.length})</h3>
-          <ul>
-            {stale.slice(0, 5).map(p => (
-              <li>{p.data.title} — last updated {p.data.updatedDate || p.data.date}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {missingImage.length > 0 && (
-        <div class="admin-card admin-card--alert">
-          <h3>Missing Hero Image ({missingImage.length})</h3>
-          <ul>
-            {missingImage.map(p => <li>{p.data.title}</li>)}
-          </ul>
-        </div>
-      )}
-      {missingFaq.length > 0 && (
-        <div class="admin-card admin-card--alert">
-          <h3>Missing FAQ ({missingFaq.length})</h3>
-          <ul>
-            {missingFaq.slice(0, 5).map(p => <li>{p.data.title}</li>)}
-          </ul>
-        </div>
-      )}
-    </div>
+    <!-- Data source note -->
+    <p style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--color-text-muted); margin-top: 2rem; border-top: 1px solid var(--color-border-light); padding-top: 1rem;">
+      Data source: Astro content collection (build-time). For live data, connect Google Analytics in <a href={`${base}/admin/settings/`} style="border-bottom: 1px solid var(--color-border);">Settings</a>.
+    </p>
   </div>
-  <AdminActions />
+
+  <AdminOutput />
+
+  <script>
+    const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+    const output = (window as any).adminOutput;
+
+    // Daily schedule checkboxes — persist to localStorage
+    const scheduleKey = `aileen_schedule_${new Date().toISOString().split('T')[0]}`;
+    const saved = JSON.parse(localStorage.getItem(scheduleKey) || '[]');
+    document.querySelectorAll('.schedule-check').forEach((cb, i) => {
+      if (saved[i]) (cb as HTMLInputElement).checked = true;
+      cb.addEventListener('change', () => {
+        const checks: boolean[] = [];
+        document.querySelectorAll('.schedule-check').forEach(c => checks.push((c as HTMLInputElement).checked));
+        localStorage.setItem(scheduleKey, JSON.stringify(checks));
+      });
+    });
+
+    // API action buttons — properly pass title/keyword to endpoints
+    document.querySelectorAll('[data-api-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement;
+        const action = el.dataset.apiAction!;
+        const title = el.dataset.title || '';
+        const keyword = el.dataset.keyword || '';
+        const platform = el.dataset.platform || '';
+
+        // Build request
+        let endpoint = action;
+        let body: any = {};
+
+        switch (action) {
+          case 'faq':
+            body = { title, keyword };
+            break;
+          case 'meta':
+            body = { title, keyword };
+            break;
+          case 'titles':
+            body = { keyword: keyword || title };
+            break;
+          case 'social':
+            endpoint = 'social';
+            body = { title, platform: platform || 'pinterest' };
+            break;
+          case 'instagram':
+            body = { title };
+            break;
+          case 'refresh':
+            body = { title, keyword };
+            break;
+          case 'audit-monetization':
+            body = { content: `Title: ${title}\nKeyword: ${keyword}`, keyword };
+            break;
+          case 'newsletter':
+            body = {};
+            break;
+          case 'plan':
+            body = {};
+            break;
+          case 'write':
+            body = {};
+            break;
+          case 'pins':
+            body = {};
+            break;
+          case 'import-astro':
+            body = {};
+            break;
+          default:
+            body = { title, keyword };
+        }
+
+        const label = action.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        output.show(`${label}${title ? ': ' + title : ''}`);
+        el.classList.add('admin-btn--loading');
+
+        try {
+          const res = await fetch(`${API_URL}/api/${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          output.setRaw(data);
+        } catch (err) {
+          output.setError('Could not connect to API. Make sure the growth engine is running: aileen serve');
+        }
+        el.classList.remove('admin-btn--loading');
+      });
+    });
+
+    // Brand DM generation
+    document.getElementById('gen-brand-dm')?.addEventListener('click', async () => {
+      const brand = (document.getElementById('brand-name') as HTMLInputElement).value;
+      const product = (document.getElementById('brand-product') as HTMLInputElement).value;
+      if (!brand) return;
+      output.show(`Brand DM: ${brand}`);
+      try {
+        const res = await fetch(`${API_URL}/api/brand-dm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brand, product }),
+        });
+        output.setRaw(await res.json());
+      } catch { output.setError('API not available. Run: aileen serve'); }
+    });
+
+    // Hotel pitch generation
+    document.getElementById('gen-hotel-pitch')?.addEventListener('click', async () => {
+      const hotel = (document.getElementById('hotel-name') as HTMLInputElement).value;
+      const location = (document.getElementById('hotel-location') as HTMLInputElement).value;
+      if (!hotel) return;
+      output.show(`Hotel Pitch: ${hotel}`);
+      try {
+        const res = await fetch(`${API_URL}/api/hotel-pitch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hotel, location }),
+        });
+        output.setRaw(await res.json());
+      } catch { output.setError('API not available. Run: aileen serve'); }
+    });
+  </script>
 </Base>
+
+<style>
+  .daily-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-border-light, #eee);
+    cursor: pointer;
+    font-family: var(--font-ui, -apple-system, sans-serif);
+    font-size: 0.85rem;
+  }
+  .schedule-item:last-child { border-bottom: none; }
+  .schedule-item:hover { background: var(--color-bg-alt, #f5f5f5); }
+  .schedule-check {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-success, #27ae60);
+    flex-shrink: 0;
+  }
+  .schedule-check:checked + .schedule-time { text-decoration: line-through; opacity: 0.5; }
+  .schedule-check:checked ~ .schedule-task { text-decoration: line-through; opacity: 0.5; }
+  .schedule-time {
+    font-weight: 600;
+    min-width: 80px;
+    color: var(--color-text-secondary, #555);
+    font-size: 0.78rem;
+  }
+  .schedule-task {
+    flex: 1;
+  }
+  .admin-btn--loading {
+    opacity: 0.5;
+    pointer-events: none;
+    position: relative;
+  }
+  .admin-btn--loading::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    border: 2px solid #ccc;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

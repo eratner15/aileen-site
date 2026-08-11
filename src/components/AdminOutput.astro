@@ -1,0 +1,252 @@
+---
+// Shared output panel for admin AI actions
+---
+
+<div id="admin-output-panel" class="admin-output-panel" style="display:none;">
+  <div class="admin-output-header">
+    <span id="admin-output-title" class="admin-output-title">Output</span>
+    <div class="admin-output-actions">
+      <button id="admin-output-copy" class="admin-btn admin-btn--small" title="Copy to clipboard">Copy</button>
+      <button id="admin-output-close" class="admin-btn admin-btn--small" title="Close">&times;</button>
+    </div>
+  </div>
+  <div id="admin-output-body" class="admin-output-body"></div>
+</div>
+
+<style>
+  .admin-output-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 50vh;
+    background: #fff;
+    border-top: 2px solid var(--color-text, #111);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-ui, -apple-system, sans-serif);
+  }
+  .admin-output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--color-border-light, #eee);
+    flex-shrink: 0;
+  }
+  .admin-output-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .admin-output-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .admin-output-body {
+    padding: 1rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .admin-output-body .output-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border-light, #eee);
+  }
+  .admin-output-body .output-section:last-child {
+    border-bottom: none;
+  }
+  .admin-output-body h4 {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-muted, #999);
+  }
+  .output-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-muted, #999);
+  }
+  .output-loading::before {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ddd;
+    border-top-color: var(--color-text, #111);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .output-error {
+    color: var(--color-error, #c0392b);
+  }
+  .output-copyable {
+    background: var(--color-bg-alt, #f5f5f5);
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    margin: 0.5rem 0;
+  }
+  .output-copyable:hover {
+    background: #eee;
+  }
+  .output-copyable::after {
+    content: 'click to copy';
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    font-size: 0.65rem;
+    color: var(--color-text-muted, #999);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .output-copied::after {
+    content: 'copied!';
+    color: var(--color-success, #27ae60);
+  }
+</style>
+
+<script>
+  // Admin Output Panel API
+  (window as any).adminOutput = {
+    show(title: string) {
+      const panel = document.getElementById('admin-output-panel')!;
+      const titleEl = document.getElementById('admin-output-title')!;
+      const body = document.getElementById('admin-output-body')!;
+      panel.style.display = 'flex';
+      titleEl.textContent = title;
+      body.innerHTML = '<div class="output-loading">Generating...</div>';
+    },
+
+    setContent(html: string) {
+      const body = document.getElementById('admin-output-body')!;
+      body.innerHTML = html;
+      // Bind copy handlers on copyable blocks
+      body.querySelectorAll('.output-copyable').forEach(el => {
+        el.addEventListener('click', () => {
+          navigator.clipboard.writeText(el.textContent?.replace('click to copy', '').trim() || '');
+          el.classList.add('output-copied');
+          setTimeout(() => el.classList.remove('output-copied'), 1500);
+        });
+      });
+    },
+
+    setError(msg: string) {
+      const body = document.getElementById('admin-output-body')!;
+      body.innerHTML = `<div class="output-error">${msg}</div>`;
+    },
+
+    setRaw(data: any) {
+      // Smart formatting based on response shape
+      let html = '';
+
+      if (data.titles) {
+        html += '<div class="output-section"><h4>Title Options</h4>';
+        (Array.isArray(data.titles) ? data.titles : [data.titles]).forEach((t: string) => {
+          html += `<div class="output-copyable">${t}</div>`;
+        });
+        html += '</div>';
+      }
+      if (data.meta) {
+        html += '<div class="output-section"><h4>Meta Descriptions</h4>';
+        (Array.isArray(data.meta) ? data.meta : [data.meta]).forEach((m: string) => {
+          html += `<div class="output-copyable">${m}</div>`;
+        });
+        html += '</div>';
+      }
+      if (data.faq) {
+        html += '<div class="output-section"><h4>FAQ</h4>';
+        (Array.isArray(data.faq) ? data.faq : [data.faq]).forEach((f: any) => {
+          if (typeof f === 'object') {
+            html += `<div class="output-copyable"><strong>Q: ${f.question || f.q}</strong>\n${f.answer || f.a}</div>`;
+          } else {
+            html += `<div class="output-copyable">${f}</div>`;
+          }
+        });
+        html += '</div>';
+      }
+      if (data.captions || data.instagram || data.platform) {
+        const content = data.captions || data.instagram || '';
+        html += '<div class="output-section"><h4>Social Copy</h4>';
+        html += `<div class="output-copyable">${typeof content === 'string' ? content : JSON.stringify(content, null, 2)}</div>`;
+        html += '</div>';
+      }
+      if (data.pitch) {
+        html += '<div class="output-section"><h4>Hotel Pitch</h4>';
+        html += `<div class="output-copyable">${data.pitch}</div>`;
+        html += '</div>';
+      }
+      if (data.dm) {
+        html += '<div class="output-section"><h4>Brand DM</h4>';
+        html += `<div class="output-copyable">${data.dm}</div>`;
+        html += '</div>';
+      }
+      if (data.outline) {
+        html += '<div class="output-section"><h4>Outline</h4>';
+        html += `<div class="output-copyable">${typeof data.outline === 'string' ? data.outline : JSON.stringify(data.outline, null, 2)}</div>`;
+        html += '</div>';
+      }
+      if (data.audit) {
+        html += '<div class="output-section"><h4>Monetization Audit</h4>';
+        html += `<div class="output-copyable">${data.audit}</div>`;
+        html += '</div>';
+      }
+      if (data.rewritten) {
+        html += '<div class="output-section"><h4>Rewritten</h4>';
+        html += `<div class="output-copyable">${data.rewritten}</div>`;
+        html += '</div>';
+      }
+      if (data.suggestions) {
+        html += '<div class="output-section"><h4>Suggestions</h4>';
+        html += `<div class="output-copyable">${typeof data.suggestions === 'string' ? data.suggestions : JSON.stringify(data.suggestions, null, 2)}</div>`;
+        html += '</div>';
+      }
+      if (data.links) {
+        html += '<div class="output-section"><h4>Internal Links</h4>';
+        html += `<div class="output-copyable">${typeof data.links === 'string' ? data.links : JSON.stringify(data.links, null, 2)}</div>`;
+        html += '</div>';
+      }
+      if (data.blurb) {
+        html += '<div class="output-section"><h4>Commerce Blurb</h4>';
+        html += `<div class="output-copyable">${data.blurb}</div>`;
+        html += '</div>';
+      }
+
+      // Fallback: show raw JSON if nothing matched
+      if (!html) {
+        html = `<div class="output-section"><h4>Result</h4><div class="output-copyable">${JSON.stringify(data, null, 2)}</div></div>`;
+      }
+
+      (window as any).adminOutput.setContent(html);
+    },
+
+    hide() {
+      document.getElementById('admin-output-panel')!.style.display = 'none';
+    }
+  };
+
+  // Close button
+  document.getElementById('admin-output-close')?.addEventListener('click', () => {
+    (window as any).adminOutput.hide();
+  });
+
+  // Copy all button
+  document.getElementById('admin-output-copy')?.addEventListener('click', () => {
+    const body = document.getElementById('admin-output-body')!;
+    navigator.clipboard.writeText(body.textContent || '');
+    const btn = document.getElementById('admin-output-copy')!;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+</script>

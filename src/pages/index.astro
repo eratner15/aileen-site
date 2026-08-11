@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PostCard from '../components/PostCard.astro';
+import destinations from '../data/destinations.json';
 
 const allPosts = await getCollection('posts', ({ data }) => !data.draft);
 allPosts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
@@ -14,91 +15,80 @@ function postUrl(post: typeof allPosts[0]) {
   return `${base}/${pillar}/${rest.join('/')}/`;
 }
 
-// Signature clusters
-const restaurants = allPosts.filter(p => p.data.contentType === 'restaurant-guide').slice(0, 3);
-const travelGuides = allPosts.filter(p => p.data.contentType === 'travel-guide').slice(0, 3);
-const hotels = allPosts.filter(p => p.data.contentType === 'hotel-review').slice(0, 3);
-const styleGuides = allPosts.filter(p => p.data.contentType === 'style-guide' || p.data.pillar === 'style').slice(0, 3);
-const recipes = allPosts.filter(p => p.data.pillar === 'recipes').slice(0, 3);
-
-// Destination data for rows
-const destinationData: Record<string, { label: string; image: string }> = {
-  miami: { label: 'Miami', image: 'https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=800&h=500&fit=crop' },
-  'palm-beach': { label: 'Palm Beach', image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=800&h=500&fit=crop' },
-  nyc: { label: 'New York City', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&h=500&fit=crop' },
-  boston: { label: 'Boston', image: 'https://images.unsplash.com/photo-1501979376754-2ff867a4f659?w=800&h=500&fit=crop' },
-  maine: { label: 'Maine', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop' },
-  aspen: { label: 'Aspen', image: 'https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?w=800&h=500&fit=crop' },
-};
-
-// Count posts per destination
-const destCounts: Record<string, number> = {};
-for (const dest of Object.keys(destinationData)) {
-  destCounts[dest] = allPosts.filter(p => p.data.destinations?.includes(dest)).length;
-}
-
-// Editor's Picks: featured posts sorted by featuredOrder
+// Editor's Picks: featured posts sorted by featuredOrder (exclude the hero)
 const editorsPicks = allPosts
   .filter(p => p.data.featured && p.id !== featured?.id)
   .sort((a, b) => (a.data.featuredOrder || 99) - (b.data.featuredOrder || 99))
-  .slice(0, 3);
+  .slice(0, 4);
+
+// Signature clusters
+const restaurants = allPosts.filter(p => p.data.contentType === 'restaurant-guide').slice(0, 4);
+const travelGuides = allPosts.filter(p => p.data.contentType === 'travel-guide').slice(0, 4);
+const hotels = allPosts.filter(p => p.data.contentType === 'hotel-review').slice(0, 4);
+const styleGuides = allPosts.filter(p => p.data.contentType === 'style-guide' || p.data.pillar === 'style').slice(0, 4);
+const recipes = allPosts.filter(p => p.data.pillar === 'recipes').slice(0, 4);
 
 // Popular Guides: cornerstone posts across all pillars
-const popularGuides = allPosts
-  .filter(p => p.data.cornerstone)
-  .slice(0, 6);
+const popularGuides = allPosts.filter(p => p.data.cornerstone).slice(0, 6);
 
-// Latest posts (excluding featured)
-const latest = allPosts.filter(p => p.id !== featured?.id).slice(0, 6);
+// Latest posts (excluding featured and editor's picks)
+const editorPickIds = new Set([featured?.id, ...editorsPicks.map(p => p.id)]);
+const latest = allPosts.filter(p => !editorPickIds.has(p.id)).slice(0, 6);
 
-// Build cluster sections - only show if posts exist
+// Count posts per destination
+const destCounts: Record<string, number> = {};
+for (const dest of destinations) {
+  destCounts[dest.slug] = allPosts.filter(p => p.data.destinations?.includes(dest.slug)).length;
+}
+
+// Featured destinations (those with content)
+const featuredDests = destinations.filter(d => destCounts[d.slug] > 0).slice(0, 6);
+if (featuredDests.length < 6) {
+  for (const d of destinations) {
+    if (featuredDests.length >= 6) break;
+    if (!featuredDests.find(fd => fd.slug === d.slug)) featuredDests.push(d);
+  }
+}
+
+// Build cluster sections
 const clusters = [
-  { label: 'Where to Eat', linkLabel: 'All Restaurant Guides', linkHref: `${base}/restaurants/`, posts: restaurants },
-  { label: 'Where to Go', linkLabel: 'All Travel Guides', linkHref: `${base}/travel/`, posts: travelGuides },
-  { label: 'Where to Stay', linkLabel: 'All Hotel Reviews', linkHref: `${base}/hotels/`, posts: hotels },
-  { label: 'What to Wear', linkLabel: 'All Style Guides', linkHref: `${base}/style/`, posts: styleGuides },
-  { label: 'What to Make', linkLabel: 'All Recipes', linkHref: `${base}/recipes/`, posts: recipes },
+  { label: 'Where to Eat', linkLabel: 'All Restaurant Guides', linkHref: `${base}/restaurants/`, posts: restaurants, accent: 'restaurants' },
+  { label: 'Where to Go', linkLabel: 'All Travel Guides', linkHref: `${base}/travel/`, posts: travelGuides, accent: 'travel' },
+  { label: 'Where to Stay', linkLabel: 'All Hotel Reviews', linkHref: `${base}/hotels/`, posts: hotels, accent: 'hotels' },
+  { label: 'What to Wear', linkLabel: 'All Style Guides', linkHref: `${base}/style/`, posts: styleGuides, accent: 'style' },
+  { label: 'What to Make', linkLabel: 'All Recipes', linkHref: `${base}/recipes/`, posts: recipes, accent: 'recipes' },
 ].filter(c => c.posts.length > 0);
 ---
 
 <Base title="AILEEN Magazine" description="Elegant travel, timeless style, and food that feels like home. The ones worth knowing.">
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="container">
-      <p class="hero-tagline">Elegant Travel &middot; Timeless Style &middot; Food That Feels Like Home</p>
-      <h1>The ones worth knowing.</h1>
-      <p class="hero-subtitle">
-        Curated guides to the places, pieces, and recipes that earn their place in your life. No fluff, no filler.
-      </p>
-    </div>
-  </section>
-
-  <!-- Featured Post -->
+  <!-- Hero: Full-width image-led with featured post overlay -->
   {featured && (
-    <section class="featured-section container">
-      <a href={postUrl(featured)} class="featured-card" style="text-decoration:none; color:inherit;">
-        <div class="featured-image">
-          <img src={featured.data.image} alt={featured.data.title} loading="eager" width="1200" height="675" />
+    <section class="homepage-hero">
+      <a href={postUrl(featured)} class="homepage-hero-link">
+        <div class="homepage-hero-image">
+          <img src={featured.data.image} alt={featured.data.imageAlt} loading="eager" width="1200" height="675" />
+          <div class="homepage-hero-overlay"></div>
         </div>
-        <div class="featured-content">
-          <p class="featured-label">Featured</p>
-          <h2><span>{featured.data.title}</span></h2>
-          <p class="featured-excerpt">{featured.data.excerpt}</p>
-          <span class="read-more">Read the Guide</span>
+        <div class="homepage-hero-content">
+          <p class="homepage-hero-label">Featured</p>
+          <h1>{featured.data.title}</h1>
+          <p class="homepage-hero-excerpt">{featured.data.excerpt}</p>
+          <span class="homepage-hero-cta">Read the Guide</span>
         </div>
       </a>
     </section>
   )}
 
-  <!-- Editor's Picks / The Edit -->
+  <!-- Editor's Picks -->
   {editorsPicks.length > 0 && (
-    <section class="container" style="padding-bottom: 1rem;">
-      <div class="section-header">
+    <section class="homepage-section container">
+      <div class="section-header section-header--editorial">
+        <div class="section-rule"></div>
         <p class="section-label">The Edit</p>
         <h2>Editor's Picks</h2>
       </div>
-      <div class="post-grid">
+      <div class="post-grid post-grid--4">
         {editorsPicks.map(post => (
           <PostCard
             title={post.data.title}
@@ -113,75 +103,136 @@ const clusters = [
     </section>
   )}
 
-  <!-- Popular Guides (cornerstone content) -->
+  <!-- Essential Guides (Cornerstone) -->
   {popularGuides.length > 0 && (
-    <section class="container" style="padding-bottom: 1rem;">
-      <div class="section-header">
-        <p class="section-label">Essential Reading</p>
-        <h2>Popular Guides</h2>
-      </div>
-      <div class="post-grid">
-        {popularGuides.map(post => (
-          <PostCard
-            title={post.data.title}
-            href={postUrl(post)}
-            pillar={post.data.pillar}
-            excerpt={post.data.excerpt}
-            date={post.data.date}
-            image={post.data.image.replace('1200', '600').replace('675', '400')}
-          />
-        ))}
+    <section class="homepage-section homepage-section--alt">
+      <div class="container">
+        <div class="section-header section-header--editorial">
+          <div class="section-rule"></div>
+          <p class="section-label">Essential Reading</p>
+          <h2>Start Here</h2>
+        </div>
+        <div class="essential-guides-grid">
+          {popularGuides.map((post, i) => (
+            <a href={postUrl(post)} class={`essential-card ${i === 0 ? 'essential-card--large' : ''}`}>
+              <div class="essential-card-image">
+                <img src={post.data.image.replace('1200', i === 0 ? '800' : '500').replace('675', i === 0 ? '500' : '340')} alt={post.data.imageAlt} loading="lazy" />
+              </div>
+              <div class="essential-card-body">
+                <span class="pillar-badge">{post.data.pillar.charAt(0).toUpperCase() + post.data.pillar.slice(1)}</span>
+                <h3>{post.data.title}</h3>
+                <p>{post.data.excerpt}</p>
+              </div>
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   )}
 
-  <!-- Signature Clusters -->
-  {clusters.map(cluster => (
-    <section class="container" style="padding-bottom: 1rem;">
-      <div class="section-header">
-        <p class="section-label">{cluster.label}</p>
-      </div>
-      <div class="post-grid">
-        {cluster.posts.map(post => (
-          <PostCard
-            title={post.data.title}
-            href={postUrl(post)}
-            pillar={post.data.pillar}
-            excerpt={post.data.excerpt}
-            date={post.data.date}
-            image={post.data.image.replace('1200', '600').replace('675', '400')}
-          />
-        ))}
-      </div>
-      <div style="text-align: center; margin-top: 1.5rem;">
-        <a href={cluster.linkHref} class="read-more" style="text-decoration: none;">{cluster.linkLabel} &rarr;</a>
+  <!-- Signature Clusters (varied layouts) -->
+  {clusters.map((cluster, idx) => (
+    <section class={`homepage-section ${idx % 2 !== 0 ? 'homepage-section--alt' : ''}`}>
+      <div class="container">
+        <div class="section-header section-header--editorial">
+          <div class="section-rule"></div>
+          <p class="section-label">{cluster.label}</p>
+        </div>
+        {idx === 0 && cluster.posts.length >= 3 ? (
+          <!-- Feature + grid layout for first cluster -->
+          <div class="cluster-feature-layout">
+            <a href={postUrl(cluster.posts[0])} class="cluster-feature">
+              <div class="cluster-feature-image">
+                <img src={cluster.posts[0].data.image} alt={cluster.posts[0].data.imageAlt} loading="lazy" width="800" height="500" />
+              </div>
+              <div class="cluster-feature-body">
+                <h3>{cluster.posts[0].data.title}</h3>
+                <p>{cluster.posts[0].data.excerpt}</p>
+                <span class="read-more">Read Guide</span>
+              </div>
+            </a>
+            <div class="cluster-feature-sidebar">
+              {cluster.posts.slice(1, 4).map(post => (
+                <a href={postUrl(post)} class="cluster-sidebar-item">
+                  <div class="cluster-sidebar-image">
+                    <img src={post.data.image.replace('1200', '300').replace('675', '200')} alt={post.data.imageAlt} loading="lazy" />
+                  </div>
+                  <div class="cluster-sidebar-body">
+                    <h4>{post.data.title}</h4>
+                    <p>{post.data.excerpt.slice(0, 80)}...</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <!-- Standard grid layout -->
+          <div class="post-grid">
+            {cluster.posts.map(post => (
+              <PostCard
+                title={post.data.title}
+                href={postUrl(post)}
+                pillar={post.data.pillar}
+                excerpt={post.data.excerpt}
+                date={post.data.date}
+                image={post.data.image.replace('1200', '600').replace('675', '400')}
+              />
+            ))}
+          </div>
+        )}
+        <div class="section-footer">
+          <a href={cluster.linkHref} class="section-link">{cluster.linkLabel} &rarr;</a>
+        </div>
       </div>
     </section>
   ))}
 
-  <!-- Destination Rows -->
-  <section class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
-    <div class="section-header">
-      <p class="section-label">Destinations</p>
-      <h2>Explore by City</h2>
-    </div>
-    <div class="destination-row">
-      {Object.entries(destinationData).map(([slug, meta]) => (
-        <a href={`${base}/destinations/${slug}/`} class="destination-card">
-          <img src={meta.image} alt={meta.label} loading="lazy" width="800" height="500" />
-          <div class="destination-card-overlay">
-            <span class="destination-card-label">{meta.label}</span>
-            {destCounts[slug] > 0 && <span class="destination-card-count">{destCounts[slug]} {destCounts[slug] === 1 ? 'guide' : 'guides'}</span>}
-          </div>
-        </a>
-      ))}
+  <!-- Destinations Strip -->
+  <section class="homepage-section homepage-section--destinations">
+    <div class="container">
+      <div class="section-header section-header--editorial">
+        <div class="section-rule"></div>
+        <p class="section-label">Destinations</p>
+        <h2>Explore by City</h2>
+      </div>
+      <div class="destination-row">
+        {featuredDests.map(dest => (
+          <a href={`${base}/destinations/${dest.slug}/`} class="destination-card">
+            <img src={dest.thumbnail} alt={dest.label} loading="lazy" width="600" height="400" />
+            <div class="destination-card-overlay">
+              <span class="destination-card-label">{dest.label}</span>
+              {destCounts[dest.slug] > 0 && (
+                <span class="destination-card-count">{destCounts[dest.slug]} {destCounts[dest.slug] === 1 ? 'guide' : 'guides'}</span>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+      <div class="section-footer">
+        <a href={`${base}/destinations/`} class="section-link">All Destinations &rarr;</a>
+      </div>
     </div>
   </section>
 
-  <!-- Latest Posts -->
+  <!-- Newsletter CTA (editorial inline) -->
+  <section class="homepage-newsletter">
+    <div class="homepage-newsletter-inner">
+      <div class="section-rule" style="margin: 0 auto 1.5rem;"></div>
+      <p class="section-label">The AILEEN Edit</p>
+      <h2>Worth your inbox.</h2>
+      <p class="homepage-newsletter-desc">One email a week. The restaurants worth booking, the hotels worth staying, the pieces worth keeping.</p>
+      <form class="newsletter-form" data-newsletter="true">
+        <input type="email" placeholder="Your email address" aria-label="Email address" required />
+        <button type="submit">Subscribe</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Latest -->
   {latest.length > 0 && (
-    <section class="container" style="padding-bottom: 1rem;">
-      <div class="section-header">
+    <section class="homepage-section container">
+      <div class="section-header section-header--editorial">
+        <div class="section-rule"></div>
         <p class="section-label">Latest</p>
         <h2>Worth Your Time</h2>
       </div>

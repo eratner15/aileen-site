@@ -1,0 +1,75 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const { active = '' } = Astro.props;
+const tabs = [
+  { id: 'today', label: 'Today', href: `${base}/admin/` },
+  { id: 'editorial', label: 'Editorial', href: `${base}/admin/editorial/` },
+  { id: 'seo', label: 'SEO', href: `${base}/admin/seo/` },
+  { id: 'opportunities', label: 'Opportunities', href: `${base}/admin/opportunities/` },
+  { id: 'distribution', label: 'Distribution', href: `${base}/admin/distribution/` },
+  { id: 'monetization', label: 'Monetization', href: `${base}/admin/monetization/` },
+  { id: 'performance', label: 'Performance', href: `${base}/admin/performance/` },
+  { id: 'settings', label: 'Settings', href: `${base}/admin/settings/` },
+];
+---
+
+<div class="admin-header-bar">
+  <div class="admin-header-top">
+    <span id="api-status" class="api-status api-status--offline">Checking API...</span>
+    <span id="api-scorecard" class="api-scorecard"></span>
+  </div>
+  <nav class="admin-nav">
+    {tabs.map(t => (
+      <a href={t.href} class={`admin-nav-link ${active === t.id ? 'active' : ''}`}>{t.label}</a>
+    ))}
+  </nav>
+</div>
+
+<style>
+  .admin-header-bar {
+    margin-bottom: 1.5rem;
+  }
+  .admin-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .api-scorecard {
+    font-family: var(--font-ui, -apple-system, sans-serif);
+    font-size: 0.72rem;
+    color: var(--color-text-muted, #999);
+  }
+</style>
+
+<script>
+  const API_URL = localStorage.getItem('aileen_api_url') || 'http://localhost:3001';
+
+  async function checkApi() {
+    const el = document.getElementById('api-status');
+    try {
+      const res = await fetch(`${API_URL}/api/health`, { signal: AbortSignal.timeout(3000) });
+      if (res.ok) {
+        el!.textContent = 'API Connected';
+        el!.className = 'api-status api-status--online';
+        loadScorecard();
+      }
+    } catch {
+      el!.textContent = 'API Offline — run: aileen serve';
+      el!.className = 'api-status api-status--offline';
+    }
+  }
+
+  async function loadScorecard() {
+    const el = document.getElementById('api-scorecard');
+    try {
+      const res = await fetch(`${API_URL}/api/scorecard`);
+      const d = await res.json();
+      if (el && d.postsPublished !== undefined) {
+        el.textContent = `This week: ${d.postsPublished}/${d.weeklyTarget} posts · ${d.pinsCreated}/${d.pinTarget} pins · ${d.postsNeedingAudit} need audit`;
+      }
+    } catch {}
+  }
+
+  checkApi();
+</script>

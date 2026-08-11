@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { getCollection } from 'astro:content';
+import navigation from '../data/navigation.json';
 
 // Dynamic popular links for footer
 const popularPosts = (await getCollection('posts', ({ data }) => !data.draft && (data.featured || data.cornerstone)))
@@ -16,6 +17,7 @@ interface Props {
   ogTitle?: string;
   ogDescription?: string;
   canonicalOverride?: string;
+  isAdmin?: boolean;
 }
 
 const {
@@ -27,6 +29,7 @@ const {
   ogTitle,
   ogDescription,
   canonicalOverride,
+  isAdmin = false,
 } = Astro.props;
 
 const siteTitle = title === 'AILEEN Magazine' ? title : `${title} | AILEEN Magazine`;
@@ -125,7 +128,7 @@ const resolvedOgDescription = ogDescription || description;
     }
   })} />
 </head>
-<body>
+<body class={isAdmin ? 'is-admin' : ''}>
   <header class="site-header">
     <div class="header-inner">
       <a href={`${base}/`} class="site-logo">
@@ -135,16 +138,17 @@ const resolvedOgDescription = ogDescription || description;
       <button class="nav-toggle" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
       </button>
-      <nav>
+      <nav class="site-nav">
         <ul class="main-nav">
-          <li><a href={`${base}/restaurants/`}>Restaurants</a></li>
-          <li><a href={`${base}/travel/`}>Travel</a></li>
-          <li><a href={`${base}/hotels/`}>Hotels</a></li>
-          <li><a href={`${base}/style/`}>Style</a></li>
-          <li><a href={`${base}/recipes/`}>Recipes</a></li>
-          <li><a href={`${base}/destinations/`}>Destinations</a></li>
-          <li><a href={`${base}/about/`}>About</a></li>
+          {navigation.main.map(item => (
+            <li><a href={`${base}${item.href}`}>{item.label}</a></li>
+          ))}
         </ul>
+        <div class="nav-secondary">
+          {navigation.secondary.map(item => (
+            <a href={`${base}${item.href}`} class="nav-secondary-link">{item.label}</a>
+          ))}
+        </div>
       </nav>
     </div>
   </header>
@@ -153,19 +157,21 @@ const resolvedOgDescription = ogDescription || description;
     <slot />
   </main>
 
-  <!-- Newsletter CTA -->
-  <section class="newsletter-cta">
-    <div class="newsletter-cta-inner">
-      <p class="section-label" style="color: var(--color-text-muted);">The AILEEN Edit</p>
-      <h2>A weekly letter on what's worth your time.</h2>
-      <p>In travel, style, and everything in between. No fluff, no filler.</p>
-      <form class="newsletter-form" data-newsletter="true">
-        <input type="email" placeholder="Your email address" aria-label="Email address" required />
-        <button type="submit">Subscribe</button>
-      </form>
-      <p class="newsletter-privacy">We respect your privacy. Unsubscribe anytime.</p>
-    </div>
-  </section>
+  {!isAdmin && (
+    <!-- Newsletter CTA -->
+    <section class="newsletter-cta">
+      <div class="newsletter-cta-inner">
+        <p class="section-label" style="color: var(--color-text-muted);">The AILEEN Edit</p>
+        <h2>A weekly letter on what's worth your time.</h2>
+        <p>In travel, style, and everything in between. No fluff, no filler.</p>
+        <form class="newsletter-form" data-newsletter="true">
+          <input type="email" placeholder="Your email address" aria-label="Email address" required />
+          <button type="submit">Subscribe</button>
+        </form>
+        <p class="newsletter-privacy">We respect your privacy. Unsubscribe anytime.</p>
+      </div>
+    </section>
+  )}
 
   <footer class="site-footer">
     <div class="footer-inner">
@@ -177,12 +183,9 @@ const resolvedOgDescription = ogDescription || description;
       <div class="footer-col">
         <h4>Explore</h4>
         <ul>
-          <li><a href={`${base}/restaurants/`}>Restaurants</a></li>
-          <li><a href={`${base}/travel/`}>Travel</a></li>
-          <li><a href={`${base}/hotels/`}>Hotels</a></li>
-          <li><a href={`${base}/style/`}>Style</a></li>
-          <li><a href={`${base}/recipes/`}>Recipes</a></li>
-          <li><a href={`${base}/destinations/`}>Destinations</a></li>
+          {navigation.footer.explore.map(item => (
+            <li><a href={`${base}${item.href}`}>{item.label}</a></li>
+          ))}
         </ul>
       </div>
       <div class="footer-col">
@@ -205,10 +208,14 @@ const resolvedOgDescription = ogDescription || description;
       <div class="footer-col">
         <h4>Connect</h4>
         <ul>
-          <li><a href={`${base}/about/`}>About</a></li>
-          <li><a href="https://instagram.com/aileenlavin" target="_blank" rel="noopener">Instagram</a></li>
-          <li><a href="https://pinterest.com/aileenlavin" target="_blank" rel="noopener">Pinterest</a></li>
-          <li><a href="https://tiktok.com/@aileenlavin" target="_blank" rel="noopener">TikTok</a></li>
+          {navigation.footer.connect.map(item => (
+            <li>
+              <a href={item.external ? item.href : `${base}${item.href}`}
+                {...(item.external ? { target: '_blank', rel: 'noopener' } : {})}>
+                {item.label}
+              </a>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
@@ -221,7 +228,8 @@ const resolvedOgDescription = ogDescription || description;
   <script>
     // Mobile nav toggle
     document.querySelector('.nav-toggle')?.addEventListener('click', () => {
-      document.querySelector('.main-nav')?.classList.toggle('open');
+      document.querySelector('.site-nav')?.classList.toggle('open');
+      document.querySelector('.nav-toggle')?.classList.toggle('active');
     });
 
     // Sticky header shadow
@@ -255,35 +263,11 @@ const resolvedOgDescription = ogDescription || description;
             event_label: window.location.pathname,
           });
         }
-        // TODO: Connect to email provider API (Mailchimp/ConvertKit)
+        // TODO: Connect to email provider API
         const btn = form.querySelector('button');
         if (btn) {
           btn.textContent = 'Thank you!';
           btn.setAttribute('disabled', 'true');
-        }
-      });
-    });
-
-    // Track TOC link clicks
-    document.querySelectorAll('.toc a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (typeof window.gtag === 'function') {
-          window.gtag('event', 'toc_click', {
-            event_category: 'engagement',
-            event_label: (link as HTMLAnchorElement).textContent?.trim(),
-          });
-        }
-      });
-    });
-
-    // Track related post clicks
-    document.querySelectorAll('.post-grid .post-card a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (typeof window.gtag === 'function') {
-          window.gtag('event', 'related_click', {
-            event_category: 'engagement',
-            event_label: (link as HTMLAnchorElement).href,
-          });
         }
       });
     });

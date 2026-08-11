@@ -1,29 +1,106 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import PostGrid from '../../components/PostGrid.astro';
+import PostCard from '../../components/PostCard.astro';
+import NewsletterCTA from '../../components/NewsletterCTA.astro';
 
 const posts = await getCollection('posts', ({ data }) =>
-  !data.draft && (data.contentType === 'the-edit' || data.contentType === 'style-guide')
+  !data.draft && (data.contentType === 'the-edit' || (data.featuredProducts && data.featuredProducts.length > 0))
 );
-posts.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+posts.sort((a, b) => {
+  if (a.data.cornerstone && !b.data.cornerstone) return -1;
+  if (!a.data.cornerstone && b.data.cornerstone) return 1;
+  return new Date(b.data.date).getTime() - new Date(a.data.date).getTime();
+});
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const featured = posts.find(p => p.data.featured || p.data.cornerstone) || posts[0];
+const cornerstones = posts.filter(p => p.data.cornerstone);
+const rest = posts.filter(p => p.id !== featured?.id);
+
+function postUrl(post: typeof posts[0]) {
+  const [pillar, ...r] = post.id.split('/');
+  return `${base}/${pillar}/${r.join('/')}/`;
+}
 ---
 
-<Base title="The Edit" description="Curated product picks, shopping roundups, and style edits. The pieces, places, and things worth knowing about right now.">
+<Base title="The Edit" description="Product picks, shopping edits, and the pieces worth keeping. Every recommendation is something I own, use, or have personally vetted.">
 
   <section class="pillar-hero">
     <div class="container">
       <p class="section-label">The Edit</p>
-      <h1>Worth knowing about right now.</h1>
+      <h1>Curated, not sponsored.</h1>
       <p class="pillar-description">
-        Curated shopping edits, product picks, and style roundups. Not everything — just the things that have earned a place on the list.
-        Updated regularly with what's actually good.
+        Product picks, shopping edits, and the pieces worth keeping. Every recommendation is something I own,
+        use, or have personally vetted.
       </p>
     </div>
   </section>
 
-  <section class="container" style="padding-top: 3rem;">
-    <PostGrid posts={posts} />
+  <!-- Featured / Hero Post -->
+  {featured && (
+    <section class="container" style="padding: 3rem 0 1rem;">
+      <a href={postUrl(featured)} class="cluster-feature" style="text-decoration:none; color:inherit; display:block;">
+        <div class="cluster-feature-image">
+          <img src={featured.data.image} alt={featured.data.imageAlt} loading="eager" width="800" height="500" />
+        </div>
+        <div class="cluster-feature-body">
+          <h3>{featured.data.title}</h3>
+          <p>{featured.data.excerpt}</p>
+          <span class="read-more">Read Edit</span>
+        </div>
+      </a>
+    </section>
+  )}
+
+  <!-- Cornerstones -->
+  {cornerstones.length > 1 && (
+    <section class="container" style="padding: 2rem 0;">
+      <div class="section-header section-header--editorial">
+        <div class="section-rule"></div>
+        <p class="section-label">Essential Edits</p>
+      </div>
+      <div class="post-grid post-grid--4">
+        {cornerstones.filter(p => p.id !== featured?.id).slice(0, 4).map(post => (
+          <PostCard
+            title={post.data.title}
+            href={postUrl(post)}
+            pillar={post.data.pillar}
+            excerpt={post.data.excerpt}
+            date={post.data.date}
+            image={post.data.image.replace('1200', '400').replace('675', '280')}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- All edits -->
+  <section class="container" style="padding: 2rem 0;">
+    <div class="section-header section-header--editorial">
+      <div class="section-rule"></div>
+      <p class="section-label">All Edits</p>
+    </div>
+    <div class="post-grid">
+      {rest.map(post => (
+        <PostCard
+          title={post.data.title}
+          href={postUrl(post)}
+          pillar={post.data.pillar}
+          excerpt={post.data.excerpt}
+          date={post.data.date}
+          image={post.data.image.replace('1200', '600').replace('675', '400')}
+        />
+      ))}
+    </div>
+    {rest.length === 0 && (
+      <div class="empty-state"><p>More edits coming soon.</p></div>
+    )}
+  </section>
+
+  <!-- Newsletter -->
+  <section class="container" style="padding: 1rem 0 2rem;">
+    <NewsletterCTA variant="inline" />
   </section>
 
 </Base>
